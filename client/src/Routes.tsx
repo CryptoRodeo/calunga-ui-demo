@@ -1,26 +1,27 @@
-import { createBrowserRouter } from "react-router-dom";
+import { useRoutes, Navigate } from "react-router-dom";
 
-import App from "./App";
 import { PythonWheels } from "./pages/python-wheels/python-wheels";
+import { Suspense } from "react";
+import { Bullseye, Spinner } from "@patternfly/react-core";
 
 export const Paths = {
   pythonWheels: "python-wheels",
 } as const;
 
-export const AppRoutes = createBrowserRouter(
-  [
-    {
-      path: "/",
-      element: <App />,
-      children: [
-        {
-          path: "python-wheels",
-          element: <PythonWheels />,
-        },
-      ],
-    },
-  ],
-  {
-    basename: import.meta.env.PUBLIC_PATH || "/",
-  },
-);
+export const AppRoutes = () => {
+  const allRoutes = useRoutes([
+    { path: "/", element: <Navigate to={Paths.pythonWheels} /> },
+    { path: Paths.pythonWheels, element: <PythonWheels /> },
+  ]);
+
+  return (
+    <Suspense
+      fallback={
+        <Bullseye>
+          <Spinner />
+        </Bullseye>
+      }>
+      {allRoutes}
+    </Suspense>
+  );
+};

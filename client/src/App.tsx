@@ -1,16 +1,19 @@
 import type React from "react";
-import { Outlet } from "react-router-dom";
+import { BrowserRouter as Router } from "react-router-dom";
 
 import { DefaultLayout } from "./layout";
 
 import "@patternfly/patternfly/patternfly.css";
 import "@patternfly/patternfly/patternfly-addons.css";
+import { AppRoutes } from "./Routes";
 
 const App: React.FC = () => {
   return (
-    <DefaultLayout>
-      <Outlet />
-    </DefaultLayout>
+    <Router basename={import.meta.env.PUBLIC_PATH || import.meta.env.BASE_URL}>
+      <DefaultLayout>
+        <AppRoutes />
+      </DefaultLayout>
+    </Router>
   );
 };
 

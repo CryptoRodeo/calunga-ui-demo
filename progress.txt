@@ -184,10 +184,27 @@ Files changed:
 - This fixes the masthead logo path resolution for GitHub Pages deployment
 Status: Complete
 
-Feature: Clicking on the Python Wheels side nav button leads to URL with repeated path segments
+Feature: Clicking on the Python Wheels side nav button keeps redirecting with duplicate base paths
 Files changed:
-- Updated client/rsbuild.config.ts to pass publicPath as template parameter when GITHUB_PAGES is true
-- Updated client/index.gh-pages.html to use <%= publicPath || '/' %> in base href tag instead of hardcoded "/"
-- The base href now correctly matches the PUBLIC_PATH environment variable (/calunga-ui-demo/)
-- This fixes navigation issues where clicking side nav buttons would cause repeated path segments in URLs
+- Updated client/src/Routes.tsx to change Paths.pythonWheels from "/python-wheels" (absolute) to "python-wheels" (relative)
+- When using React Router with a basename, NavLink components must use relative paths instead of absolute paths
+- This prevents the basename from being appended multiple times when clicking navigation links
+Status: Complete
+
+Feature: The masthead-logo.svg text is incorrect
+Files changed:
+- Updated branding/images/masthead-logo.svg to display "Trusted Developer Libraries" instead of "Trusted Artificial Signings"
+- Replaced complex vector path text with simple text element for better maintainability
+- Removed unnecessary Red Hat-specific branding text that was not needed
+Status: Complete
+
+Feature: masthead missing after refactoring to vite
+Files changed:
+- Updated client/src/app/hooks/useBranding.ts to remove runtime processBrandingStrings function
+- Simplified useBranding hook to return brandingStrings directly from @calunga-ui/common
+- Template replacement (<%= brandingRoot %>) now happens entirely during common package build via rollup
+- Updated client/vite.config.ts viteStaticCopy plugin to copy brandingPath to "." instead of "branding"
+- Changed dest from "branding" to "." to match rhtas-console-ui approach
+- Branding assets now correctly copied and accessible at /branding/images/masthead-logo.svg
+- Masthead logo now renders correctly in both development and production builds
 Status: Complete

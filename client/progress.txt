@@ -1,0 +1,18 @@
+
+Feature: app should use vite over rsbuild
+Files changed:
+- Created client/vite.config.ts with vite configuration adapted from rhtas-console-ui
+- Updated client/package.json to replace rsbuild dependencies with vite dependencies
+- Updated client/package.json scripts to use vite commands (vite build, vite --port 3000 --host, vite preview, vitest)
+- Removed client/rsbuild.config.ts (replaced by vite.config.ts)
+- Created client/src/vite-env.d.ts for TypeScript environment variable types
+- Updated client/src/App.tsx to use BrowserRouter instead of Router component
+- Updated client/src/App.tsx to use PUBLIC_PATH || BASE_URL for basename
+- Updated client/src/index.tsx to render App component directly instead of using RouterProvider
+- Updated client/src/Routes.tsx to add PythonWheels route and remove unused imports
+- Updated client/index.html to add script tag for entry point (/src/index.tsx)
+- vite.config.ts includes all necessary plugins: react, ignore-process-env, vite-static-copy, ViteEjsPlugin, copy-index, istanbul
+- vite.config.ts handles GitHub Pages deployment via GITHUB_PAGES env variable
+- vite.config.ts includes proxy configuration for /auth and /api endpoints
+- Build and dev server tested successfully
+Status: Complete

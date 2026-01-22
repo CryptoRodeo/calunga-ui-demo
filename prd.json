@@ -192,4 +192,38 @@
     ],
     "passes": true
   },
+  {
+    "category": "bug-fix",
+    "description": "Clicking on the Python Wheels side nav button keeps redirecting to https://cryptorodeo.github.io/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/python-wheels?itemsPerPage=10&pageNumber=1&sortColumn=wheel&sortDirection=asc",
+    "steps": [
+      "Clicking on 'Python Wheels' on the side bar nav causes the folllowing link to be rendered: https://cryptorodeo.github.io/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/python-wheels?itemsPerPage=10&pageNumber=1&sortColumn=wheel&sortDirection=asc",
+      "The github page is now deployed but the side bar nav causes an issue, investigate why and fix the issue.",
+      "This is how it's rendered on Github pages: <a class=\"pf-v6-c-nav__link\" href=\"/calunga-ui-demo/python-wheels\" data-discover=\"true\">Python Wheels</a>"
+    ],
+    "passes": true
+  },
+  {
+    "category": "styling",
+    "description": "The masthead-logo.svg text is incorrect",
+    "steps": [
+      "The masthead-logo.svg text should say: Trusted Developer Libraries"
+    ],
+    "passes": true
+  },
+  {
+    "category": "functionality",
+    "description": "app should use vite over rsbuild",
+    "steps": [
+      "The calunga-ui project should use vite over rsbuild, similar to how its done in rhtas-console-ui",
+    ],
+    "passes": true
+  },
+  {
+    "category": "functionality",
+    "description": "masthead missing after refactoring to vite",
+    "steps": [
+      "The masthead is missing after moving the app to vite. Investigate why and resolve the issue.",
+    ],
+    "passes": true
+  },
 ]

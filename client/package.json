@@ -7,15 +7,16 @@
   "scripts": {
     "clean": "rimraf ./dist",
     "clean:all": "rimraf ./dist ./node_modules",
-    "build": "rsbuild build",
+    "build": "vite build",
     "check": "biome check --error-on-warnings .",
     "check:write": "biome check --write .",
     "format": "biome format .",
     "format:fix": "biome format --write .",
-    "start:dev": "rsbuild dev",
-    "start": "rsbuild preview",
-    "test": "cross-env NODE_ENV=test jest --rootDir=. --config=./config/jest.config.ts",
-    "preview": "rsbuild preview"
+    "start:dev": "vite --port 3000 --host",
+    "start": "vite preview",
+    "test": "vitest",
+    "coverage": "vitest run --coverage",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@hookform/resolvers": "^2.9.11",
@@ -45,16 +46,21 @@
     "yup": "^0.32.11"
   },
   "devDependencies": {
-    "@rsbuild/core": "^1.5.11",
-    "@rsbuild/plugin-react": "^1.4.0",
-    "@rsbuild/plugin-type-check": "^1.2.4",
-    "@testing-library/jest-dom": "^6.4.6",
+    "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.0.0",
     "@types/file-saver": "^2.0.2",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
-    "raw-loader": "^4.0.2",
-    "swc-plugin-coverage-instrument": "^0.0.28"
+    "@vitejs/plugin-react": "^5.0.0",
+    "@vitest/browser": "^3.2.4",
+    "jsdom": "^27.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.2",
+    "vite-plugin-ejs": "^1.7.0",
+    "vite-plugin-istanbul": "^7.2.1",
+    "vite-plugin-static-copy": "^3.1.1",
+    "vitest": "^3.2.4",
+    "vitest-browser-react": "^1.0.1"
   },
   "browserslist": {
     "production": [

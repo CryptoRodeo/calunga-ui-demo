@@ -1,8 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { RouterProvider } from "react-router-dom";
 
-import { AppRoutes } from "./Routes";
+import App from "./App";
 // import "./global.css"; // Removed: using PatternFly defaults instead
 
 const container = document.getElementById("root");
@@ -13,7 +12,7 @@ const root = createRoot(container!);
 const renderApp = () => {
   return root.render(
     <React.StrictMode>
-      <RouterProvider router={AppRoutes} />
+      <App />
     </React.StrictMode>,
   );
 };
