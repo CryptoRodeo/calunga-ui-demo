@@ -1,0 +1,90 @@
+[
+  {
+    "id": "1",
+    "wheel": "pandas",
+    "version": "2.2.0",
+    "abi": "cp312",
+    "platform": "x86_64",
+    "license": "BSD",
+    "published": "A month ago",
+    "sourceIndex": "TDL",
+    "description": "pandas is a Python package that provides fast, flexible, and expressive data structures designed to make working with \"relational\" or \"labeled\" data both easy and intuitive. It aims to be the fundamental high-level building block for doing practical, real world data analysis in Python. Additionally, it has the broader goal of becoming the most powerful and flexible open source data analysis / manipulation available in any language. It is already well on its way towards this goal."
+  },
+  {
+    "id": "2",
+    "wheel": "django-inspectional-registration",
+    "version": "2.3.0",
+    "abi": "cp312",
+    "platform": "aarch64",
+    "license": "BSD",
+    "published": "5 days ago",
+    "sourceIndex": "AIPCC",
+    "description": "Django registration package with inspection workflow. This package provides a two-step registration process with administrator approval, allowing site administrators to review and approve new user registrations before granting access."
+  },
+  {
+    "id": "3",
+    "wheel": "facebooklogger",
+    "version": "1.5.0",
+    "abi": "cp312",
+    "platform": "aarch64",
+    "license": "BSD",
+    "published": "5 days ago",
+    "sourceIndex": "TDL",
+    "description": "A Python logging library for Facebook integration. This package provides structured logging capabilities with automatic metric collection and reporting to Facebook's infrastructure, including support for custom log levels and context tracking."
+  },
+  {
+    "id": "4",
+    "wheel": "fabric",
+    "version": "1.2.0",
+    "abi": "ABI3",
+    "platform": "x86_64",
+    "license": "BSD",
+    "published": "5 days ago",
+    "sourceIndex": "TDL",
+    "description": "High-level Python library for executing shell commands remotely over SSH. Fabric simplifies the use of SSH for application deployment and systems administration tasks, providing a clean interface for running commands on multiple servers."
+  },
+  {
+    "id": "5",
+    "wheel": "MirahezeBot-Plugins",
+    "version": "4.2.2",
+    "abi": "cp312",
+    "platform": "aarch64",
+    "license": "BSD",
+    "published": "5 days ago",
+    "sourceIndex": "TDL",
+    "description": "Plugin collection for MirahezeBot IRC bot framework. Provides various plugins for IRC channel management, including user authentication, channel moderation, and automated responses for the Miraheze wiki hosting platform."
+  },
+  {
+    "id": "6",
+    "wheel": "sopel-youtube",
+    "version": "2.4.0",
+    "abi": "ABI3",
+    "platform": "x86_64",
+    "license": "BSD",
+    "published": "5 days ago",
+    "sourceIndex": "TDL",
+    "description": "YouTube plugin for Sopel IRC bot. Automatically detects YouTube links posted in IRC channels and displays video information including title, duration, upload date, and view count using the YouTube Data API."
+  },
+  {
+    "id": "7",
+    "wheel": "ducky",
+    "version": "3.2.0",
+    "abi": "cp312",
+    "platform": "aarch64",
+    "license": "BSD",
+    "published": "5 days ago",
+    "sourceIndex": "TDL",
+    "description": "Python package for rubber duck debugging and code analysis. Ducky provides an interactive debugging assistant that helps developers explain their code step-by-step, identify logical errors, and improve code clarity through self-explanation."
+  },
+  {
+    "id": "8",
+    "wheel": "ppci",
+    "version": "3.2.0",
+    "abi": "ABI3",
+    "platform": "x86_64",
+    "license": "BSD",
+    "published": "5 days ago",
+    "sourceIndex": "TDL",
+    "description": "Pure Python Compiler Infrastructure. A compiler framework written entirely in Python that supports multiple architectures and languages, providing tools for parsing, code generation, linking, and assembly for educational and embedded systems development."
+  }
+]

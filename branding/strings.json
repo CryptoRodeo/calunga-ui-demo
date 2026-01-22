@@ -1,0 +1,22 @@
+{
+  "application": {
+    "title": "Trusted Developer Libraries",
+    "name": "Calunga UI",
+    "description": "Calunga UI"
+  },
+  "about": {
+    "displayName": "Trusted Developer Libraries",
+    "imageSrc": "<%= brandingRoot %>/images/masthead-logo.svg",
+    "documentationUrl": ""
+  },
+  "masthead": {
+    "leftBrand": {
+      "src": "<%= brandingRoot %>/images/masthead-logo.svg",
+      "alt": "brand",
+      "height": "40px"
+    },
+    "leftTitle": null,
+    "rightBrand": null,
+    "supportUrl": ""
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "application": {
+    "title": "Trusted Developer Libraries",
+    "name": "Calunga UI",
+    "description": "Calunga UI"
+  },
+  "about": {
+    "displayName": "Trusted Developer Libraries",
+    "documentationUrl": ""
+  },
+  "masthead": {
+    "leftTitle": {
+      "text": "Trusted Developer Libraries"
+    }
+  }
+}

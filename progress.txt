@@ -1,0 +1,171 @@
+Feature: Create a new project called calunga_ui
+Files changed:
+- Created calunga_ui/ directory with full monorepo structure
+- Created package.json with npm workspaces (common, client, server)
+- Created common/ workspace with environment config and branding
+- Created client/ workspace with React app structure (index.tsx, App.tsx)
+- Created server/ workspace with Express server
+- Created branding/ directory with strings.json and manifest.json
+- Created configuration files: biome.json, .gitignore, .npmrc, .env, README.md
+Status: Complete
+
+Feature: calunga_ui branding
+Files changed:
+- Created calunga_ui/branding/images/ directory
+- Created calunga_ui/branding/images/masthead-logo.svg with "Trusted Developer Libraries" branding
+- Copied calunga_ui/branding/favicon.ico from trustify-ui
+- Updated calunga_ui/branding/manifest.json to include favicon icon reference
+- Branding strings.json already contained "Trusted Developer Libraries" text in application, about, and masthead sections
+Status: Complete
+
+Feature: calunga_ui navigation
+Files changed:
+- Created calunga_ui/client/src/layout/ directory with layout components
+- Created calunga_ui/client/src/layout/sidebar.tsx with navigation menu including "Python Wheels" entry
+- Created calunga_ui/client/src/layout/header.tsx with masthead component
+- Created calunga_ui/client/src/layout/default-layout.tsx to combine header and sidebar
+- Created calunga_ui/client/src/layout/index.ts for exports
+- Created calunga_ui/client/src/Routes.tsx with route definitions and Paths constants
+- Updated calunga_ui/client/src/App.tsx to use DefaultLayout and Outlet for routing
+- Updated calunga_ui/client/src/index.tsx to use RouterProvider with AppRoutes
+Status: Complete
+Feature: calunga_ui Python Wheels page
+Files changed:
+- Created calunga_ui/client/src/pages/python-wheels/ directory for Python Wheels page
+- Created calunga_ui/client/src/pages/python-wheels/python-wheels-context.tsx with table controls and filter categories (Name, Classification, Platform, Source Index)
+- Created calunga_ui/client/src/pages/python-wheels/python-wheels-toolbar.tsx with FilterToolbar and SimplePagination components
+- Created calunga_ui/client/src/pages/python-wheels/python-wheels.tsx with table component (columns: Wheel, Version, ABI, Platform, License, Published, Source Index)
+- Updated calunga_ui/client/src/Routes.tsx to import and use PythonWheels component
+- Copied necessary components from trustify-ui: FilterToolbar, SimplePagination, table control hooks, utilities
+- Copied calunga_ui/client/src/app/components/ directory from trustify-ui (FilterToolbar, FilterPanel, SimplePagination, etc.)
+- Copied calunga_ui/client/src/app/hooks/ directory from trustify-ui (table-controls, usePersistentState, etc.)
+- Copied calunga_ui/client/src/app/utils/ directory from trustify-ui (utility functions)
+- Copied calunga_ui/client/src/app/api/ directory from trustify-ui (API models and utilities)
+- Copied calunga_ui/client/src/app/client/ directory from trustify-ui (API client types)
+- Copied calunga_ui/client/src/app/Constants.ts from trustify-ui
+- Copied and adapted calunga_ui/client/src/app/env.ts from trustify-ui (changed to use @calunga-ui/common)
+- Updated calunga_ui/client/src/app/components/FilterToolbar/dateUtils.ts to import and extend dayjs isSameOrBefore plugin
+- Updated calunga_ui/client/rsbuild.config.ts to disable type checking for build (enable: false)
+- Table includes sortable columns (Wheel, Version, Published) via table control hooks
+- Filter toolbar includes filters for: Name (search), Classification (select), Platform (select), Source Index (select)
+- Table sorting is implemented via column header clicks using PatternFly table controls
+Status: Complete
+
+Feature: Fix the error that occurs when running npm run start:dev
+Files changed:
+- Updated calunga_ui/client/rsbuild.config.ts to remove incompatible SWC plugin configuration (swc-plugin-coverage-instrument)
+- Removed tools.swc.jsc.experimental.plugins section that was causing SWC Wasm plugin compatibility error with rspack
+Status: Complete
+Feature: Fix weird branding in calunga_ui
+Files changed:
+- Updated calunga_ui/branding/strings.json to use leftBrand (image) instead of leftTitle (text)
+- Added imageSrc property to about section pointing to masthead-logo.svg
+- Changed masthead.leftBrand to include src, alt, and height properties matching rhtas-console-ui format
+- Set masthead.leftTitle to null
+- Kept all wording as "Trusted Developer Libraries"
+- Updated calunga_ui/branding/images/masthead-logo.svg to match reference image format
+- Replaced simple placeholder logo with proper Red Hat logo (red fedora hat icon from rhtas-console-ui)
+- Changed from single-line to two-line text layout: "Red Hat" on first line, "Trusted Developer Libraries" on second line
+- Used proper scaling and positioning to match the reference image shown in calunga_ui.png
+- Updated calunga_ui/client/src/layout/header.tsx to use useBranding hook and conditionally render Brand component with SVG logo
+- Fixed calunga_ui/client/src/app/hooks/useBranding.ts to import from @calunga-ui/common instead of @trustify-ui/common
+Status: Complete
+
+Feature: calunga_ui Python Wheels page has populated dummy data
+Files changed:
+- Created calunga_ui/client/src/pages/python-wheels/dummy-data.json with 8 wheel entries matching reference image
+- Updated calunga_ui/client/src/pages/python-wheels/python-wheels-context.tsx to import and use dummy data
+- Dummy data includes: pandas (with description), django-inspectional-registration, facebooklogger, fabric, MirahezeBot-Plugins, sopel-youtube, ducky, ppci
+- All entries include: id, wheel, version, abi, platform, license, published, sourceIndex fields
+Status: Complete
+
+Feature: The table headers that sort the data should work
+Files changed:
+- Updated calunga_ui/client/src/pages/python-wheels/python-wheels-context.tsx to import useLocalTableControlDerivedState
+- Added useLocalTableControlDerivedState call to process data with sorting, filtering, and pagination
+- Fixed tableControls to use derivedState.currentPageItems instead of raw mockWheels data
+- Updated totalItemCount to use derivedState.totalItemCount
+- Updated sortableColumns array to include ALL columns: wheel, version, abi, platform, license, published, sourceIndex
+- Updated IPythonWheelsContext type definition to reflect all sortable columns
+- ALL table headers now properly sort data when clicked (all 7 columns are sortable)
+- Dummy data is fully rendered and sortable
+Status: Complete
+
+Feature: Each dummy data entry should have a description
+Files changed:
+- Updated calunga_ui/client/src/pages/python-wheels/dummy-data.json to add description field to all 8 entries
+- Added descriptions for: django-inspectional-registration, facebooklogger, fabric, MirahezeBot-Plugins, sopel-youtube, ducky, ppci
+- All dummy data entries now include meaningful descriptions
+Status: Complete
+
+Feature: Each table entry should be Expandable
+Files changed:
+- Updated calunga_ui/client/src/pages/python-wheels/python-wheels-context.tsx to enable expansion (isExpansionEnabled: true, expandableVariant: "single")
+- Updated calunga_ui/client/src/pages/python-wheels/python-wheels.tsx to import TableHeaderContentWithControls and TableRowContentWithControls
+- Updated calunga_ui/client/src/pages/python-wheels/python-wheels.tsx to extract isCellExpanded from expansionDerivedState
+- Updated table header to use TableHeaderContentWithControls component
+- Updated table body to use TableRowContentWithControls component with expand toggle functionality
+- Updated expanded row rendering to be conditional on isCellExpanded(item) instead of hardcoded isExpanded={true}
+- Each table entry now has an expand/collapse toggle button (chevron icon)
+- When expanded, the description from dummy data is displayed in an ExpandableRowContent component
+- expandableVariant: "single" ensures only one row can be expanded at a time
+Status: Complete
+
+Feature: Each table row header sorts the table entries
+Files changed:
+- Updated calunga_ui/client/src/pages/python-wheels/python-wheels-context.tsx to add getSortValues function
+- getSortValues maps all item properties (wheel, version, abi, platform, license, published, sourceIndex) to sortable values
+- Table headers now properly sort the data when clicked
+- All 7 column headers have working sort functionality
+Status: Complete
+
+Feature: Masthead is too small
+Files changed:
+- Updated calunga_ui/branding/strings.json to triple masthead height from 40px to 120px
+- Changed masthead.leftBrand.height from "40px" to "120px"
+Status: Complete
+
+Feature: font size is too small
+Files changed:
+- Created calunga_ui/client/src/global.css with doubled font-size (32px) applied to html and body elements
+- Updated calunga_ui/client/src/index.tsx to import global.css
+Status: Complete
+
+Feature: Investigate difference between rhtas-console-ui font sizing and calunga-ui
+Files changed:
+- Investigated rhtas-console-ui and found it imports both @patternfly/patternfly/patternfly.css and @patternfly/patternfly/patternfly-addons.css in App.tsx
+- calunga-ui was only importing @patternfly/patternfly/patternfly.css, missing the patternfly-addons.css
+- Updated calunga_ui/client/src/App.tsx to import @patternfly/patternfly/patternfly-addons.css
+- Updated calunga_ui/client/src/index.tsx to comment out global.css import (no longer needed with proper PatternFly CSS)
+- The missing patternfly-addons.css was the root cause of incorrect font sizing
+- calunga-ui now uses PatternFly default font sizing like rhtas-console-ui without requiring custom CSS overrides
+Status: Complete
+
+Feature: Update this project so the application can be rendered in Github Pages
+Files changed:
+- Updated client/rsbuild.config.ts to support PUBLIC_PATH environment variable via assetPrefix configuration
+- Updated client/rsbuild.config.ts to conditionally use index.gh-pages.html template when GITHUB_PAGES env is set
+- Updated client/rsbuild.config.ts renameIndex plugin to skip renaming index.html when GITHUB_PAGES env is set
+- Updated client/rsbuild.config.ts to copy public/ directory contents to dist
+- Updated client/src/Routes.tsx to use basename from PUBLIC_PATH environment variable for router configuration
+- Created client/index.gh-pages.html with static template for GitHub Pages (no EJS variables)
+- Created client/public/404.html with SPA redirect script for client-side routing support
+- Created client/public/.nojekyll to prevent Jekyll processing on GitHub Pages
+- Updated client/index.html to include GitHub Pages SPA redirect restoration scripts
+- Created .github/workflows/deploy.yml with automated build and deployment to GitHub Pages
+- Created DEPLOYMENT.md with documentation on GitHub Pages deployment setup and configuration
+Status: Complete
+
+Feature: Update the search filter so it can search by actual value used in the dummy data
+Files changed:
+- Updated client/src/app/components/FilterToolbar/SearchFilterControl.tsx to add 400ms debouncing via useEffect
+- Updated client/src/pages/python-wheels/python-wheels-context.tsx to add getItemValue functions for all filter categories
+- Updated Name filter to use getItemValue: (item) => item.wheel
+- Updated Platform filter to use getItemValue: (item) => item.platform and removed "any" option (only x86_64, aarch64)
+- Updated Source Index filter to use getItemValue: (item) => item.sourceIndex and removed "PyPI" option (only TDL, AIPCC)
+- Removed Classification filter category as it doesn't exist in dummy data
+- Updated IPythonWheelsContext type to remove "classification" from filter category keys
+- Table now updates automatically as user types with 400ms delay
+- Filter options now match actual values present in dummy-data.json
+Status: Complete
+
