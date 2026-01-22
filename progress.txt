@@ -210,3 +210,40 @@ Files changed:
 - Without the entry point script tag, Vite did not bundle any JavaScript code, resulting in an empty white page
 - Vite now properly bundles the application and injects the correct script and CSS tags with the PUBLIC_PATH base
 Status: Complete
+Feature: Github page redirect loop after refresh
+Files changed:
+- Updated client/src/App.tsx to strip trailing slash from React Router basename
+- React Router's basename should not include a trailing slash, while Vite's base option should
+- Added .replace(/\/$/, '') to remove trailing slash from PUBLIC_PATH before passing to Router
+- Updated client/src/Routes.tsx to add replace prop to Navigate component
+- Using replace prevents adding unnecessary entries to browser history during root redirect
+- Fixed issue where base path was being duplicated in URLs (e.g., /calunga-ui-demo/calunga-ui-demo/...)
+Status: Complete
+
+Feature: Github pages functionality should be the same as in rhtas-console-ui
+Files changed:
+- Updated .github/workflows/deploy.yml to match rhtas-console-ui approach
+- Changed workflow to use single job (gh-pages) instead of separate build/deploy jobs
+- Updated build command to use NODE_ENV=development and BASE_URL instead of NODE_ENV=production and PUBLIC_PATH
+- Added actions/configure-pages@v5 step to match rhtas-console-ui workflow
+- Updated client/vite.config.ts to use BASE_URL environment variable instead of PUBLIC_PATH
+- Removed GITHUB_PAGES environment variable handling and conditional input logic
+- Removed rename-gh-pages-html plugin (no longer needed)
+- Simplified ViteEjsPlugin to only run when NODE_ENV=development
+- Simplified copy-index plugin to only run when NODE_ENV=production (without GITHUB_PAGES check)
+- Removed define block for PUBLIC_PATH (no longer needed)
+- Updated client/src/App.tsx to use import.meta.env.BASE_URL directly as basename
+- Removed fallback to PUBLIC_PATH and trailing slash stripping logic
+- Updated client/index.html to remove GitHub Pages specific redirect scripts
+- Removed GitHub Pages SPA redirect script and 404.html redirect handling
+- Simplified to match rhtas-console-ui index.html structure
+- Deleted client/index.gh-pages.html (no longer needed with new approach)
+- Deleted client/public/404.html (not needed with rhtas-console-ui approach)
+- Deleted client/public/.nojekyll (not needed with rhtas-console-ui approach)
+- Updated DEPLOYMENT.md to reflect new deployment approach
+- Changed documentation to reference BASE_URL instead of PUBLIC_PATH
+- Updated build command examples to use NODE_ENV=development
+- Removed references to 404.html, .nojekyll, and GITHUB_PAGES variable
+- Added explanation of how the approach matches rhtas-console-ui
+Status: Complete
+

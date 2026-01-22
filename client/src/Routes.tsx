@@ -10,7 +10,7 @@ export const Paths = {
 
 export const AppRoutes = () => {
   const allRoutes = useRoutes([
-    { path: "/", element: <Navigate to={Paths.pythonWheels} /> },
+    { path: "/", element: <Navigate to={Paths.pythonWheels} replace /> },
     { path: Paths.pythonWheels, element: <PythonWheels /> },
   ]);
 

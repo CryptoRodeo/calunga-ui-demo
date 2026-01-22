@@ -9,7 +9,7 @@ import { AppRoutes } from "./Routes";
 
 const App: React.FC = () => {
   return (
-    <Router basename={import.meta.env.PUBLIC_PATH || import.meta.env.BASE_URL}>
+    <Router basename={import.meta.env.BASE_URL}>
       <DefaultLayout>
         <AppRoutes />
       </DefaultLayout>

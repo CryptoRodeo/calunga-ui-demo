@@ -21,20 +21,7 @@ const manifestPath = path.resolve(brandingPath, "manifest.json");
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.PUBLIC_PATH || "/",
-  build: {
-    rollupOptions: {
-      input: process.env.GITHUB_PAGES
-        ? path.resolve(__dirname, "index.gh-pages.html")
-        : path.resolve(__dirname, "index.html"),
-      output: {
-        manualChunks: {
-          react: ["react", "react-dom"],
-        },
-      },
-    },
-    sourcemap: process.env.NODE_ENV === "development",
-  },
+  base: process.env.BASE_URL,
   plugins: [
     react(),
     {
@@ -53,9 +40,6 @@ export default defineConfig({
           src: brandingPath,
           dest: ".",
         },
-        ...(process.env.NODE_ENV !== "production"
-          ? []
-          : []),
       ],
     }),
     ...(process.env.NODE_ENV === "development"
@@ -66,7 +50,7 @@ export default defineConfig({
           }),
         ]
       : []),
-    ...(!process.env.GITHUB_PAGES && process.env.NODE_ENV === "production"
+    ...(process.env.NODE_ENV === "production"
       ? [
           {
             name: "copy-index",
@@ -94,25 +78,16 @@ export default defineConfig({
           }),
         ]
       : []),
-    ...(process.env.GITHUB_PAGES
-      ? [
-          {
-            name: "rename-gh-pages-html",
-            closeBundle: () => {
-              const distDir = path.resolve(__dirname, "dist");
-              const src = path.join(distDir, "index.gh-pages.html");
-              const dest = path.join(distDir, "index.html");
-
-              if (fs.existsSync(src)) {
-                fs.renameSync(src, dest);
-              }
-            },
-          },
-        ]
-      : []),
   ],
-  define: {
-    "import.meta.env.PUBLIC_PATH": JSON.stringify(process.env.PUBLIC_PATH || "/"),
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom"],
+        },
+      },
+    },
+    sourcemap: process.env.NODE_ENV === "development",
   },
   resolve: {
     alias: {

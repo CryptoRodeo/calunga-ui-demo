@@ -16,13 +16,13 @@ The project includes a GitHub Actions workflow that automatically builds and dep
    - Build the application with the correct base path
    - Deploy it to GitHub Pages
 
-3. Your application will be available at `https://<username>.github.io/calunga-ui/`
+3. Your application will be available at `https://<username>.github.io/calunga-ui-demo/`
 
 ### Configuration
 
 The GitHub Actions workflow (`.github/workflows/deploy.yml`) is pre-configured with:
-- `PUBLIC_PATH: /calunga-ui-demo/` - Update this if your repository has a different name
-- Build optimizations for static hosting
+- `BASE_URL: /calunga-ui-demo/` - Update this if your repository has a different name
+- `NODE_ENV: development` - Enables EJS template processing during build
 - Automatic deployment to GitHub Pages
 
 ## Manual Deployment
@@ -31,7 +31,7 @@ To build the application manually for GitHub Pages:
 
 ```bash
 # Build with GitHub Pages configuration
-NODE_ENV=production PUBLIC_PATH=/calunga-ui-demo/ GITHUB_PAGES=true npm run build
+NODE_ENV=development BASE_URL=/calunga-ui-demo/ npm run build
 
 # The built files will be in client/dist/
 ```
@@ -42,22 +42,22 @@ To use a custom domain:
 
 1. Add a `CNAME` file to `client/public/` with your domain name
 2. Configure your domain's DNS settings to point to GitHub Pages
-3. Update the `PUBLIC_PATH` in `.github/workflows/deploy.yml` to `/`
+3. Update the `BASE_URL` in `.github/workflows/deploy.yml` to `/`
 
 ## How It Works
 
-The GitHub Pages deployment includes several features to support single-page applications:
+The GitHub Pages deployment uses the same build process as rhtas-console-ui:
 
-1. **Base Path Configuration**: Assets are served from the correct subdirectory
-2. **Client-Side Routing**: A `404.html` redirect enables SPA routing
-3. **Static Build**: Uses a simplified template without server-side rendering
-4. **Jekyll Bypass**: Includes `.nojekyll` to prevent Jekyll processing
+1. **Base Path Configuration**: Vite's `base` option is set via `BASE_URL` environment variable
+2. **EJS Template Processing**: `NODE_ENV=development` enables ViteEjsPlugin to process templates
+3. **React Router**: The basename is automatically set from `import.meta.env.BASE_URL`
+4. **Static Assets**: All assets are correctly prefixed with the base URL path
 
 ## Troubleshooting
 
 If the application doesn't load correctly:
 
-1. Verify the `PUBLIC_PATH` in the workflow matches your repository name
+1. Verify the `BASE_URL` in the workflow matches your repository name (with leading and trailing slashes)
 2. Check that GitHub Pages is enabled and set to use GitHub Actions
 3. Review the Actions tab for build/deployment errors
 4. Ensure your browser isn't caching an old version (hard refresh)

@@ -235,4 +235,21 @@
     ],
     "passes": true
   },
+  {
+    "category": "Redirect after render",
+    "description": "Github page is empty and white at first then redirects incorrectly on refresh",
+    "steps": [
+      "Visting the github page yields an empty white page, no content is rendered: https://cryptorodeo.github.io/calunga-ui-demo/ ",
+      "After a refresh content gets rendered, but then I'm redirected to https://cryptorodeo.github.io/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/python-wheels?itemsPerPage=10&pageNumber=1&sortColumn=wheel&sortDirection=asc",
+    ],
+    "passes": true
+  },
+  {
+    "category": "refactor",
+    "description": "Github pages functionality should be the same as in rhtas-console-ui",
+    "steps": [
+      "The Github Pages functionality of calunga-ui project works the same as the rhtas-console-ui project"
+    ],
+    "passes": true
+  },
 ]
