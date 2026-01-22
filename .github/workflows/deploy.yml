@@ -33,7 +33,7 @@ jobs:
 
       - name: Build
         env:
-          PUBLIC_PATH: /calunga-ui/
+          PUBLIC_PATH: /calunga-ui-demo/
           NODE_ENV: production
           GITHUB_PAGES: true
         run: npm run build

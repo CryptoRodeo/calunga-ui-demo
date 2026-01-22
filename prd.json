@@ -162,4 +162,12 @@
     ],
     "passes": true
   },
+  {
+    "category": "bug-fix",
+    "description": "Nothing is rendered at https://cryptorodeo.github.io/calunga-ui-demo/",
+    "steps": [
+      "The github page is now deployed but nothing renders, investigate why and fix the issue.",
+    ],
+    "passes": true
+  },
 ]

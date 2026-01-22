@@ -169,3 +169,10 @@ Files changed:
 - Filter options now match actual values present in dummy-data.json
 Status: Complete
 
+Feature: Nothing is rendered at https://cryptorodeo.github.io/calunga-ui-demo/
+Files changed:
+- Updated .github/workflows/deploy.yml to fix PUBLIC_PATH from /calunga-ui/ to /calunga-ui-demo/
+- The mismatch between repository name (calunga-ui-demo) and PUBLIC_PATH (/calunga-ui/) was causing assets and routes to fail loading
+- Router basename and assetPrefix now correctly match the actual GitHub Pages URL path
+Status: Complete
+
