@@ -1,6 +1,6 @@
-# Calunga UI - Trusted Developer Libraries
+# Calunga UI Demo - Trusted Developer Libraries
 
-A React-based web application for managing Python wheels and developer libraries.
+A React-based web application demo.
 
 ## Quick Start
 
