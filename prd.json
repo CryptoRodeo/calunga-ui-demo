@@ -174,17 +174,21 @@
     "category": "bug-fix",
     "description": "The github page is now deployed, but the masthead does not render properly",
     "steps": [
-      "The github page is now deployed but the masthead is not rendering, investigate why and fix the issue.",
-      "It looks like the masthead file is missing, it renders a broken file link."
+      "It looks like the masthead file is missing or something related to it is missing, I see a broken file link where it should be",
+      "Investigate if anything related to how Github pages is deployed could cause this",
+      "Investigate what could cause this if it's not related to Github pages",
+      "Investigate by reviewing what is returned at https://cryptorodeo.github.io/calunga-ui-demo/"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "bug-fix",
     "description": "Clicking on the Python Wheels side nav button leads to https://cryptorodeo.github.io/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/python-wheels?itemsPerPage=10&pageNumber=1&sortColumn=wheel&sortDirection=asc",
     "steps": [
       "The github page is now deployed but the side bar nav causes an issue, investigate why and fix the issue.",
-      "Update any code needed to fix the issue"
+      "When on the root page nothing is rendered correctly also, so maybe this is realted",
+      "Update any code needed to fix the issue",
+      "Invesitgate by reviewing what happens when you go to https://cryptorodeo.github.io/calunga-ui-demo/python-wheels . You should see a redirect"
     ],
     "passes": true
   },

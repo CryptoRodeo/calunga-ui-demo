@@ -109,6 +109,14 @@ export default defineConfig({
         _env: encodeEnv(CALUNGA_ENV, SERVER_ENV_KEYS),
         branding: brandingStrings,
       }),
+      ...(process.env.GITHUB_PAGES && {
+        publicPath: process.env.PUBLIC_PATH || "/",
+      }),
+    },
+  },
+  source: {
+    define: {
+      "import.meta.env.PUBLIC_PATH": JSON.stringify(process.env.PUBLIC_PATH || "/"),
     },
   },
   tools: {

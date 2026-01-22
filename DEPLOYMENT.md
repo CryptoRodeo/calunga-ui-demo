@@ -21,7 +21,7 @@ The project includes a GitHub Actions workflow that automatically builds and dep
 ### Configuration
 
 The GitHub Actions workflow (`.github/workflows/deploy.yml`) is pre-configured with:
-- `PUBLIC_PATH: /calunga-ui/` - Update this if your repository has a different name
+- `PUBLIC_PATH: /calunga-ui-demo/` - Update this if your repository has a different name
 - Build optimizations for static hosting
 - Automatic deployment to GitHub Pages
 
@@ -31,7 +31,7 @@ To build the application manually for GitHub Pages:
 
 ```bash
 # Build with GitHub Pages configuration
-NODE_ENV=production PUBLIC_PATH=/calunga-ui/ GITHUB_PAGES=true npm run build
+NODE_ENV=production PUBLIC_PATH=/calunga-ui-demo/ GITHUB_PAGES=true npm run build
 
 # The built files will be in client/dist/
 ```

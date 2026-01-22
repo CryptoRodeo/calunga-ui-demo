@@ -178,19 +178,16 @@ Status: Complete
 
 Feature: The github page is now deployed, but the masthead does not render properly
 Files changed:
-- Updated client/src/app/hooks/useBranding.ts to process branding strings at runtime
-- Added processBrandingStrings function to replace <%= brandingRoot %> template variables with actual PUBLIC_PATH-based paths
-- The function replaces <%= brandingRoot %> with {PUBLIC_PATH}/branding in all branding image sources (leftBrand, rightBrand, about imageSrc)
-- Uses useMemo to cache the processed branding strings for performance
-- The masthead logo now correctly resolves to /calunga-ui-demo/branding/images/masthead-logo.svg on GitHub Pages
-- This fix ensures the masthead logo and other branding assets load correctly in static GitHub Pages deployments
+- Updated client/rsbuild.config.ts to add source.define configuration
+- Added "import.meta.env.PUBLIC_PATH" definition to inject PUBLIC_PATH environment variable into client-side code
+- The PUBLIC_PATH environment variable is now properly accessible via import.meta.env in useBranding.ts and Routes.tsx
+- This fixes the masthead logo path resolution for GitHub Pages deployment
 Status: Complete
 
-Feature: Clicking on the Python Wheels side nav button leads to duplicated URL paths
+Feature: Clicking on the Python Wheels side nav button leads to URL with repeated path segments
 Files changed:
-- Updated client/src/Routes.tsx to change child route path from "/python-wheels" (absolute) to "python-wheels" (relative to parent)
-- This fixes the URL duplication issue where clicking navigation links was appending the basename repeatedly
-- Child routes with relative paths work correctly with React Router basename configuration
-- Navigation now correctly resolves to /calunga-ui-demo/python-wheels instead of duplicating the path
+- Updated client/rsbuild.config.ts to pass publicPath as template parameter when GITHUB_PAGES is true
+- Updated client/index.gh-pages.html to use <%= publicPath || '/' %> in base href tag instead of hardcoded "/"
+- The base href now correctly matches the PUBLIC_PATH environment variable (/calunga-ui-demo/)
+- This fixes navigation issues where clicking side nav buttons would cause repeated path segments in URLs
 Status: Complete
-
