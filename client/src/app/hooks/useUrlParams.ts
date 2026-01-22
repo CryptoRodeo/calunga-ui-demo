@@ -61,6 +61,7 @@ export const useUrlParams = <
   type TPrefixedURLParamKey = TURLParamKey | `${TKeyPrefix}:${TURLParamKey}`;
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const withPrefix = (key: TURLParamKey): TPrefixedURLParamKey =>
     persistenceKeyPrefix ? `${persistenceKeyPrefix}:${key}` : key;
@@ -70,22 +71,29 @@ export const useUrlParams = <
   ): TSerializedParams<TPrefixedURLParamKey> =>
     persistenceKeyPrefix
       ? objectKeys(serializedParams).reduce(
-          (obj, key) => {
-            obj[withPrefix(key)] = serializedParams[key];
-            return obj;
-          },
-          {} as TSerializedParams<TPrefixedURLParamKey>,
-        )
+        (obj, key) => {
+          obj[withPrefix(key)] = serializedParams[key];
+          return obj;
+        },
+        {} as TSerializedParams<TPrefixedURLParamKey>,
+      )
       : (serializedParams as TSerializedParams<TPrefixedURLParamKey>);
 
   const setParams = (newParams: Partial<TDeserializedParams>) => {
+    // IMPORTANT:
+    // Do NOT use document.location.pathname here when using a BrowserRouter basename (e.g. GH Pages).
+    // document.location.pathname includes the basename, while React Router's location.pathname is basename-stripped.
+    // Using document.location.pathname causes the basename to be prefixed repeatedly on every navigate call.
+    const pathname = location.pathname;
+
     // In case setParams is called multiple times synchronously from the same rendered instance,
-    // we use document.location here as the current params so these calls never overwrite each other.
+    // we use window.location.search here as the current params so these calls never overwrite each other.
     // This also retains any unrelated params that might be present and allows newParams to be a partial update.
-    const { pathname, search } = document.location;
-    const existingSearchParams = new URLSearchParams(search);
+    const existingSearchParams = new URLSearchParams(window.location.search);
+
     // We prefix the params object here so the serialize function doesn't have to care about the keyPrefix.
     const newPrefixedSerializedParams = withPrefixes(serialize(newParams));
+
     navigate(
       {
         pathname,
@@ -98,8 +106,8 @@ export const useUrlParams = <
     );
   };
 
-  // We use useLocation here so we are re-rendering when the params change.
-  const urlParams = new URLSearchParams(useLocation().search);
+  // We use location.search so we are re-rendering when the params change.
+  const urlParams = new URLSearchParams(location.search);
   // We un-prefix the params object here so the deserialize function doesn't have to care about the keyPrefix.
 
   let allParamsEmpty = true;
@@ -134,6 +142,7 @@ export const trimAndStringifyUrlParams = <TPrefixedURLParamKey extends string>({
 }) => {
   const existingPrefixedSerializedParams =
     Object.fromEntries(existingSearchParams);
+
   for (const key of objectKeys(newPrefixedSerializedParams)) {
     // Returning undefined for a property from serialize should result in it being omitted from the partial update.
     if (newPrefixedSerializedParams[key] === undefined) {
