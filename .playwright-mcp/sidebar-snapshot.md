@@ -1,0 +1,164 @@
+- generic [ref=e3]:
+  - link "Skip to content" [ref=e5] [cursor=pointer]:
+    - /url: "#main-content-page-layout-horizontal-nav"
+    - generic [ref=e6]: Skip to content
+  - banner [ref=e7]:
+    - generic [ref=e8]:
+      - button "Global navigation" [ref=e10] [cursor=pointer]:
+        - img [ref=e12]
+      - img "brand" [ref=e18]
+  - list [ref=e20]:
+    - listitem [ref=e21]:
+      - link [ref=e22] [cursor=pointer]:
+        - /url: /python-wheels
+        - text: Python Wheels
+    - listitem [ref=e23]:
+      - link [ref=e24] [cursor=pointer]:
+        - /url: /search
+        - text: Search Packages
+  - main [ref=e26]:
+    - generic [ref=e28]:
+      - heading "Package Search" [level=1] [ref=e29]
+      - generic [ref=e33]:
+        - img [ref=e35]
+        - textbox "Search packages" [ref=e37]:
+          - /placeholder: Search for packages...
+    - generic [ref=e40]:
+      - generic [ref=e43]:
+        - generic [ref=e45]:
+          - generic [ref=e46]: "Sort by:"
+          - button "Downloads" [ref=e381] [cursor=pointer]:
+            - generic [ref=e49]: Downloads
+            - img [ref=e52]
+        - separator [ref=e54]
+        - generic [ref=e56]: Showing 11-20 of 25
+        - generic [ref=e58]:
+          - button "11 - 20 of 25" [ref=e528] [cursor=pointer]:
+            - generic [ref=e61]:
+              - generic [ref=e62]: 11 - 20
+              - text: of 25
+            - img [ref=e65]
+          - navigation "Pagination" [ref=e67]:
+            - button "Go to previous page" [ref=e529] [cursor=pointer]:
+              - img [ref=e531]
+            - button "Go to next page" [ref=e70] [cursor=pointer]:
+              - img [ref=e72]
+      - generic [ref=e75]:
+        - generic [ref=e533]:
+          - generic [ref=e536]:
+            - heading "date-fns" [level=3] [ref=e538]
+            - generic [ref=e540]: 3.0.6
+          - paragraph [ref=e542]: Modern JavaScript date utility library. Provides comprehensive functions for manipulating JavaScript dates.
+          - generic [ref=e544]:
+            - generic [ref=e545]: 📥 36.0M downloads
+            - generic [ref=e546]: 📅 Updated 2 weeks ago
+            - generic [ref=e547]: 👤 Sasha Koss
+            - generic [ref=e548]: 📄 MIT
+        - generic [ref=e549]:
+          - generic [ref=e552]:
+            - heading "react-router-dom" [level=3] [ref=e554]
+            - generic [ref=e556]: 6.21.1
+          - paragraph [ref=e558]: Declarative routing for React web applications. The standard routing library for React.
+          - generic [ref=e560]:
+            - generic [ref=e561]: 📥 34.0M downloads
+            - generic [ref=e562]: 📅 Updated 1 week ago
+            - generic [ref=e563]: 👤 Remix Software
+            - generic [ref=e564]: 📄 MIT
+        - generic [ref=e565]:
+          - generic [ref=e568]:
+            - heading "dayjs" [level=3] [ref=e570]
+            - generic [ref=e572]: 1.11.10
+          - paragraph [ref=e574]: Fast 2kB alternative to Moment.js with the same modern API. Lightweight date library for parsing, validating, and formatting dates.
+          - generic [ref=e576]:
+            - generic [ref=e577]: 📥 32.0M downloads
+            - generic [ref=e578]: 📅 Updated 1 month ago
+            - generic [ref=e579]: 👤 iamkun
+            - generic [ref=e580]: 📄 MIT
+        - generic [ref=e581]:
+          - generic [ref=e584]:
+            - heading "tailwindcss" [level=3] [ref=e586]
+            - generic [ref=e588]: 3.4.1
+          - paragraph [ref=e590]: A utility-first CSS framework for rapid UI development. Build modern websites without ever leaving your HTML.
+          - generic [ref=e592]:
+            - generic [ref=e593]: 📥 28.0M downloads
+            - generic [ref=e594]: 📅 Updated 6 days ago
+            - generic [ref=e595]: 👤 Tailwind Labs
+            - generic [ref=e596]: 📄 MIT
+        - generic [ref=e597]:
+          - generic [ref=e600]:
+            - heading "vite" [level=3] [ref=e602]
+            - generic [ref=e604]: 5.0.11
+          - paragraph [ref=e606]: Next generation frontend tooling. It's fast! Lightning-fast dev server with instant hot module replacement.
+          - generic [ref=e608]:
+            - generic [ref=e609]: 📥 23.0M downloads
+            - generic [ref=e610]: 📅 Updated 4 days ago
+            - generic [ref=e611]: 👤 Evan You
+            - generic [ref=e612]: 📄 MIT
+        - generic [ref=e613]:
+          - generic [ref=e616]:
+            - heading "socket.io" [level=3] [ref=e618]
+            - generic [ref=e620]: 4.6.1
+          - paragraph [ref=e622]: Realtime application framework for Node.js. Enables real-time bidirectional event-based communication.
+          - generic [ref=e624]:
+            - generic [ref=e625]: 📥 21.0M downloads
+            - generic [ref=e626]: 📅 Updated 3 weeks ago
+            - generic [ref=e627]: 👤 Guillermo Rauch
+            - generic [ref=e628]: 📄 MIT
+        - generic [ref=e629]:
+          - generic [ref=e632]:
+            - heading "chart.js" [level=3] [ref=e634]
+            - generic [ref=e636]: 4.4.1
+          - paragraph [ref=e638]: Simple yet flexible JavaScript charting for designers & developers. Create beautiful charts with ease.
+          - generic [ref=e640]:
+            - generic [ref=e641]: 📥 19.0M downloads
+            - generic [ref=e642]: 📅 Updated 3 weeks ago
+            - generic [ref=e643]: 👤 Chart.js Team
+            - generic [ref=e644]: 📄 MIT
+        - generic [ref=e645]:
+          - generic [ref=e648]:
+            - heading "formik" [level=3] [ref=e650]
+            - generic [ref=e652]: 2.4.5
+          - paragraph [ref=e654]: Build forms in React, without the tears. Handles form state, validation, and submission with ease.
+          - generic [ref=e656]:
+            - generic [ref=e657]: 📥 16.0M downloads
+            - generic [ref=e658]: 📅 Updated 2 months ago
+            - generic [ref=e659]: 👤 Jared Palmer
+            - generic [ref=e660]: 📄 Apache-2.0
+        - generic [ref=e661]:
+          - generic [ref=e664]:
+            - heading "zod" [level=3] [ref=e666]
+            - generic [ref=e668]: 3.22.4
+          - paragraph [ref=e670]: TypeScript-first schema validation with static type inference. A powerful validation library with TypeScript support.
+          - generic [ref=e672]:
+            - generic [ref=e673]: 📥 15.0M downloads
+            - generic [ref=e674]: 📅 Updated 3 days ago
+            - generic [ref=e675]: 👤 Colin McDonnell
+            - generic [ref=e676]: 📄 MIT
+        - generic [ref=e677]:
+          - generic [ref=e680]:
+            - heading "react-hook-form" [level=3] [ref=e682]
+            - generic [ref=e684]: 7.49.3
+          - paragraph [ref=e686]: Performant, flexible and extensible forms with easy-to-use validation. Forms made simple in React.
+          - generic [ref=e688]:
+            - generic [ref=e689]: 📥 14.0M downloads
+            - generic [ref=e690]: 📅 Updated 1 week ago
+            - generic [ref=e691]: 👤 Bill Luo
+            - generic [ref=e692]: 📄 MIT
+      - generic [ref=e237]:
+        - button "11 - 20 of 25" [ref=e693] [cursor=pointer]:
+          - generic [ref=e240]:
+            - generic [ref=e241]: 11 - 20
+            - text: of 25
+          - img [ref=e244]
+        - navigation "Pagination" [ref=e246]:
+          - button "Go to first page" [ref=e694] [cursor=pointer]:
+            - img [ref=e696]
+          - button "Go to previous page" [ref=e698] [cursor=pointer]:
+            - img [ref=e700]
+          - generic [ref=e249]:
+            - spinbutton "Current page" [ref=e251]: "2"
+            - generic [ref=e252]: of 3
+          - button "Go to next page" [active] [ref=e254] [cursor=pointer]:
+            - img [ref=e256]
+          - button "Go to last page" [ref=e259] [cursor=pointer]:
+            - img [ref=e261]

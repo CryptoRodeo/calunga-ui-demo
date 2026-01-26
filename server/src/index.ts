@@ -22,9 +22,7 @@ debugMode && console.log("CONSOLE_ENV", CALUNGA_ENV);
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const pathToClientDist = path.join(__dirname, "../../client/dist");
 
-const port = CALUNGA_ENV.PORT
-  ? Number.parseInt(CALUNGA_ENV.PORT, 10)
-  : 8080;
+const port = CALUNGA_ENV.PORT ? Number.parseInt(CALUNGA_ENV.PORT, 10) : 8080;
 
 const app = express();
 app.set("x-powered-by", false);
