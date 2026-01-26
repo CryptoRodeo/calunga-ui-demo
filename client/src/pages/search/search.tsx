@@ -15,9 +15,11 @@ import {
   FlexItem,
   Gallery,
   Pagination,
+  Divider,
 } from "@patternfly/react-core";
 import { SearchContext, SearchProvider } from "./search-context";
 import { SearchToolbar } from "./search-toolbar";
+import { IndexContextSelector } from "./components/index-context-selector";
 
 const SearchContent: React.FC = () => {
   const {
@@ -56,7 +58,11 @@ const SearchContent: React.FC = () => {
 
   return (
     <>
-      <PageSection variant={PageSectionVariants.light}>
+      <PageSection variant={PageSectionVariants.default}>
+        <div style={{ marginBottom: "1rem" }}>
+          <IndexContextSelector />
+        </div>
+        <Divider style={{ marginBottom: "1rem" }} />
         <Title headingLevel="h1" size="2xl">
           Package Search
         </Title>

@@ -14,6 +14,7 @@
     "pythonVersion": ">=3.8",
     "abi": "none",
     "architecture": "any",
+    "index": "github",
     "trustScore": 95,
     "slsaLevel": 3,
     "currentVersionSbom": {
@@ -167,6 +168,7 @@
     "pythonVersion": ">=3.7",
     "abi": "none",
     "architecture": "any",
+    "index": "artifactory",
     "trustScore": 75,
     "slsaLevel": 2,
     "currentVersionSbom": {
@@ -427,7 +429,8 @@
         "affectedVersions": ["<4.17.19"],
         "publishedAt": "2020-07-03T12:00:00Z"
       }
-    ]
+    ],
+    "index": "nexus"
   },
   {
     "id": "4",
@@ -437,7 +440,8 @@
     "downloads": 67000000,
     "updated": "2 weeks ago",
     "author": "TJ Holowaychuk",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "github"
   },
   {
     "id": "5",
@@ -447,7 +451,8 @@
     "downloads": 92000000,
     "updated": "1 day ago",
     "author": "Microsoft",
-    "license": "Apache-2.0"
+    "license": "Apache-2.0",
+    "index": "artifactory"
   },
   {
     "id": "6",
@@ -457,7 +462,8 @@
     "downloads": 54000000,
     "updated": "3 days ago",
     "author": "James Long",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "nexus"
   },
   {
     "id": "7",
@@ -467,7 +473,8 @@
     "downloads": 48000000,
     "updated": "1 week ago",
     "author": "Tobias Koppers",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "github"
   },
   {
     "id": "8",
@@ -477,7 +484,8 @@
     "downloads": 23000000,
     "updated": "4 days ago",
     "author": "Evan You",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "artifactory"
   },
   {
     "id": "9",
@@ -487,7 +495,8 @@
     "downloads": 71000000,
     "updated": "5 days ago",
     "author": "Nicholas C. Zakas",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "nexus"
   },
   {
     "id": "10",
@@ -497,7 +506,8 @@
     "downloads": 38000000,
     "updated": "2 weeks ago",
     "author": "Meta",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "github"
   },
   {
     "id": "11",
@@ -507,7 +517,8 @@
     "downloads": 34000000,
     "updated": "1 week ago",
     "author": "Remix Software",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "artifactory"
   },
   {
     "id": "12",
@@ -517,7 +528,8 @@
     "downloads": 15000000,
     "updated": "3 days ago",
     "author": "Colin McDonnell",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "nexus"
   },
   {
     "id": "13",
@@ -527,7 +539,8 @@
     "downloads": 28000000,
     "updated": "6 days ago",
     "author": "Tailwind Labs",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "github"
   },
   {
     "id": "14",
@@ -537,7 +550,8 @@
     "downloads": 41000000,
     "updated": "1 week ago",
     "author": "Vercel",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "artifactory"
   },
   {
     "id": "15",
@@ -547,7 +561,8 @@
     "downloads": 9000000,
     "updated": "2 days ago",
     "author": "Prisma",
-    "license": "Apache-2.0"
+    "license": "Apache-2.0",
+    "index": "nexus"
   },
   {
     "id": "16",
@@ -557,7 +572,8 @@
     "downloads": 32000000,
     "updated": "1 month ago",
     "author": "iamkun",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "github"
   },
   {
     "id": "17",
@@ -567,7 +583,8 @@
     "downloads": 11000000,
     "updated": "5 days ago",
     "author": "Framer",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "artifactory"
   },
   {
     "id": "18",
@@ -577,7 +594,8 @@
     "downloads": 8500000,
     "updated": "1 week ago",
     "author": "Vercel",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "nexus"
   },
   {
     "id": "19",
@@ -587,7 +605,8 @@
     "downloads": 36000000,
     "updated": "2 weeks ago",
     "author": "Sasha Koss",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "github"
   },
   {
     "id": "20",
@@ -597,7 +616,8 @@
     "downloads": 19000000,
     "updated": "3 weeks ago",
     "author": "Chart.js Team",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "artifactory"
   },
   {
     "id": "21",
@@ -607,7 +627,8 @@
     "downloads": 7200000,
     "updated": "4 days ago",
     "author": "Poimandres",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "nexus"
   },
   {
     "id": "22",
@@ -617,7 +638,8 @@
     "downloads": 14000000,
     "updated": "1 week ago",
     "author": "Bill Luo",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "github"
   },
   {
     "id": "23",
@@ -627,7 +649,8 @@
     "downloads": 16000000,
     "updated": "2 months ago",
     "author": "Jared Palmer",
-    "license": "Apache-2.0"
+    "license": "Apache-2.0",
+    "index": "artifactory"
   },
   {
     "id": "24",
@@ -637,7 +660,8 @@
     "downloads": 52000000,
     "updated": "1 month ago",
     "author": "Dan Abramov",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "nexus"
   },
   {
     "id": "25",
@@ -647,6 +671,7 @@
     "downloads": 21000000,
     "updated": "3 weeks ago",
     "author": "Guillermo Rauch",
-    "license": "MIT"
+    "license": "MIT",
+    "index": "github"
   }
 ]

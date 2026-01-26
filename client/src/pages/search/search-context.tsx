@@ -81,6 +81,7 @@ export interface Package {
   pythonVersion?: string;
   abi?: string;
   architecture?: string;
+  index?: string; // NEW: Package index (github, artifactory, nexus)
   versions?: PackageVersion[];
   dependents?: Dependent[];
   securityAdvisories?: SecurityAdvisory[];
@@ -94,6 +95,13 @@ export interface Package {
 
 export type SortOption = "relevance" | "date" | "downloads";
 
+// Filter types
+export interface FilterValues {
+  index: string[];
+  pythonVersion: string[];
+  architecture: string[];
+}
+
 interface ISearchContext {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -106,6 +114,11 @@ interface ISearchContext {
   currentPageItems: Package[];
   totalItemCount: number;
   filteredItemCount: number;
+  // NEW: Filter state
+  filters: FilterValues;
+  setFilter: (category: keyof FilterValues, values: string[]) => void;
+  clearAllFilters: () => void;
+  deleteFilter: (category: keyof FilterValues, value: string) => void;
 }
 
 const contextDefaultValue = {} as ISearchContext;
@@ -134,6 +147,19 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
   const [perPage, setPerPageState] = useState(
     parseInt(searchParams.get("perPage") || "10", 10),
   );
+
+  // Initialize filter state from URL params
+  const [filters, setFiltersState] = useState<FilterValues>(() => {
+    const indexParam = searchParams.get("index");
+    const pythonParam = searchParams.get("python");
+    const archParam = searchParams.get("arch");
+
+    return {
+      index: indexParam ? indexParam.split(",") : [],
+      pythonVersion: pythonParam ? pythonParam.split(",") : [],
+      architecture: archParam ? archParam.split(",") : [],
+    };
+  });
 
   // Update URL params when state changes
   const setSearchQuery = useCallback(
@@ -184,22 +210,130 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     [searchParams, setSearchParams],
   );
 
+  // Filter management functions
+  const setFilter = useCallback(
+    (category: keyof FilterValues, values: string[]) => {
+      setFiltersState((prev) => ({ ...prev, [category]: values }));
+      setPageState(1); // Reset to page 1 when filters change
+      const newParams = new URLSearchParams(searchParams);
+
+      // Map category to URL param name
+      const paramMap: Record<keyof FilterValues, string> = {
+        index: "index",
+        pythonVersion: "python",
+        architecture: "arch",
+      };
+
+      const paramName = paramMap[category];
+      if (values.length > 0) {
+        newParams.set(paramName, values.join(","));
+      } else {
+        newParams.delete(paramName);
+      }
+      newParams.set("page", "1");
+      setSearchParams(newParams);
+    },
+    [searchParams, setSearchParams],
+  );
+
+  const deleteFilter = useCallback(
+    (category: keyof FilterValues, value: string) => {
+      setFiltersState((prev) => ({
+        ...prev,
+        [category]: prev[category].filter((v) => v !== value),
+      }));
+      setPageState(1);
+      const newParams = new URLSearchParams(searchParams);
+
+      const paramMap: Record<keyof FilterValues, string> = {
+        index: "index",
+        pythonVersion: "python",
+        architecture: "arch",
+      };
+
+      const paramName = paramMap[category];
+      const updatedValues = filters[category].filter((v) => v !== value);
+
+      if (updatedValues.length > 0) {
+        newParams.set(paramName, updatedValues.join(","));
+      } else {
+        newParams.delete(paramName);
+      }
+      newParams.set("page", "1");
+      setSearchParams(newParams);
+    },
+    [searchParams, setSearchParams, filters],
+  );
+
+  const clearAllFilters = useCallback(() => {
+    setFiltersState({
+      index: [],
+      pythonVersion: [],
+      architecture: [],
+    });
+    setPageState(1);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("index");
+    newParams.delete("python");
+    newParams.delete("arch");
+    newParams.set("page", "1");
+    setSearchParams(newParams);
+  }, [searchParams, setSearchParams]);
+
   // Load mock data
   const packages: Package[] = dummyData;
 
-  // Filter packages based on search query
+  // Filter packages based on search query and filters
   const filteredPackages = useMemo(() => {
-    if (!searchQuery) {
-      return packages;
+    let filtered = packages;
+
+    // Apply search query filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (pkg) =>
+          pkg.name.toLowerCase().includes(query) ||
+          pkg.description.toLowerCase().includes(query) ||
+          pkg.author.toLowerCase().includes(query),
+      );
     }
-    const query = searchQuery.toLowerCase();
-    return packages.filter(
-      (pkg) =>
-        pkg.name.toLowerCase().includes(query) ||
-        pkg.description.toLowerCase().includes(query) ||
-        pkg.author.toLowerCase().includes(query),
-    );
-  }, [searchQuery, packages]);
+
+    // Apply index filter
+    if (filters.index.length > 0) {
+      filtered = filtered.filter((pkg) =>
+        pkg.index ? filters.index.includes(pkg.index) : false,
+      );
+    }
+
+    // Apply python version filter
+    if (filters.pythonVersion.length > 0) {
+      filtered = filtered.filter((pkg) => {
+        if (!pkg.pythonVersion) return false;
+        // Check if package supports any of the selected Python versions
+        return filters.pythonVersion.some((version) => {
+          // Parse version requirement (e.g., ">=3.8" supports 3.8, 3.9, etc.)
+          const versionMatch = pkg.pythonVersion?.match(/>=?(\d+\.\d+)/);
+          if (versionMatch) {
+            const minVersion = parseFloat(versionMatch[1]);
+            const filterVersion = parseFloat(version);
+            return filterVersion >= minVersion;
+          }
+          return pkg.pythonVersion?.includes(version);
+        });
+      });
+    }
+
+    // Apply architecture filter
+    if (filters.architecture.length > 0) {
+      filtered = filtered.filter((pkg) =>
+        pkg.architecture
+          ? filters.architecture.includes(pkg.architecture)
+          : false,
+      );
+    }
+
+    return filtered;
+  }, [searchQuery, filters, packages]);
 
   // Sort packages based on sortBy
   const sortedPackages = useMemo(() => {
@@ -273,6 +407,10 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
         currentPageItems,
         totalItemCount: packages.length,
         filteredItemCount: sortedPackages.length,
+        filters,
+        setFilter,
+        clearAllFilters,
+        deleteFilter,
       }}
     >
       {children}
