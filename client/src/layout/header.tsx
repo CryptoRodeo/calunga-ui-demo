@@ -34,7 +34,11 @@ export const HeaderApp: React.FC = () => {
             <Split>
               <SplitItem>
                 {leftBrand ? (
-                  <Brand src={leftBrand.src} alt={leftBrand.alt} heights={{ default: leftBrand.height }} />
+                  <Brand
+                    src={leftBrand.src}
+                    alt={leftBrand.alt}
+                    heights={{ default: leftBrand.height }}
+                  />
                 ) : null}
               </SplitItem>
               <SplitItem isFilled>

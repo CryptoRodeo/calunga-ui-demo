@@ -71,12 +71,12 @@ export const useUrlParams = <
   ): TSerializedParams<TPrefixedURLParamKey> =>
     persistenceKeyPrefix
       ? objectKeys(serializedParams).reduce(
-        (obj, key) => {
-          obj[withPrefix(key)] = serializedParams[key];
-          return obj;
-        },
-        {} as TSerializedParams<TPrefixedURLParamKey>,
-      )
+          (obj, key) => {
+            obj[withPrefix(key)] = serializedParams[key];
+            return obj;
+          },
+          {} as TSerializedParams<TPrefixedURLParamKey>,
+        )
       : (serializedParams as TSerializedParams<TPrefixedURLParamKey>);
 
   const setParams = (newParams: Partial<TDeserializedParams>) => {

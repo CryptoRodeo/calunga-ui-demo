@@ -32,12 +32,7 @@ const PythonWheelsContent: React.FC = () => {
   const {
     numRenderedColumns,
     currentPageItems,
-    propHelpers: {
-      tableProps,
-      getThProps,
-      getTrProps,
-      getTdProps,
-    },
+    propHelpers: { tableProps, getThProps, getTrProps, getTdProps },
     expansionDerivedState: { isCellExpanded },
   } = tableControls;
 

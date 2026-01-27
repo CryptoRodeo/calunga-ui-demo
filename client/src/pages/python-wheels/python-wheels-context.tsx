@@ -25,8 +25,20 @@ export interface PythonWheel {
 interface IPythonWheelsContext {
   tableControls: ITableControls<
     PythonWheel,
-    "wheel" | "version" | "abi" | "platform" | "license" | "published" | "sourceIndex",
-    "wheel" | "version" | "abi" | "platform" | "license" | "published" | "sourceIndex",
+    | "wheel"
+    | "version"
+    | "abi"
+    | "platform"
+    | "license"
+    | "published"
+    | "sourceIndex",
+    | "wheel"
+    | "version"
+    | "abi"
+    | "platform"
+    | "license"
+    | "published"
+    | "sourceIndex",
     "" | "platform" | "sourceIndex",
     string
   >;
@@ -35,9 +47,8 @@ interface IPythonWheelsContext {
 
 const contextDefaultValue = {} as IPythonWheelsContext;
 
-export const PythonWheelsContext = React.createContext<IPythonWheelsContext>(
-  contextDefaultValue
-);
+export const PythonWheelsContext =
+  React.createContext<IPythonWheelsContext>(contextDefaultValue);
 
 interface IPythonWheelsProvider {
   children: React.ReactNode;
@@ -60,7 +71,15 @@ export const PythonWheelsProvider: React.FunctionComponent<
     },
     isPaginationEnabled: true,
     isSortEnabled: true,
-    sortableColumns: ["wheel", "version", "abi", "platform", "license", "published", "sourceIndex"],
+    sortableColumns: [
+      "wheel",
+      "version",
+      "abi",
+      "platform",
+      "license",
+      "published",
+      "sourceIndex",
+    ],
     getSortValues: (item) => ({
       wheel: item.wheel,
       version: item.version,

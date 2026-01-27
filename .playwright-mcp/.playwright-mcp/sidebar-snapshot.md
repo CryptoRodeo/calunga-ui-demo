@@ -1,0 +1,144 @@
+- generic [ref=e3]:
+  - link "Skip to content" [ref=e350] [cursor=pointer]:
+    - /url: "#main-content-page-layout-horizontal-nav"
+    - generic [ref=e6]: Skip to content
+  - banner [ref=e7]:
+    - generic [ref=e8]:
+      - button "Global navigation" [ref=e351] [cursor=pointer]:
+        - img [ref=e12]
+      - img "brand" [ref=e352]
+  - list [ref=e20]:
+    - listitem [ref=e21]:
+      - link [ref=e22] [cursor=pointer]:
+        - /url: /python-wheels
+        - text: Python Wheels
+    - listitem [ref=e23]:
+      - link [ref=e24] [cursor=pointer]:
+        - /url: /search
+        - text: Search Packages
+  - main [ref=e26]:
+    - generic [ref=e28]:
+      - button "Back to Search" [ref=e353] [cursor=pointer]:
+        - img [ref=e31]
+        - generic [ref=e33]: Back to Search
+      - generic [ref=e34]:
+        - generic [ref=e36]:
+          - heading "react-query" [level=1] [ref=e354]
+          - generic [ref=e42]: v5.17.0
+        - paragraph [ref=e44]: Hooks for fetching, caching and updating asynchronous data in React. Powerful data synchronization for React applications.
+        - generic [ref=e46]:
+          - generic [ref=e50]: "#react"
+          - generic [ref=e54]: "#data-fetching"
+          - generic [ref=e58]: "#cache"
+          - generic [ref=e62]: "#async"
+          - generic [ref=e66]: "#hooks"
+    - generic [ref=e68]:
+      - generic "Package details tabs" [ref=e355]:
+        - tablist [ref=e70]:
+          - tab "Overview" [selected] [ref=e356] [cursor=pointer]
+          - tab "Versions" [ref=e357] [cursor=pointer]
+          - tab "Dependents" [ref=e358] [cursor=pointer]
+          - tab "Security" [ref=e359] [cursor=pointer]
+      - generic [ref=e75]:
+        - 'tabpanel "About React Query is a powerful data synchronization library for React applications. It provides hooks for fetching, caching, synchronizing, and updating server state in your React applications. With automatic background refetching, optimistic updates, and intelligent caching, React Query makes managing server state a breeze. It handles all the complex logic of data fetching, including loading states, error handling, and cache invalidation, so you can focus on building your application. Installation pip install react-query Basic Usage import react-query # Use react-query in your project" [ref=e360]':
+          - generic [ref=e79]:
+            - heading "About" [level=2] [ref=e361]
+            - paragraph [ref=e81]: React Query is a powerful data synchronization library for React applications. It provides hooks for fetching, caching, synchronizing, and updating server state in your React applications. With automatic background refetching, optimistic updates, and intelligent caching, React Query makes managing server state a breeze. It handles all the complex logic of data fetching, including loading states, error handling, and cache invalidation, so you can focus on building your application.
+            - heading "Installation" [level=2] [ref=e362]
+            - generic [ref=e83]: pip install react-query
+            - heading "Basic Usage" [level=2] [ref=e363]
+            - generic [ref=e85]: "import react-query # Use react-query in your project"
+        - generic [ref=e87]:
+          - generic [ref=e90]:
+            - generic [ref=e91]:
+              - term [ref=e92]:
+                - generic [ref=e93]: 📅 Updated
+              - definition [ref=e94]:
+                - generic [ref=e95]: 2 days ago
+            - generic [ref=e96]:
+              - term [ref=e97]:
+                - generic [ref=e98]: 📥 Downloads
+              - definition [ref=e99]:
+                - generic [ref=e100]: 12.5M
+            - generic [ref=e101]:
+              - term [ref=e102]:
+                - generic [ref=e103]: 📄 License
+              - definition [ref=e104]:
+                - generic [ref=e105]: MIT
+            - generic [ref=e106]:
+              - term [ref=e107]:
+                - generic [ref=e108]: 👤 Author
+              - definition [ref=e109]:
+                - generic [ref=e110]: TanStack
+          - generic [ref=e112]:
+            - heading "Trust & Verification" [level=4] [ref=e364]:
+              - generic [ref=e114]:
+                - img [ref=e115]
+                - text: Trust & Verification
+            - generic [ref=e117]:
+              - generic [ref=e118]:
+                - term [ref=e119]:
+                  - generic [ref=e120]:
+                    - img [ref=e121]
+                    - text: Status
+                - definition [ref=e123]:
+                  - generic [ref=e125]:
+                    - generic [ref=e129]: Verified
+                    - generic [ref=e131]: 3/3 attestations
+                    - button "View details" [active] [ref=e365] [cursor=pointer]:
+                      - generic [ref=e134]: View details
+              - generic [ref=e135]:
+                - term [ref=e136]:
+                  - generic [ref=e137]:
+                    - img [ref=e138]
+                    - text: SBOM
+                - definition [ref=e140]:
+                  - generic [ref=e142]:
+                    - generic [ref=e146]: CycloneDX v1.4
+                    - generic [ref=e148]: 45 components
+                    - generic [ref=e150]:
+                      - button "Preview" [ref=e366] [cursor=pointer]:
+                        - img [ref=e153]
+                        - generic [ref=e155]: Preview
+                      - link "Download" [ref=e367] [cursor=pointer]:
+                        - /url: /sbom/react-query-5.17.0.json
+                        - img [ref=e158]
+                        - generic [ref=e160]: Download
+              - generic [ref=e161]:
+                - term [ref=e162]:
+                  - generic [ref=e163]: SLSA Level
+                - definition [ref=e164]:
+                  - generic [ref=e171]: SLSA L3
+              - generic [ref=e172]:
+                - term [ref=e173]:
+                  - generic [ref=e174]: Trust Score
+                - definition [ref=e175]:
+                  - generic [ref=e177]:
+                    - generic [ref=e178]: 95/100
+                    - generic [ref=e179]:
+                      - generic [ref=e180]: 95%
+                      - img [ref=e182]
+                    - progressbar "95/100" [ref=e368]
+          - generic [ref=e187]:
+            - heading "Wheel Metadata" [level=4] [ref=e369]
+            - generic [ref=e189]:
+              - generic [ref=e190]:
+                - term [ref=e191]:
+                  - generic [ref=e192]: 🐍 Python Version
+                - definition [ref=e193]:
+                  - generic [ref=e194]: ">=3.8"
+              - generic [ref=e195]:
+                - term [ref=e196]:
+                  - generic [ref=e197]: ⚙️ ABI
+                - definition [ref=e198]:
+                  - generic [ref=e199]: none
+              - generic [ref=e200]:
+                - term [ref=e201]:
+                  - generic [ref=e202]: 🖥️ Architecture
+                - definition [ref=e203]:
+                  - generic [ref=e204]: any
+              - generic [ref=e205]:
+                - term [ref=e206]:
+                  - generic [ref=e207]: 📦 Wheel File
+                - definition [ref=e208]:
+                  - generic [ref=e209]: react_query-5.17.0-py3-none-any.whl

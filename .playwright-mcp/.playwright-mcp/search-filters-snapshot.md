@@ -1,0 +1,130 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - link "Skip to content" [ref=e5] [cursor=pointer]:
+      - /url: "#main-content-page-layout-horizontal-nav"
+      - generic [ref=e6]: Skip to content
+    - banner [ref=e7]:
+      - generic [ref=e8]:
+        - button "Global navigation" [ref=e10] [cursor=pointer]:
+          - img [ref=e12]
+        - img "brand" [ref=e18]
+    - list [ref=e20]:
+      - listitem [ref=e21]:
+        - link [ref=e22] [cursor=pointer]:
+          - /url: /python-wheels
+          - text: Python Wheels
+      - listitem [ref=e23]:
+        - link [ref=e24] [cursor=pointer]:
+          - /url: /search
+          - text: Search Packages
+    - main [ref=e26]:
+      - generic [ref=e484]:
+        - heading "Package Search" [level=1] [ref=e485]
+        - generic [ref=e489]:
+          - img [ref=e491]
+          - textbox "Search packages" [ref=e493]:
+            - /placeholder: Search for packages...
+      - generic [ref=e496]:
+        - generic [ref=e498]:
+          - generic [ref=e499]:
+            - button "Show Filters" [expanded] [ref=e502] [cursor=pointer]:
+              - img [ref=e504]
+            - separator [ref=e506]
+            - generic [ref=e508]:
+              - generic [ref=e509]: "Sort by:"
+              - button "Relevance" [ref=e511] [cursor=pointer]:
+                - generic [ref=e512]: Relevance
+                - img [ref=e515]
+            - separator [ref=e517]
+            - generic [ref=e519]: Showing 1-1 of 1
+            - generic [ref=e521]:
+              - button "1 - 1 of 1" [ref=e768] [cursor=pointer]:
+                - generic [ref=e524]:
+                  - generic [ref=e525]: 1 - 1
+                  - text: of 1
+                - img [ref=e528]
+              - navigation "Pagination" [ref=e530]:
+                - generic [ref=e531]:
+                  - button "Go to previous page" [disabled]:
+                    - generic:
+                      - img
+                - generic [ref=e532]:
+                  - button "Go to next page" [disabled]:
+                    - generic:
+                      - img
+          - generic [ref=e700]:
+            - button "Filter by index 1" [ref=e702] [cursor=pointer]:
+              - generic [ref=e703]:
+                - text: Filter by index
+                - generic [ref=e704]: "1"
+              - img [ref=e707]
+            - button "Filter by Python version 1" [expanded] [ref=e769] [cursor=pointer]:
+              - generic [ref=e711]:
+                - text: Filter by Python version
+                - generic [ref=e770]: "1"
+              - img [ref=e714]
+            - button "Filter by architecture" [ref=e717] [cursor=pointer]:
+              - generic [ref=e718]: Filter by architecture
+              - img [ref=e721]
+        - generic [ref=e663] [cursor=pointer]:
+          - generic [ref=e666]:
+            - heading "react-query" [level=3] [ref=e668]
+            - generic [ref=e670]: 5.17.0
+          - paragraph [ref=e672]: Hooks for fetching, caching and updating asynchronous data in React. Powerful data synchronization for React applications.
+          - generic [ref=e674]:
+            - generic [ref=e675]: 📥 12.5M downloads
+            - generic [ref=e676]: 📅 Updated 2 days ago
+            - generic [ref=e677]: 👤 TanStack
+            - generic [ref=e678]: 📄 MIT
+        - generic [ref=e680]:
+          - button "1 - 1 of 1" [ref=e771] [cursor=pointer]:
+            - generic [ref=e683]:
+              - generic [ref=e684]: 1 - 1
+              - text: of 1
+            - img [ref=e687]
+          - navigation "Pagination" [ref=e689]:
+            - generic [ref=e690]:
+              - button "Go to first page" [disabled]:
+                - generic:
+                  - img
+            - generic [ref=e691]:
+              - button "Go to previous page" [disabled]:
+                - generic:
+                  - img
+            - generic [ref=e692]:
+              - spinbutton "Current page" [disabled] [ref=e694]: "1"
+              - generic [ref=e695]: of 1
+            - generic [ref=e696]:
+              - button "Go to next page" [disabled]:
+                - generic:
+                  - img
+            - generic [ref=e697]:
+              - button "Go to last page" [disabled]:
+                - generic:
+                  - img
+  - menu [ref=e725]:
+    - menuitem "Python 3.7" [ref=e726]:
+      - generic [ref=e728] [cursor=pointer]:
+        - checkbox "Python 3.7" [ref=e731]
+        - generic [ref=e732]: Python 3.7
+    - menuitem "Python 3.8" [ref=e733]:
+      - generic [ref=e735] [cursor=pointer]:
+        - checkbox "Python 3.8" [checked] [active] [ref=e738]
+        - generic [ref=e739]: Python 3.8
+        - img [ref=e773]
+    - menuitem "Python 3.9" [ref=e740]:
+      - generic [ref=e742] [cursor=pointer]:
+        - checkbox "Python 3.9" [ref=e745]
+        - generic [ref=e746]: Python 3.9
+    - menuitem "Python 3.10" [ref=e747]:
+      - generic [ref=e749] [cursor=pointer]:
+        - checkbox "Python 3.10" [ref=e752]
+        - generic [ref=e753]: Python 3.10
+    - menuitem "Python 3.11" [ref=e754]:
+      - generic [ref=e756] [cursor=pointer]:
+        - checkbox "Python 3.11" [ref=e759]
+        - generic [ref=e760]: Python 3.11
+    - menuitem "Python 3.12" [ref=e761]:
+      - generic [ref=e763] [cursor=pointer]:
+        - checkbox "Python 3.12" [ref=e766]
+        - generic [ref=e767]: Python 3.12
