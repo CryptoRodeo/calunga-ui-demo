@@ -279,5 +279,19 @@
       "Test that other filter operators (~, ~~, !=, etc.) still serialize correctly with their Django lookup suffixes (__icontains, __contains, __exclude, etc.)"
     ],
     "passes": true
+  },
+  {
+    "category": "Bug",
+    "description": "Fix packages not rendering after navigating back from package detail page",
+    "problem": "In search-context.tsx:452-477, the useQuery queryFn stores fetched package data exclusively via React setState side effects (setAccumulatedPackages, setPulpServerTotal, setPulpPagesFetched) rather than consuming the query's returned data property. When a user clicks 'Back to Packages' on the package detail page (package-detail.tsx:220, navigate('/search')), the Search component and SearchProvider re-mount from scratch. All useState hooks reinitialize to their defaults: accumulatedPackages=[], pulpServerTotal=0, pulpPagesFetched=0. However, React Query finds the cached data for queryKey ['packages', selectedIndex, 'initial'] is still fresh (within the 5-minute staleTime at line 476), so queryFn is NOT re-executed and the setState side effects never run. The accumulatedPackages state stays [], producing empty transformedPackages, empty filteredPackages, and empty currentPageItems. The user sees 'No packages found' despite the data being available in React Query's cache.",
+    "rationale": "The useQuery hook already returns the fetched data via its data property, but the component ignores it and relies solely on side effects in queryFn to populate separate React state. This is a known React Query anti-pattern: side effects in queryFn are not replayed when data is served from cache. The fix should either (a) initialize accumulatedPackages from the query's data property (e.g., via a useEffect that syncs query data into state on mount), or (b) restructure to use the query's data directly for the initial page and only use accumulatedPackages state for additional pages fetched via fetchNextPulpPage. Option (b) is preferred as it eliminates the state duplication entirely for the initial load.",
+    "steps": [
+      "In search-context.tsx, destructure the data property from the initial useQuery: change `const { isLoading, error } = useQuery(...)` to `const { data: initialData, isLoading, error } = useQuery(...)`",
+      "Add a useEffect that syncs the query's cached data into accumulatedPackages state whenever initialData changes or is available from cache on mount: `useEffect(() => { if (initialData) { setAccumulatedPackages(initialData.packages); setPulpServerTotal(initialData.serverTotal); setPulpPagesFetched(1); } }, [initialData])`",
+      "This ensures that when the component re-mounts and React Query serves cached data (without re-running queryFn), the accumulatedPackages state is still populated from the cache",
+      "Verify that navigating to a package detail and clicking 'Back to Packages' now correctly renders the package list",
+      "Verify that the initial load (first visit) still works correctly since queryFn sets state AND the useEffect also sets state from the returned data"
+    ],
+    "passes": true
   }
 ]

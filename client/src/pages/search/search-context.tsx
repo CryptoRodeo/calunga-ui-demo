@@ -450,6 +450,7 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
 
   // Fetch the first page immediately to show initial results fast
   const {
+    data: initialData,
     isLoading,
     error,
   } = useQuery({
@@ -475,6 +476,18 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     enabled: !!selectedIndex,
     staleTime: 1000 * 60 * 5,
   });
+
+  // Sync cached query data into accumulated state on mount/re-mount.
+  // When React Query serves cached data (e.g., navigating back from package detail),
+  // queryFn doesn't re-run, so the setState side effects inside it don't fire.
+  // This useEffect ensures accumulatedPackages is populated from the cache.
+  useEffect(() => {
+    if (initialData && accumulatedPackages.length === 0) {
+      setAccumulatedPackages(initialData.packages);
+      setPulpServerTotal(initialData.serverTotal);
+      setPulpPagesFetched(1);
+    }
+  }, [initialData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch the next Pulp page on demand (called when user paginates beyond loaded data)
   const fetchNextPulpPage = useCallback(async () => {

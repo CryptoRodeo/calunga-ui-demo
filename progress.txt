@@ -360,3 +360,30 @@ Actions Taken:
 Status: COMPLETED
 Package detail page requests now use plain field names (name=value, version=value) instead of
 invalid __exact suffixes. This fixes 400 Bad Request errors when clicking on packages.
+
+Feature: Fix packages not rendering after navigating back from package detail page
+
+Files Changed:
+- client/src/pages/search/search-context.tsx
+
+Actions Taken:
+1. Destructured `data: initialData` from the useQuery at line 452-478
+   - Previously only `isLoading` and `error` were destructured, ignoring cached data
+   - The queryFn populated state via setState side effects which don't replay on cache hits
+
+2. Added useEffect to sync cached query data into accumulated state (after line 478)
+   - When component re-mounts (e.g., navigating back from package detail), React Query
+     serves cached data without re-running queryFn
+   - The useEffect detects when initialData is available but accumulatedPackages is empty
+     (fresh mount) and populates the state from the cache
+   - Condition `accumulatedPackages.length === 0` prevents overwriting state when queryFn
+     has already set it during initial load
+
+3. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Navigating back from the package detail page now correctly renders the package list.
+React Query's cached data is synced into component state on re-mount, fixing the
+"No packages found" display that occurred when queryFn side effects were not replayed.
