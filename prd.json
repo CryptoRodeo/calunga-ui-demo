@@ -22,6 +22,18 @@
     "passes": true
   },
   {
+    "category": "Documentation",
+    "description": "Update documentation on the Packages index",
+    "steps": [
+      "Using the code in ~/work/pulpcore as reference verify that the ./PULP_DATA_MAPPING_PLAN.md file in the current directory  the correct strategy for listing packages",
+      "Using the code in  ~/work/pulp_python/ as reference verify that the ./PULP_DATA_MAPPING_PLAN.md file in the current directory documents the correct strategy for listing packages",
+      "Using the code in  ~/work/pulp-docs/ as reference verify that the ./PULP_DATA_MAPPING_PLAN.md file in the current directory documents the correct strategy for listing packages",
+      "Using all those references, look at the existing PULP_DATA_MAPPING_PLAN.md file and see if there are any more efficient ways to retrieve data from the pulp API",
+      "Update ./PULP_DATA_MAPPING_PLAN.md as needed"
+    ],
+    "passes": false
+  },
+  {
     "category": "Functional",
     "description": "The service efficiently pulls all packages for the related distribution",
     "steps": [
@@ -60,6 +72,197 @@
     "steps": [
       "The service can paginate packages following the plan in ./PULP_DATA_MAPPING_PLAN.md . Those packages are for a specific distribution"
     ],
+    "passes": true
+  },
+  {
+    "category": "Performance",
+    "description": "Replace sequential full-fetch loop with progressive loading",
+    "problem": "Currently in search-context.tsx:484-505, the code fetches ALL packages sequentially in a while loop. This causes: (1) Long initial loading time blocking the UI, (2) Sequential HTTP requests that can't be optimized, (3) Memory overhead from loading thousands of packages at once, (4) Poor user experience with infinite spinner",
+    "rationale": "The current implementation was designed to work around Pulp API limitations (no server-side filtering for name substring, classifiers, license). However, fetching everything upfront is not scalable. We need a hybrid approach that balances server-side pagination with client-side filtering capabilities.",
+    "steps": [
+      "Implement progressive loading strategy: fetch first page (limit=100) immediately to show initial results",
+      "Use the existing Pagination component's next-page button to trigger fetching the next page from the Pulp API on demand — no separate 'Load More' button or infinite scroll",
+      "Update search-context.tsx to maintain a running dataset that grows as the user paginates, instead of fetching everything upfront",
+      "Show initial results within 1-2 seconds, allow users to start browsing immediately",
+      "Add loading indicators for incremental fetches (spinner or skeleton in the package list area, not full-page spinner)"
+    ],
+    "passes": true
+  },
+  {
+    "category": "Performance",
+    "description": "Implement parallel page fetching for faster bulk loading",
+    "problem": "The current while loop at search-context.tsx:484-505 fetches pages sequentially (page 1, wait, page 2, wait, etc.). This is inefficient when dealing with large datasets.",
+    "rationale": "Modern browsers support multiple concurrent HTTP requests. Fetching pages in parallel can reduce total load time by 50-70%.",
+    "steps": [
+      "Replace sequential while loop with parallel Promise.all() approach",
+      "First, make a single request to get total count",
+      "Calculate total pages needed (Math.ceil(total / limit))",
+      "Create array of fetch promises for all pages: const promises = Array.from({length: totalPages}, (_, i) => fetchPage(i))",
+      "Execute in parallel with: const results = await Promise.all(promises)",
+      "Limit concurrency to 5-10 requests at a time to avoid overwhelming the server",
+      "Show progress indicator: 'Loading packages: 300/1000'"
+    ],
     "passes": false
   },
+  {
+    "category": "UX",
+    "description": "Add optimistic rendering with skeleton states",
+    "problem": "Users see a spinner for potentially 10-30 seconds with no feedback on progress or partial results",
+    "rationale": "Perceived performance is as important as actual performance. Show users something immediately and provide progress feedback.",
+    "steps": [
+      "Show skeleton cards immediately while first page loads",
+      "Display actual results as soon as first page arrives (don't wait for all pages)",
+      "Add progress indicator: 'Loaded 500 of ~2000 packages' during bulk fetch",
+      "Update counts and pagination controls as more data arrives",
+      "Allow users to interact with loaded results while remaining data fetches in background"
+    ],
+    "passes": false
+  },
+  {
+    "category": "Architecture",
+    "description": "Implement smart caching strategy with stale-while-revalidate",
+    "problem": "Every distribution change triggers a full refetch of all packages, even if the data hasn't changed",
+    "rationale": "Package data changes infrequently. We can show cached data immediately while fetching fresh data in the background.",
+    "steps": [
+      "Update useQuery configuration to use staleTime: 1000 * 60 * 30 (30 minutes instead of 5)",
+      "Add cacheTime: 1000 * 60 * 60 (keep in cache for 1 hour)",
+      "Use refetchOnMount: false to prevent unnecessary refetches",
+      "Implement background refetch with refetchInterval: 1000 * 60 * 10 (10 minutes)",
+      "Add manual refresh button for users who want latest data",
+      "Show 'last updated' timestamp so users know data freshness"
+    ],
+    "passes": false
+  },
+  {
+    "category": "Architecture",
+    "description": "Add virtual scrolling for large package lists",
+    "problem": "Rendering 1000+ package cards in the DOM causes performance issues (slow scrolling, high memory usage)",
+    "rationale": "Virtual scrolling only renders visible items plus a small buffer, dramatically improving performance for large lists.",
+    "steps": [
+      "Install react-virtual or @tanstack/react-virtual library",
+      "Replace Gallery component with virtual scroll container in search.tsx:380-570",
+      "Configure virtual scrolling with estimated item height (e.g., 200px per card)",
+      "Keep pagination for UX (users expect pages), but render current page with virtual scrolling",
+      "This allows smooth scrolling even with 100+ items per page"
+    ],
+    "passes": false
+  },
+  {
+    "category": "Feature",
+    "description": "Implement server-side search enhancement via custom endpoint",
+    "problem": "Pulp API lacks server-side filtering for name substring, classifiers, and license (verified in PULP_DATA_MAPPING_PLAN.md:10-19). This forces client-side filtering which requires fetching all data.",
+    "rationale": "A custom API endpoint in the Express server can add missing filtering capabilities without modifying Pulp.",
+    "steps": [
+      "Add new endpoint in server/src/main.ts: GET /api/v2/packages/search",
+      "Endpoint fetches from Pulp, then applies client-side filters server-side (better than browser)",
+      "Support query params: ?q=<name_search>&classifier=<value>&license=<value>&limit=20&offset=0",
+      "Server caches Pulp responses for 5 minutes to reduce repeated fetches",
+      "Return paginated results matching UI expectations",
+      "Update search-context.tsx to use this new endpoint instead of direct Pulp calls",
+      "This moves filtering load from browser to server, enables true server-side pagination"
+    ],
+    "passes": false
+  },
+  {
+    "category": "Performance",
+    "description": "Implement request debouncing and cancellation",
+    "problem": "User interactions (search typing, filter changes) can trigger multiple overlapping requests, wasting resources",
+    "rationale": "Only the latest request matters. Cancel in-flight requests when new ones are triggered.",
+    "steps": [
+      "Already using useDeferredValue for search debouncing (good!)",
+      "Add AbortController to cancel in-flight requests when parameters change",
+      "Update useQuery to use enabled: !!selectedIndex && !!deferredSearchQuery to prevent empty searches",
+      "Add 300ms debounce to filter changes before triggering new query",
+      "Show 'Searching...' indicator during debounce period"
+    ],
+    "passes": false
+  },
+  {
+    "category": "Monitoring",
+    "description": "Add performance metrics and monitoring",
+    "problem": "No visibility into how long packages take to load or how many packages are being fetched",
+    "rationale": "Can't optimize what you don't measure. Need data to understand user experience and identify bottlenecks.",
+    "steps": [
+      "Add performance timing: const start = performance.now() before fetch, log duration after",
+      "Track metrics: total packages fetched, time to first result, time to complete, number of HTTP requests",
+      "Add console logging in dev mode: 'Fetched 1000 packages in 12.3s (8 requests)'",
+      "Consider adding user-facing metrics: 'Searching 2,847 packages...' or 'Loaded 1000 packages'",
+      "Log slow queries (>5s) for investigation"
+    ],
+    "passes": false
+  },
+  {
+    "category": "Quick Win",
+    "description": "Increase initial page size and add smarter pagination",
+    "problem": "Current implementation fetches 100 items per page. For client-side filtering, this is too small and causes many requests.",
+    "rationale": "Fetching larger chunks reduces number of HTTP requests while maintaining reasonable response times.",
+    "steps": [
+      "Change limit from 100 to 500 in search-context.tsx:474",
+      "Reduce total pages fetched by 5x immediately",
+      "Add smart pagination: if total < 1000, fetch all; if total > 1000, use progressive loading",
+      "Update loading message to show: 'Loading packages (this may take a moment for large repositories)'",
+      "This is a one-line change that can reduce load time by 50%"
+    ],
+    "passes": false
+  },
+  {
+    "category": "UX",
+    "description": "Add search result limits and warnings",
+    "problem": "No feedback to users about dataset size or limits. Users don't know if they're searching 100 or 10,000 packages.",
+    "rationale": "Transparency about data size helps users understand performance and set expectations.",
+    "steps": [
+      "Show total package count in header: 'Searching 2,847 packages from distribution X'",
+      "Add warning if dataset is large: '⚠ This repository contains 5,000+ packages. Initial load may take 10-15 seconds.'",
+      "Suggest using search/filters to narrow results: 'Tip: Use search or filters for faster results'",
+      "Consider adding limit: only fetch first 2000 packages, show 'Showing first 2000 of 5000 packages'",
+      "Add 'Show all' button to fetch remaining if user needs it"
+    ],
+    "passes": false
+  },
+  {
+    "category": "Bug",
+    "description": "Remove sortBy from useQuery queryKey to prevent refetching and inconsistent results across sort options",
+    "problem": "In search-context.tsx:470, the queryKey is `[\"packages\", selectedIndex, sortBy]`. Including sortBy means each sort option (relevance, date, downloads) maintains a SEPARATE React Query cache entry. Changing sort invalidates the cache and triggers a full re-fetch with a different server-side ordering via mapSortToPulp() (lines 431-446): relevance maps to `ordering: name` (alphabetical), date/downloads map to `ordering: -pulp_created` (newest first). Since the Pulp content API returns ALL VERSIONS of ALL packages, different orderings produce pages with different content. If a fetch is interrupted, times out, or the dataset changes between sort-triggered re-fetches, completely different packages appear in each sort view. Meanwhile, all three sort strategies are ALREADY applied client-side at line 566 via applySorting() after deduplication, making the server-side sort entirely redundant.",
+    "rationale": "The server-side sort via mapSortToPulp is unnecessary because the while loop fetches ALL data anyway — ordering on the server only affects page order, not final results. By removing sortBy from the queryKey, raw data is fetched once and cached regardless of sort option. The client-side applySorting() (lines 153-234) already correctly handles all three sort strategies (date, downloads, relevance scoring) on the deduplicated dataset. This eliminates redundant fetches and ensures consistent package lists across sort changes.",
+    "steps": [
+      "Change queryKey at search-context.tsx:470 from `[\"packages\", selectedIndex, sortBy]` to `[\"packages\", selectedIndex]`",
+      "Remove the sort parameter from hubParams at search-context.tsx:487: delete `sort: mapSortToPulp(sortBy)` since server-side ordering is no longer needed",
+      "Keep the client-side applySorting() call at line 566 unchanged — it already handles all three sort strategies correctly after deduplication",
+      "Remove or deprecate the mapSortToPulp function (lines 431-446) and the buildPulpFilters function (lines 405-428) since neither produces server-side parameters",
+      "Verify that changing sort options no longer triggers network requests or shows a loading spinner — sort changes should be instant client-side operations"
+    ],
+    "passes": true
+  },
+  {
+    "category": "Bug",
+    "description": "Preserve Pulp API total count and compute correct totalItemCount vs filteredItemCount for pagination",
+    "problem": "In search-context.tsx:572-583, both totalItemCount and filteredItemCount are set to `filteredPackages.length` — the count of packages AFTER fetching, deduplication, AND client-side filtering. The Pulp API's total count (PulpPaginatedResponse.count, representing total content items in the repository) is available in each API response but is discarded after the while loop at lines 484-505. The loop only accumulates `result.data` (the items array) and ignores `result.total`. As a result, the Pagination component (search.tsx:580) shows `itemCount={filteredItemCount}` which only reflects the client-side filtered array length, not the true repository size. Users see a count like '50' when the repository contains thousands of packages. The Inventory card (search.tsx:258-269) also shows an empty string because it has no access to the package count.",
+    "rationale": "The Pulp API already provides the total count in every paginated response (PulpPaginatedResponse.count at models.ts:84). This value should be preserved through the data pipeline. The UI needs three distinct counts: (1) serverTotal — total content items from the API (useful for the Inventory card), (2) totalItemCount — unique packages after deduplication but before filtering (useful for showing 'X of Y packages'), (3) filteredItemCount — packages after client-side filtering (used for pagination page calculation). Currently all three are collapsed into filteredPackages.length.",
+    "steps": [
+      "In the useQuery queryFn (search-context.tsx:471-511), capture the total count from the API response: change `return allPackages` at line 507 to `return { packages: allPackages, serverTotal: allPackages.length > 0 ? result.total : 0 }` where result.total is preserved from the last loop iteration",
+      "Declare a variable before the while loop to track the server total: `let serverTotal = 0;` and update it each iteration: `serverTotal = result.total;`",
+      "Update the rawData destructuring at line 465 to extract both: `const { data: rawData, isLoading, error } = useQuery({ ... })` where rawData is now `{ packages, serverTotal }`",
+      "Update transformedPackages memo (line 514) to use `rawData?.packages` instead of `rawData`",
+      "In the pagination memo (lines 572-583), set totalItemCount to `transformedPackages.length` (unique packages post-dedup, pre-filter) and filteredItemCount to `filteredPackages.length` (post-filter). Expose serverTotal via context for the Inventory card",
+      "Add serverTotal to the ISearchContext interface and provide it in all three SearchContext.Provider value objects (loading, error, success states)"
+    ],
+    "passes": true
+  },
+  {
+    "category": "Bug",
+    "description": "Replace blocking while-loop with immediate first-page render and background data completion",
+    "problem": "In search-context.tsx:484-505, the useQuery queryFn contains a `while (hasMore)` loop that fetches ALL packages (100 per request) sequentially before the query promise resolves. For a repository with 2000 packages across 5000+ content items (multiple versions per package), this means 50+ sequential HTTP requests chained together. During this entire multi-request sequence, React Query's isLoading remains true (line 466-467), and the UI renders a full-page Spinner with 'Loading packages...' text (search.tsx:335-353). Users see zero content until the very last page is fetched — potentially tens of seconds of blank loading screen. The while loop blocks at: `hasMore = result.data.length === limit && currentOffset < result.total` (line 504), continuing until every single page has been accumulated into the allPackages array.",
+    "rationale": "The root cause is that useQuery's queryFn is a single async function that doesn't resolve until ALL pages are fetched. React Query cannot show partial results because the promise is all-or-nothing. The fix should separate initial rendering from complete data loading. By fetching the first page (100 items) as a standalone query that resolves immediately, users see content after a single HTTP round-trip. Remaining pages should be fetched via a separate mechanism (second useQuery, useEffect, or background task) that progressively merges data into state. This changes perceived load time from O(totalPages * RTT) to O(1 * RTT) for first meaningful render.",
+    "steps": [
+      "Replace the while-loop useQuery with a single page-at-a-time useQuery whose queryKey includes the current page and perPage: `queryKey: ['packages', selectedIndex, page, perPage]`",
+      "Map the Pagination component's page/perPage state directly to Pulp API offset/limit parameters: `offset = (page - 1) * perPage`, `limit = perPage`",
+      "The useQuery queryFn fetches exactly one page per call — no loop, no accumulation. It returns `{ packages: pageItems, serverTotal: count }` from a single HTTP request",
+      "Render results immediately after each single-page fetch — users see content after one API round-trip instead of waiting for all pages",
+      "When the user clicks the Pagination next-page button, page state updates, queryKey changes, and React Query fetches the next page from the Pulp API automatically",
+      "Use the Pulp API's `count` field as the Pagination `itemCount` so users see the true total and can navigate to any page",
+      "Apply deduplication and transformation only to the current page's results (not an accumulated global dataset)",
+      "Leverage React Query's caching so previously visited pages are served from cache without re-fetching"
+    ],
+    "passes": false
+  }
 ]

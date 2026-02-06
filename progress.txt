@@ -175,3 +175,115 @@ Actions Taken:
 
 Status: COMPLETED
 Feature already implemented following PULP_DATA_MAPPING_PLAN.md. Efficient multi-page fetching retrieves all packages for the distribution in a performant manner.
+
+Feature: Remove sortBy from useQuery queryKey to prevent refetching and inconsistent results across sort options
+
+Files Changed:
+- client/src/pages/search/search-context.tsx
+
+Actions Taken:
+1. Removed sortBy from useQuery queryKey (line 470)
+   - Changed queryKey from ["packages", selectedIndex, sortBy] to ["packages", selectedIndex]
+   - Sort option changes no longer trigger full data re-fetches from the Pulp API
+   - Raw data is fetched once and cached regardless of sort selection
+
+2. Removed sort parameter from hubParams (line 487)
+   - Deleted `sort: mapSortToPulp(sortBy)` from the fetch parameters
+   - Server-side ordering was redundant since the while loop fetches ALL data anyway
+
+3. Removed mapSortToPulp function (was lines 431-446)
+   - No longer needed since server-side sorting is not used
+   - All sorting handled client-side by applySorting() at line 566
+
+4. Removed buildPulpFilters function (was lines 405-428)
+   - Function returned empty array every time (no server-side filters available)
+   - Was dead code providing no value
+
+5. Updated comment at sorting call site
+   - Removed inaccurate reference to server-side sorting via queryKey
+   - Updated to reflect that all sorting is client-side
+
+6. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Sort option changes are now instant client-side operations. No redundant network requests or loading spinners when switching between relevance, date, and downloads sort options.
+
+Feature: Preserve Pulp API total count and compute correct totalItemCount vs filteredItemCount for pagination
+
+Files Changed:
+- client/src/pages/search/search-context.tsx
+- client/src/pages/search/search.tsx
+
+Actions Taken:
+1. Updated useQuery queryFn to capture serverTotal from Pulp API response
+   - Added `let serverTotal = 0` before the while loop (line 429)
+   - Captures `serverTotal = result.total` each iteration (line 455)
+   - Changed return from `allPackages` to `{ packages: allPackages, serverTotal }` (line 461)
+
+2. Updated rawData consumers to use new shape
+   - Changed `deduplicateByLatestVersion(rawData)` to `deduplicateByLatestVersion(rawData.packages)` (line 472)
+
+3. Differentiated totalItemCount and filteredItemCount (lines 523-537)
+   - `serverTotal`: total content items from Pulp API (all versions)
+   - `totalItemCount`: unique packages after dedup, before client-side filtering (transformedPackages.length)
+   - `filteredItemCount`: packages after client-side filtering (filteredPackages.length)
+
+4. Added serverTotal to ISearchContext interface and all three Provider value objects (loading, error, success)
+
+5. Connected Inventory card in search.tsx to use totalItemCount
+   - Changed from hardcoded empty string `getIndexInfo().inventory` to `${totalItemCount} Packages` (line 265)
+   - Added totalItemCount to context destructuring (line 65)
+
+6. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+The UI now correctly distinguishes between total unique packages (for inventory display), filtered packages (for pagination), and server total content items (available via context). The Inventory card shows the actual package count instead of an empty string.
+
+Feature: Replace sequential full-fetch loop with progressive loading
+
+Files Changed:
+- client/src/pages/search/search-context.tsx
+- client/src/pages/search/search.tsx
+
+Actions Taken:
+1. Replaced the blocking while-loop useQuery with progressive loading strategy
+   - Removed the while (hasMore) loop that fetched ALL packages sequentially before resolving
+   - Added initial-page useQuery that fetches only the first 100 items from Pulp API
+   - Users see initial results after a single HTTP round-trip instead of waiting for all pages
+
+2. Implemented on-demand incremental fetching
+   - Added accumulatedPackages state that grows as the user paginates forward
+   - Added fetchNextPulpPage callback that fetches the next Pulp page on demand
+   - A useEffect triggers fetchNextPulpPage when the user is within 2 UI pages of the end of loaded data
+   - Data is accumulated progressively — the dataset grows as the user navigates
+
+3. Added isFetchingMore state and context field
+   - Added isFetchingMore to ISearchContext interface and all three Provider value objects
+   - Tracks whether an incremental fetch is in progress (distinct from initial isLoading)
+
+4. Added inline loading indicator in search.tsx
+   - Shows a small Spinner with "Loading more packages..." text between the Gallery and Pagination
+   - Only visible during incremental fetches, not during initial load (which uses full-page spinner)
+   - Does not block user interaction with already-loaded results
+
+5. Added distribution-change reset logic
+   - When selectedIndex changes, accumulated data is cleared and progressive loading restarts
+   - Uses useRef to track previous selectedIndex and useEffect to reset state
+
+6. Preserved client-side filtering, sorting, and pagination
+   - All client-side operations (search, classification filter, license filter, sorting, pagination)
+     continue to work on the accumulated dataset
+   - As more data loads in the background, the filtered/sorted results automatically update
+
+7. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Initial results now appear after a single API round-trip (~100 items). Additional pages are fetched
+progressively as the user paginates, eliminating the blocking full-fetch that previously kept users
+waiting with a spinner until all packages were loaded.

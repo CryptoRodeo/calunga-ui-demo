@@ -4,6 +4,8 @@ import {
   useState,
   useCallback,
   useMemo,
+  useRef,
+  useEffect,
   useDeferredValue,
 } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -127,6 +129,7 @@ interface ISearchContext {
   currentPageItems: Package[];
   totalItemCount: number;
   filteredItemCount: number;
+  serverTotal: number;
   // NEW: Filter state
   filters: FilterValues;
   setFilter: (category: keyof FilterValues, values: string[]) => void;
@@ -135,6 +138,7 @@ interface ISearchContext {
   // Loading state
   isLoading: boolean;
   isPending: boolean;
+  isFetchingMore: boolean;
 }
 
 const contextDefaultValue = {} as ISearchContext;
@@ -397,54 +401,6 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     setSearchParams(newParams);
   }, [searchParams, setSearchParams]);
 
-  // Build Pulp filter parameters for server-side filtering
-  // IMPORTANT: Per PULP_DATA_MAPPING_PLAN.md lines 10-19, server-side filtering
-  // is LIMITED to specific fields. The fields name (substring), classifiers,
-  // and license are NOT supported for server-side filtering and require
-  // client-side filtering instead.
-  const buildPulpFilters = useCallback(
-    (
-      searchQuery: string,
-      filters: FilterValues,
-    ): HubRequestParams["filters"] => {
-      const hubFilters: HubRequestParams["filters"] = [];
-
-      // Search query → NO server-side filter
-      // Verified: pulp_python/app/viewsets.py line 340 shows name only supports exact/in
-      // Client-side filtering required (see PULP_DATA_MAPPING_PLAN.md lines 127-130)
-
-      // Classification filter → NO server-side filter
-      // Verified: pulp_python/app/viewsets.py lines 339-348 do NOT include classifiers
-      // Client-side filtering required (see PULP_DATA_MAPPING_PLAN.md lines 119-125)
-
-      // License filter → NO server-side filter
-      // Verified: license field NOT in PythonPackageContentFilter.Meta.fields
-      // Client-side filtering required (see PULP_DATA_MAPPING_PLAN.md lines 124-127)
-
-      // NO server-side filters available for UI requirements
-      return hubFilters;
-    },
-    [],
-  );
-
-  // Map sort option to Pulp sort parameters
-  const mapSortToPulp = useCallback(
-    (sortOption: SortOption): HubRequestParams["sort"] => {
-      switch (sortOption) {
-        case "date":
-          return { field: "pulp_created", direction: "desc" };
-        case "downloads":
-          // Not available in Pulp - fallback to date
-          return { field: "pulp_created", direction: "desc" };
-        default:
-          // Relevance requires client-side scoring
-          // For server-side, sort by name
-          return { field: "name", direction: "asc" };
-      }
-    },
-    [],
-  );
-
   // Debounce search query to prevent excessive API calls
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const deferredFilters = useDeferredValue(filters);
@@ -459,69 +415,110 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     (dist) => dist.name === selectedIndex,
   );
 
-  // Fetch ALL packages from Pulp API using pagination
-  // Per PULP_DATA_MAPPING_PLAN.md lines 542-680: client-side filtering required
-  // because name substring, classifiers, and license are NOT supported server-side
+  // Progressive loading: fetch one page at a time from Pulp API.
+  // The dataset grows as the user paginates forward.
+  // Client-side filtering/sorting works on the accumulated dataset.
+  const PULP_PAGE_SIZE = 100; // Pulp default page size
+
+  // Track accumulated raw packages and how many Pulp pages have been fetched
+  const [accumulatedPackages, setAccumulatedPackages] = useState<
+    PulpPythonPackageContent[]
+  >([]);
+  const [pulpServerTotal, setPulpServerTotal] = useState(0);
+  const [pulpPagesFetched, setPulpPagesFetched] = useState(0);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+  // Reset accumulated data when distribution changes
+  const prevSelectedIndex = useRef(selectedIndex);
+  useEffect(() => {
+    if (prevSelectedIndex.current !== selectedIndex) {
+      setAccumulatedPackages([]);
+      setPulpServerTotal(0);
+      setPulpPagesFetched(0);
+      prevSelectedIndex.current = selectedIndex;
+    }
+  }, [selectedIndex]);
+
+  // Filter by repository_version to get packages ONLY from the selected distribution
+  const extraParams = useMemo(() => {
+    const params: Record<string, string | number> = {};
+    if (selectedDistribution?.repository_version) {
+      params.repository_version = selectedDistribution.repository_version;
+    }
+    return params;
+  }, [selectedDistribution?.repository_version]);
+
+  // Fetch the first page immediately to show initial results fast
   const {
-    data: rawData,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["packages", selectedIndex, sortBy],
+    queryKey: ["packages", selectedIndex, "initial"],
     queryFn: async () => {
-      const allPackages: PulpPythonPackageContent[] = [];
-      let currentOffset = 0;
-      const limit = 100; // Pulp default page size
-      let hasMore = true;
+      const hubParams: HubRequestParams = {
+        filters: [],
+        page: { pageNumber: 1, itemsPerPage: PULP_PAGE_SIZE },
+      };
 
-      // Filter by repository_version to get packages ONLY from the selected distribution
-      const extraParams: Record<string, string | number> = {};
-      if (selectedDistribution?.repository_version) {
-        extraParams.repository_version = selectedDistribution.repository_version;
-      }
+      const result = await getPulpPaginatedResult<PulpPythonPackageContent>(
+        PULP_ENDPOINTS.PYTHON_CONTENT,
+        hubParams,
+        extraParams,
+      );
 
-      // Fetch all pages to ensure ALL packages are rendered
-      while (hasMore) {
-        const hubParams: HubRequestParams = {
-          filters: [], // NO server-side filters (not supported for required fields)
-          sort: mapSortToPulp(sortBy),
-          page: {
-            pageNumber: Math.floor(currentOffset / limit) + 1,
-            itemsPerPage: limit,
-          },
-        };
+      setAccumulatedPackages(result.data);
+      setPulpServerTotal(result.total);
+      setPulpPagesFetched(1);
 
-        const result = await getPulpPaginatedResult<PulpPythonPackageContent>(
-          PULP_ENDPOINTS.PYTHON_CONTENT,
-          hubParams,
-          extraParams,
-        );
-
-        allPackages.push(...result.data);
-        currentOffset += result.data.length;
-
-        // Check if there are more pages
-        hasMore = result.data.length === limit && currentOffset < result.total;
-      }
-
-      return allPackages; // Return ALL raw Pulp content
+      return { packages: result.data, serverTotal: result.total };
     },
-    enabled: !!selectedIndex, // Only run when we have a selected index
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes to reduce refetches
+    enabled: !!selectedIndex,
+    staleTime: 1000 * 60 * 5,
   });
 
-  // Memoize deduplication and transformation
+  // Fetch the next Pulp page on demand (called when user paginates beyond loaded data)
+  const fetchNextPulpPage = useCallback(async () => {
+    if (isFetchingMore) return;
+
+    const nextOffset = pulpPagesFetched * PULP_PAGE_SIZE;
+    if (nextOffset >= pulpServerTotal) return; // All pages already fetched
+
+    setIsFetchingMore(true);
+    try {
+      const hubParams: HubRequestParams = {
+        filters: [],
+        page: {
+          pageNumber: pulpPagesFetched + 1,
+          itemsPerPage: PULP_PAGE_SIZE,
+        },
+      };
+
+      const result = await getPulpPaginatedResult<PulpPythonPackageContent>(
+        PULP_ENDPOINTS.PYTHON_CONTENT,
+        hubParams,
+        extraParams,
+      );
+
+      setAccumulatedPackages((prev) => [...prev, ...result.data]);
+      setPulpServerTotal(result.total);
+      setPulpPagesFetched((prev) => prev + 1);
+    } finally {
+      setIsFetchingMore(false);
+    }
+  }, [isFetchingMore, pulpPagesFetched, pulpServerTotal, extraParams]);
+
+  // Memoize deduplication and transformation on accumulated data
   const transformedPackages = useMemo(() => {
-    if (!rawData) return [];
+    if (accumulatedPackages.length === 0) return [];
 
     // Deduplicate BEFORE transformation to reduce work
-    const deduplicatedContent = deduplicateByLatestVersion(rawData);
+    const deduplicatedContent = deduplicateByLatestVersion(accumulatedPackages);
 
     // Transform to UI Package model
     return deduplicatedContent.map((content) =>
       transformPulpContentToPackage(content, undefined, undefined, null),
     );
-  }, [rawData]);
+  }, [accumulatedPackages]);
 
   // CLIENT-SIDE filtering (separate memo for better performance)
   // Per PULP_DATA_MAPPING_PLAN.md: name substring, classifiers, license
@@ -560,27 +557,44 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     }
 
     // Apply client-side sorting after filtering
-    // Per PULP_DATA_MAPPING_PLAN.md lines 133-138:
-    // - "date" uses server-side sorting (already applied via queryKey)
-    // - "relevance" and "downloads" require client-side sorting
+    // All sorting is done client-side since we deduplicate and filter locally
     packages = applySorting(packages, sortBy, deferredSearchQuery);
 
     return packages;
   }, [transformedPackages, deferredSearchQuery, deferredFilters, sortBy]);
 
-  // CLIENT-SIDE pagination
+  // SERVER total from Pulp API (total content items including all versions)
+  const serverTotal = pulpServerTotal;
+
+  // Whether more Pulp pages are available to fetch
+  const hasMorePulpPages = pulpPagesFetched * PULP_PAGE_SIZE < pulpServerTotal;
+
+  // CLIENT-SIDE pagination with progressive loading trigger
   const { currentPageItems, totalItemCount, filteredItemCount } = useMemo(() => {
-    const total = filteredPackages.length;
     const startIndex = (page - 1) * perPage;
     const endIndex = startIndex + perPage;
     const pageItems = filteredPackages.slice(startIndex, endIndex);
 
     return {
       currentPageItems: pageItems,
-      totalItemCount: total,
-      filteredItemCount: total,
+      totalItemCount: transformedPackages.length, // unique packages post-dedup, pre-filter
+      filteredItemCount: filteredPackages.length, // packages post-filter
     };
-  }, [filteredPackages, page, perPage]);
+  }, [filteredPackages, transformedPackages.length, page, perPage]);
+
+  // Trigger fetching more data when user paginates near the end of loaded data
+  useEffect(() => {
+    if (!hasMorePulpPages || isFetchingMore || isLoading) return;
+
+    // Check if the user is viewing items near the end of what we've loaded
+    const endIndex = page * perPage;
+    const loadedFilteredCount = filteredPackages.length;
+
+    // Fetch more if we're within 2 pages of the end of loaded data
+    if (endIndex + perPage * 2 >= loadedFilteredCount && hasMorePulpPages) {
+      fetchNextPulpPage();
+    }
+  }, [page, perPage, filteredPackages.length, hasMorePulpPages, isFetchingMore, isLoading, fetchNextPulpPage]);
 
   // Handle loading and error states
   if (isLoading) {
@@ -599,12 +613,14 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
           currentPageItems: [],
           totalItemCount: 0,
           filteredItemCount: 0,
+          serverTotal: 0,
           filters,
           setFilter,
           clearAllFilters,
           deleteFilter,
           isLoading: true,
           isPending: false,
+          isFetchingMore: false,
         }}
       >
         {children}
@@ -629,12 +645,14 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
           currentPageItems: [],
           totalItemCount: 0,
           filteredItemCount: 0,
+          serverTotal: 0,
           filters,
           setFilter,
           clearAllFilters,
           deleteFilter,
           isLoading: false,
           isPending: false,
+          isFetchingMore: false,
         }}
       >
         {children}
@@ -656,12 +674,14 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
         currentPageItems,
         totalItemCount,
         filteredItemCount,
+        serverTotal,
         filters,
         setFilter,
         clearAllFilters,
         deleteFilter,
         isLoading: false,
         isPending,
+        isFetchingMore,
       }}
     >
       {children}
