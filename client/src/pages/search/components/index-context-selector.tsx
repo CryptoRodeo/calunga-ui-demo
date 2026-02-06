@@ -1,5 +1,6 @@
 import type React from "react";
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Dropdown,
   DropdownList,
@@ -13,27 +14,35 @@ import {
   Tooltip,
   Flex,
   FlexItem,
+  Spinner,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
-
-const indexOptions = [
-  { value: "trusted-libraries", label: "Trusted Libraries" },
-  { value: "aipcc", label: "AIPCC" },
-];
+import { getAllDistributions } from "@app/api/pulp";
 
 interface IndexContextSelectorProps {
   selectedIndex?: string;
   onIndexChange?: (index: string) => void;
+  availableDistributions?: { name: string; base_path: string }[];
+  isLoading?: boolean;
 }
 
 export const IndexContextSelector: React.FC<IndexContextSelectorProps> = ({
-  selectedIndex: controlledSelectedIndex = "trusted-libraries",
+  selectedIndex: controlledSelectedIndex,
   onIndexChange,
+  availableDistributions = [],
+  isLoading = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [internalSelectedIndex, setInternalSelectedIndex] = useState<string>("trusted-libraries");
-  
-  const selectedIndex = onIndexChange ? controlledSelectedIndex : internalSelectedIndex;
+  const [internalSelectedIndex, setInternalSelectedIndex] = useState<string>("");
+
+  // Use first distribution as default if not controlled
+  const defaultIndex =
+    availableDistributions.length > 0 ? availableDistributions[0].name : "";
+  const selectedIndex =
+    onIndexChange !== undefined
+      ? controlledSelectedIndex || defaultIndex
+      : internalSelectedIndex || defaultIndex;
+
   const [searchValue, setSearchValue] = useState<string>("");
 
   const onToggle = () => {
@@ -61,6 +70,15 @@ export const IndexContextSelector: React.FC<IndexContextSelectorProps> = ({
     setSearchValue(value);
   };
 
+  // Map distributions to dropdown options
+  const indexOptions = useMemo(() => {
+    return availableDistributions.map((dist) => ({
+      value: dist.name,
+      label: dist.name,
+      basePath: dist.base_path,
+    }));
+  }, [availableDistributions]);
+
   // Filter options based on search
   const filteredOptions = useMemo(() => {
     if (!searchValue) {
@@ -69,16 +87,25 @@ export const IndexContextSelector: React.FC<IndexContextSelectorProps> = ({
     return indexOptions.filter((option) =>
       option.label.toLowerCase().includes(searchValue.toLowerCase()),
     );
-  }, [searchValue]);
+  }, [searchValue, indexOptions]);
 
   // Get toggle label based on selection
   const getToggleLabel = () => {
+    if (isLoading) {
+      return "Loading...";
+    }
+    if (indexOptions.length === 0) {
+      return "No distributions available";
+    }
     const option = indexOptions.find((opt) => opt.value === selectedIndex);
-    return option?.label || "Trusted Libraries";
+    return option?.label || indexOptions[0]?.label || "Select index";
   };
 
   return (
-    <Flex alignItems={{ default: "alignItemsCenter" }} spaceItems={{ default: "spaceItemsSm" }}>
+    <Flex
+      alignItems={{ default: "alignItemsCenter" }}
+      spaceItems={{ default: "spaceItemsSm" }}
+    >
       <FlexItem>
         <Dropdown
           isOpen={isOpen}
@@ -109,7 +136,7 @@ export const IndexContextSelector: React.FC<IndexContextSelectorProps> = ({
               style={{
                 paddingTop: "4px",
                 paddingBottom: "0",
-                marginBottom: "0"
+                marginBottom: "0",
               }}
             >
               <TextInput
@@ -141,11 +168,11 @@ export const IndexContextSelector: React.FC<IndexContextSelectorProps> = ({
       </FlexItem>
       <FlexItem>
         <Tooltip content="Select the package source index to search. Different indexes contain packages from different ecosystems and repositories.">
-          <QuestionCircleIcon 
-            style={{ 
+          <QuestionCircleIcon
+            style={{
               color: "#6A6E73",
-              cursor: "help"
-            }} 
+              cursor: "help",
+            }}
           />
         </Tooltip>
       </FlexItem>

@@ -18,33 +18,27 @@ import {
   Flex,
   FlexItem,
 } from "@patternfly/react-core";
+import { Table, Thead, Tbody, Tr, Th, Td } from "@patternfly/react-table";
 import {
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-} from "@patternfly/react-table";
-import { 
-  ExternalLinkAltIcon, 
+  ExternalLinkAltIcon,
   ChevronDownIcon,
-  ChevronRightIcon 
+  ChevronRightIcon,
 } from "@patternfly/react-icons";
 import { PackageDetailContext } from "../package-detail-context-simple";
 import { AttestationStatusBadge } from "../components/attestation-status-badge";
 
 export const SecurityTabWithModal: React.FC = () => {
   const { packageData } = useContext(PackageDetailContext);
-  const [isSbomComponentsModalOpen, setIsSbomComponentsModalOpen] = useState(false);
+  const [isSbomComponentsModalOpen, setIsSbomComponentsModalOpen] =
+    useState(false);
   const [expandedSections, setExpandedSections] = useState({
     attestations: true,
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }));
   };
 
@@ -58,7 +52,12 @@ export const SecurityTabWithModal: React.FC = () => {
     );
   }
 
-  const { currentVersionSbom, currentVersionAttestations, slsaLevel, securityAdvisories } = packageData;
+  const {
+    currentVersionSbom,
+    currentVersionAttestations,
+    slsaLevel,
+    securityAdvisories,
+  } = packageData;
 
   return (
     <PageSection>
@@ -74,19 +73,32 @@ export const SecurityTabWithModal: React.FC = () => {
           <Title headingLevel="h3" size="lg">
             Security Overview
           </Title>
-          <p><strong>Trust Score:</strong> 99/100</p>
-          <p><strong>SLSA Level:</strong> {slsaLevel || 3}</p>
-          <p><strong>Has SBOM:</strong> {currentVersionSbom ? '✅ Yes' : '❌ No'}</p>
-          <p><strong>Has Attestations:</strong> {currentVersionAttestations ? '✅ Yes' : '❌ No'}</p>
-          <p><strong>Security Advisories:</strong> {securityAdvisories || 0}</p>
-          
+          <p>
+            <strong>Trust Score:</strong> 99/100
+          </p>
+          <p>
+            <strong>SLSA Level:</strong> {slsaLevel || 3}
+          </p>
+          <p>
+            <strong>Has SBOM:</strong> {currentVersionSbom ? "✅ Yes" : "❌ No"}
+          </p>
+          <p>
+            <strong>Has Attestations:</strong>{" "}
+            {currentVersionAttestations ? "✅ Yes" : "❌ No"}
+          </p>
+          <p>
+            <strong>Security Advisories:</strong> {securityAdvisories || 0}
+          </p>
+
           {currentVersionSbom && (
-            <div style={{ marginTop: '1rem' }}>
-              <p><strong>SBOM Components:</strong> {' '}
-                {currentVersionSbom.components && currentVersionSbom.components.length > 0 ? (
-                  <Button 
-                    variant="link" 
-                    isInline 
+            <div style={{ marginTop: "1rem" }}>
+              <p>
+                <strong>SBOM Components:</strong>{" "}
+                {currentVersionSbom.components &&
+                currentVersionSbom.components.length > 0 ? (
+                  <Button
+                    variant="link"
+                    isInline
                     onClick={() => setIsSbomComponentsModalOpen(true)}
                     style={{ padding: 0, fontSize: "inherit" }}
                   >
@@ -96,7 +108,10 @@ export const SecurityTabWithModal: React.FC = () => {
                   currentVersionSbom.summary?.totalComponents || 0
                 )}
               </p>
-              <p><strong>Vulnerabilities:</strong> {currentVersionSbom.summary?.vulnerabilities?.length || 0}</p>
+              <p>
+                <strong>Vulnerabilities:</strong>{" "}
+                {currentVersionSbom.summary?.vulnerabilities?.length || 0}
+              </p>
             </div>
           )}
         </CardBody>
@@ -106,7 +121,11 @@ export const SecurityTabWithModal: React.FC = () => {
       {currentVersionAttestations && (
         <Card style={{ marginTop: "1.5rem" }}>
           <CardBody>
-            <Flex direction={{ default: "row" }} justifyContent={{ default: "justifyContentSpaceBetween" }} alignItems={{ default: "alignItemsCenter" }}>
+            <Flex
+              direction={{ default: "row" }}
+              justifyContent={{ default: "justifyContentSpaceBetween" }}
+              alignItems={{ default: "alignItemsCenter" }}
+            >
               <FlexItem>
                 <Title headingLevel="h3" size="lg">
                   Attestation Details
@@ -116,10 +135,14 @@ export const SecurityTabWithModal: React.FC = () => {
                 <Button
                   variant="plain"
                   aria-expanded={expandedSections.attestations}
-                  onClick={() => toggleSection('attestations')}
+                  onClick={() => toggleSection("attestations")}
                   aria-label="Toggle attestation details"
                 >
-                  {expandedSections.attestations ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                  {expandedSections.attestations ? (
+                    <ChevronDownIcon />
+                  ) : (
+                    <ChevronRightIcon />
+                  )}
                 </Button>
               </FlexItem>
             </Flex>
@@ -130,34 +153,58 @@ export const SecurityTabWithModal: React.FC = () => {
                   <DescriptionListGroup>
                     <DescriptionListTerm>Attestation Type</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionAttestations.attestationType || 'Provenance Attestation'}
+                      {currentVersionAttestations.attestationType ||
+                        "Provenance Attestation"}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Verification Status</DescriptionListTerm>
+                    <DescriptionListTerm>
+                      Verification Status
+                    </DescriptionListTerm>
                     <DescriptionListDescription>
-                      <AttestationStatusBadge status={currentVersionAttestations.verificationStatus} />
+                      <AttestationStatusBadge
+                        status={currentVersionAttestations.verificationStatus}
+                      />
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Platform</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionAttestations.buildPlatform || 'Red Hat Konflux CI/CD Platform'}
+                      {currentVersionAttestations.buildPlatform ||
+                        "Red Hat Konflux CI/CD Platform"}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Certificate</DescriptionListTerm>
                     <DescriptionListDescription>
-                      <Button variant="link" isInline component="a" href="#" target="_blank">
-                        View Certificate <ExternalLinkAltIcon style={{ marginLeft: "0.25rem" }} />
+                      <Button
+                        variant="link"
+                        isInline
+                        component="a"
+                        href="#"
+                        target="_blank"
+                      >
+                        View Certificate{" "}
+                        <ExternalLinkAltIcon
+                          style={{ marginLeft: "0.25rem" }}
+                        />
                       </Button>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Signature</DescriptionListTerm>
                     <DescriptionListDescription>
-                      <Button variant="link" isInline component="a" href="#" target="_blank">
-                        View Signature <ExternalLinkAltIcon style={{ marginLeft: "0.25rem" }} />
+                      <Button
+                        variant="link"
+                        isInline
+                        component="a"
+                        href="#"
+                        target="_blank"
+                      >
+                        View Signature{" "}
+                        <ExternalLinkAltIcon
+                          style={{ marginLeft: "0.25rem" }}
+                        />
                       </Button>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
@@ -179,12 +226,19 @@ export const SecurityTabWithModal: React.FC = () => {
           <Title headingLevel="h1" size="2xl">
             SBOM Components ({currentVersionSbom?.components?.length || 0})
           </Title>
-          <p style={{ color: "var(--pf-v6-global--Color--200)", marginTop: "0.5rem" }}>
-            Detailed breakdown of all software components included in this package.
+          <p
+            style={{
+              color: "var(--pf-v6-global--Color--200)",
+              marginTop: "0.5rem",
+            }}
+          >
+            Detailed breakdown of all software components included in this
+            package.
           </p>
         </ModalHeader>
         <ModalBody style={{ maxHeight: "500px", overflowY: "auto" }}>
-          {currentVersionSbom?.components && currentVersionSbom.components.length > 0 ? (
+          {currentVersionSbom?.components &&
+          currentVersionSbom.components.length > 0 ? (
             <Table aria-label="SBOM Components table" variant="compact">
               <Thead>
                 <Tr>
@@ -199,33 +253,46 @@ export const SecurityTabWithModal: React.FC = () => {
                   <Tr key={component.bomRef || index}>
                     <Td dataLabel="Component">
                       <div>
-                        <div style={{ fontWeight: "var(--pf-v6-global--FontWeight--semi-bold)" }}>
+                        <div
+                          style={{
+                            fontWeight:
+                              "var(--pf-v6-global--FontWeight--semi-bold)",
+                          }}
+                        >
                           {component.name}
                         </div>
                         {component.description && (
-                          <div style={{ 
-                            fontSize: "var(--pf-v6-global--FontSize--sm)",
-                            color: "var(--pf-v6-global--Color--200)",
-                            marginTop: "0.25rem"
-                          }}>
+                          <div
+                            style={{
+                              fontSize: "var(--pf-v6-global--FontSize--sm)",
+                              color: "var(--pf-v6-global--Color--200)",
+                              marginTop: "0.25rem",
+                            }}
+                          >
                             {component.description}
                           </div>
                         )}
                       </div>
                     </Td>
                     <Td dataLabel="Version">
-                      <code style={{ fontSize: "var(--pf-v6-global--FontSize--sm)" }}>
+                      <code
+                        style={{
+                          fontSize: "var(--pf-v6-global--FontSize--sm)",
+                        }}
+                      >
                         {component.version}
                       </code>
                     </Td>
-                    <Td dataLabel="Type">
-                      {component.type}
-                    </Td>
+                    <Td dataLabel="Type">{component.type}</Td>
                     <Td dataLabel="Licenses">
                       {component.licenses && component.licenses.length > 0 ? (
                         component.licenses.join(", ")
                       ) : (
-                        <span style={{ color: "var(--pf-v6-global--Color--200)" }}>—</span>
+                        <span
+                          style={{ color: "var(--pf-v6-global--Color--200)" }}
+                        >
+                          —
+                        </span>
                       )}
                     </Td>
                   </Tr>

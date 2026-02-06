@@ -1,7 +1,21 @@
 import type React from "react";
-import { createContext, useState, useMemo, useCallback } from "react";
+import {
+  createContext,
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  useDeferredValue,
+} from "react";
 import { useSearchParams } from "react-router-dom";
-import dummyData from "./dummy-data.json";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { DistributionStats } from "@app/api/models";
+import {
+  getSimplePackageNames,
+  getDistributionStats,
+  getPackageMetadata,
+} from "@app/api/pulp";
+import { transformPyPIMetadataToPackage } from "@app/utils/pulp-transformers";
 
 export interface SBOMSummary {
   totalComponents: number;
@@ -114,11 +128,18 @@ interface ISearchContext {
   currentPageItems: Package[];
   totalItemCount: number;
   filteredItemCount: number;
+  serverTotal: number;
   // NEW: Filter state
   filters: FilterValues;
   setFilter: (category: keyof FilterValues, values: string[]) => void;
   clearAllFilters: () => void;
   deleteFilter: (category: keyof FilterValues, value: string) => void;
+  // Distribution stats (from PyPI Root API, available before names finish loading)
+  distributionStats: DistributionStats | null;
+  // Loading state
+  isLoading: boolean;
+  isPending: boolean;
+  isFetchingMore: boolean;
 }
 
 const contextDefaultValue = {} as ISearchContext;
@@ -127,13 +148,21 @@ export const SearchContext = createContext<ISearchContext>(contextDefaultValue);
 
 interface ISearchProvider {
   children: React.ReactNode;
-  selectedIndex?: string;
+  selectedIndex: string;
+  availableDistributions: {
+    name: string;
+    base_path: string;
+    base_url: string;
+    repository_version: string | null;
+  }[];
 }
 
 export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
   children,
-  selectedIndex = "trusted-libraries",
+  selectedIndex,
+  availableDistributions,
 }) => {
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Initialize state from URL params
@@ -147,7 +176,7 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     parseInt(searchParams.get("page") || "1", 10),
   );
   const [perPage, setPerPageState] = useState(
-    parseInt(searchParams.get("perPage") || "10", 10),
+    parseInt(searchParams.get("perPage") || "20", 10),
   );
 
   // Initialize filter state from URL params
@@ -282,185 +311,266 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     setSearchParams(newParams);
   }, [searchParams, setSearchParams]);
 
-  // Load mock data
-  const allPackages: Package[] = dummyData;
+  // Debounce search query to prevent excessive API calls
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const deferredFilters = useDeferredValue(filters);
 
-  // Filter packages based on selected index and show only latest versions
-  const packages = useMemo(() => {
-    let selectedPackages: Package[];
-    
-    if (selectedIndex === "aipcc") {
-      // Show 6 packages from "page 3" (packages 20-25)
-      selectedPackages = allPackages.slice(20, 26);
-    } else {
-      // For "trusted-libraries" show all packages
-      selectedPackages = allPackages;
+  // Determine if filtering is pending (deferred values don't match current)
+  const isPending =
+    deferredSearchQuery !== searchQuery ||
+    JSON.stringify(deferredFilters) !== JSON.stringify(filters);
+
+  // Fetch the selected distribution to get repository_version for filtering
+  const selectedDistribution = availableDistributions.find(
+    (dist) => dist.name === selectedIndex,
+  );
+
+  // Filter by repository_version to get packages ONLY from the selected distribution
+  const extraParams = useMemo(() => {
+    const params: Record<string, string | number> = {};
+    if (selectedDistribution?.repository_version) {
+      params.repository_version = selectedDistribution.repository_version;
     }
-    
-    // Group packages by name and keep only the latest version
-    const packagesByName = new Map<string, Package>();
-    
-    selectedPackages.forEach((pkg) => {
-      const existingPkg = packagesByName.get(pkg.name);
-      
-      if (!existingPkg) {
-        // First package with this name
-        packagesByName.set(pkg.name, pkg);
-      } else {
-        // Compare versions to keep the latest
-        // Simple version comparison - for more complex versioning, would need semver
-        const currentVersion = pkg.version;
-        const existingVersion = existingPkg.version;
-        
-        // Remove any pre-release suffixes for comparison
-        const normalizeVersion = (version: string) => {
-          return version.replace(/[a-zA-Z].*$/, ''); // Remove rc, alpha, beta, etc.
-        };
-        
-        const currentNormalized = normalizeVersion(currentVersion);
-        const existingNormalized = normalizeVersion(existingVersion);
-        
-        // Split version numbers and compare
-        const currentParts = currentNormalized.split('.').map(Number);
-        const existingParts = existingNormalized.split('.').map(Number);
-        
-        let isNewer = false;
-        for (let i = 0; i < Math.max(currentParts.length, existingParts.length); i++) {
-          const currentPart = currentParts[i] || 0;
-          const existingPart = existingParts[i] || 0;
-          
-          if (currentPart > existingPart) {
-            isNewer = true;
-            break;
-          } else if (currentPart < existingPart) {
-            break;
-          }
-        }
-        
-        // If versions are equal, prefer non-pre-release versions
-        if (!isNewer && currentNormalized === existingNormalized) {
-          const currentHasPreRelease = currentVersion !== currentNormalized;
-          const existingHasPreRelease = existingVersion !== existingNormalized;
-          
-          if (!currentHasPreRelease && existingHasPreRelease) {
-            isNewer = true;
-          }
-        }
-        
-        if (isNewer) {
-          packagesByName.set(pkg.name, pkg);
-        }
-      }
-    });
-    
-    return Array.from(packagesByName.values());
-  }, [selectedIndex]);
+    return params;
+  }, [selectedDistribution?.repository_version]);
 
-  // Filter packages based on search query and filters
-  const filteredPackages = useMemo(() => {
-    let filtered = packages;
+  // ── Distribution stats: fast pre-computed counts from PyPI Root API ──
+  // Runs in parallel with Query 1. Provides instant inventory numbers
+  // before the full names list finishes loading.
+  const { data: distributionStats = null } = useQuery({
+    queryKey: ["distributionStats", selectedDistribution?.base_path],
+    queryFn: () =>
+      getDistributionStats(selectedDistribution?.base_path ?? ""),
+    enabled: !!selectedDistribution,
+    staleTime: 1000 * 60 * 30,
+  });
 
-    // Apply search query filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (pkg) =>
-          pkg.name.toLowerCase().includes(query) ||
-          pkg.description.toLowerCase().includes(query) ||
-          pkg.author.toLowerCase().includes(query),
-      );
+  // ── QUERY 1: Fetch unique package names from Pulp's Simple API ──
+  // Uses database-level DISTINCT — returns just names, no content item duplication.
+  // This is a single lightweight request regardless of how many content items exist.
+  const {
+    data: packageNames,
+    isLoading: isLoadingNames,
+    error: namesError,
+  } = useQuery({
+    queryKey: ["packageNames", selectedIndex, extraParams],
+    queryFn: () =>
+      getSimplePackageNames(selectedDistribution?.base_path ?? "", extraParams),
+    enabled: !!selectedDistribution,
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60,
+  });
+
+  // Client-side name search and sorting on the full name list.
+  // Name search has full coverage since we have ALL names loaded.
+  const filteredAndSortedNames = useMemo(() => {
+    if (!packageNames) return [];
+    let names = [...packageNames];
+
+    // Search filter on name
+    if (deferredSearchQuery) {
+      const lower = deferredSearchQuery.toLowerCase();
+      names = names.filter((n) => n.toLowerCase().includes(lower));
     }
 
-    // Apply index filter
-    if (filters.index.length > 0) {
-      filtered = filtered.filter((pkg) =>
-        pkg.index ? filters.index.includes(pkg.index) : false,
-      );
-    }
-
-    // Apply classification filter
-    if (filters.classification.length > 0) {
-      filtered = filtered.filter((pkg) => {
-        if (!pkg.tags) return false;
-        // Check if package has any of the selected classifications/tags
-        return filters.classification.some((classification) =>
-          pkg.tags?.some(tag => 
-            tag.toLowerCase().includes(classification.toLowerCase()) ||
-            classification.toLowerCase().includes(tag.toLowerCase())
-          )
-        );
+    // Sort names
+    if (sortBy === "relevance" && deferredSearchQuery) {
+      const lowerQuery = deferredSearchQuery.toLowerCase();
+      names.sort((a, b) => {
+        const aLower = a.toLowerCase();
+        const bLower = b.toLowerCase();
+        const aScore =
+          aLower === lowerQuery
+            ? 1000
+            : aLower.startsWith(lowerQuery)
+              ? 500
+              : 100;
+        const bScore =
+          bLower === lowerQuery
+            ? 1000
+            : bLower.startsWith(lowerQuery)
+              ? 500
+              : 100;
+        if (aScore !== bScore) return bScore - aScore;
+        return a.localeCompare(b);
       });
+    } else {
+      names.sort((a, b) => a.localeCompare(b));
     }
 
-    // Apply license filter
-    if (filters.license.length > 0) {
-      filtered = filtered.filter((pkg) =>
-        pkg.license
-          ? filters.license.includes(pkg.license)
-          : false,
+    return names;
+  }, [packageNames, deferredSearchQuery, sortBy]);
+
+  // Client-side pagination on the sorted/filtered name list
+  const totalItemCount = packageNames?.length ?? 0;
+  const filteredItemCount = filteredAndSortedNames.length;
+  const serverTotal = totalItemCount;
+  const startIndex = (page - 1) * perPage;
+  const currentPageNames = useMemo(
+    () => filteredAndSortedNames.slice(startIndex, startIndex + perPage),
+    [filteredAndSortedNames, startIndex, perPage],
+  );
+
+  // ── QUERY 2: Fetch metadata for the current page's packages ──
+  // Uses parallel PyPI JSON Metadata API requests — one per package name.
+  // Each request returns the latest version info directly, avoiding the
+  // content API's limit-based truncation when packages have many versions.
+  const { data: currentPageItems = [], isLoading: isLoadingDetails } = useQuery(
+    {
+      queryKey: [
+        "packageDetails",
+        selectedDistribution?.base_path,
+        currentPageNames,
+      ],
+      queryFn: async () => {
+        const basePath = selectedDistribution!.base_path;
+        const results = await Promise.all(
+          currentPageNames.map((name) => getPackageMetadata(basePath, name)),
+        );
+        return results.map(transformPyPIMetadataToPackage);
+      },
+      enabled: currentPageNames.length > 0 && !!selectedDistribution,
+      staleTime: 1000 * 60 * 5,
+    },
+  );
+
+  // Re-sort current page items when sortBy is "date" or "downloads".
+  // For "relevance" and alphabetical (default), the name-based order from
+  // Query 1 is preserved. Cross-page ordering remains alphabetical by name
+  // since global date/downloads sorting would require fetching all metadata.
+  const sortedPageItems = useMemo(() => {
+    if (currentPageItems.length === 0) return currentPageItems;
+
+    if (sortBy === "date") {
+      return [...currentPageItems].sort(
+        (a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime(),
       );
     }
 
-    return filtered;
-  }, [searchQuery, filters, packages, selectedIndex]);
-
-  // Sort packages based on sortBy
-  const sortedPackages = useMemo(() => {
-    const sorted = [...filteredPackages];
-    switch (sortBy) {
-      case "date":
-        // Sort by most recently updated
-        // For demo purposes, using a simple heuristic based on the "updated" text
-        sorted.sort((a, b) => {
-          const getUpdateValue = (updated: string) => {
-            if (updated.includes("day")) {
-              const days = parseInt(updated, 10);
-              return days || 1;
-            }
-            if (updated.includes("week")) {
-              const weeks = parseInt(updated, 10);
-              return (weeks || 1) * 7;
-            }
-            if (updated.includes("month")) {
-              const months = parseInt(updated, 10);
-              return (months || 1) * 30;
-            }
-            return 999;
-          };
-          return getUpdateValue(a.updated) - getUpdateValue(b.updated);
-        });
-        break;
-      case "downloads":
-        sorted.sort((a, b) => b.downloads - a.downloads);
-        break;
-      default:
-        // If there's a search query, sort by name match first, then by downloads
-        if (searchQuery) {
-          sorted.sort((a, b) => {
-            const aNameMatch = a.name
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase());
-            const bNameMatch = b.name
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase());
-            if (aNameMatch && !bNameMatch) return -1;
-            if (!aNameMatch && bNameMatch) return 1;
-            return b.downloads - a.downloads;
-          });
-        } else {
-          // No search query, sort by downloads
-          sorted.sort((a, b) => b.downloads - a.downloads);
-        }
-        break;
+    if (sortBy === "downloads") {
+      return [...currentPageItems].sort((a, b) => b.downloads - a.downloads);
     }
-    return sorted;
-  }, [filteredPackages, sortBy, searchQuery]);
 
-  // Paginate packages
-  const currentPageItems = useMemo(() => {
-    const start = (page - 1) * perPage;
-    return sortedPackages.slice(start, start + perPage);
-  }, [sortedPackages, page, perPage]);
+    // "relevance" or default: preserve Query 1 name-based order
+    return currentPageItems;
+  }, [currentPageItems, sortBy]);
+
+  // ── Prefetch adjacent page metadata for instant pagination ──
+  // When the current page's data has loaded, prefetch the next page's metadata
+  // so clicking "Next Page" renders results instantly from cache.
+  const nextPageNames = useMemo(
+    () =>
+      filteredAndSortedNames.slice(
+        startIndex + perPage,
+        startIndex + 2 * perPage,
+      ),
+    [filteredAndSortedNames, startIndex, perPage],
+  );
+
+  useEffect(() => {
+    if (
+      nextPageNames.length === 0 ||
+      !selectedDistribution ||
+      currentPageItems.length === 0
+    ) {
+      return;
+    }
+
+    const basePath = selectedDistribution.base_path;
+    queryClient.prefetchQuery({
+      queryKey: [
+        "packageDetails",
+        selectedDistribution.base_path,
+        nextPageNames,
+      ],
+      queryFn: async () => {
+        const results = await Promise.all(
+          nextPageNames.map((name) => getPackageMetadata(basePath, name)),
+        );
+        return results.map(transformPyPIMetadataToPackage);
+      },
+      staleTime: 1000 * 60 * 5,
+    });
+  }, [
+    nextPageNames,
+    selectedDistribution,
+    currentPageItems,
+    queryClient,
+  ]);
+
+  // Loading = true until both queries have completed at least once.
+  // This prevents a "No Packages Found" flash between Query 1 (names) and
+  // Query 2 (details) completing on initial load.
+  const isLoading =
+    isLoadingNames ||
+    (isLoadingDetails &&
+      currentPageItems.length === 0 &&
+      filteredItemCount > 0);
+  const error = namesError;
+
+  // Handle loading and error states
+  if (isLoading) {
+    return (
+      <SearchContext.Provider
+        value={{
+          searchQuery,
+          setSearchQuery,
+          sortBy,
+          setSortBy,
+          page,
+          setPage,
+          perPage,
+          setPerPage,
+          currentPageItems: [],
+          totalItemCount: 0,
+          filteredItemCount: 0,
+          serverTotal: 0,
+          distributionStats,
+          filters,
+          setFilter,
+          clearAllFilters,
+          deleteFilter,
+          isLoading: true,
+          isPending: false,
+          isFetchingMore: false,
+        }}
+      >
+        {children}
+      </SearchContext.Provider>
+    );
+  }
+
+  if (error) {
+    console.error("Failed to fetch packages:", error);
+    return (
+      <SearchContext.Provider
+        value={{
+          searchQuery,
+          setSearchQuery,
+          sortBy,
+          setSortBy,
+          page,
+          setPage,
+          perPage,
+          setPerPage,
+          currentPageItems: [],
+          totalItemCount: 0,
+          filteredItemCount: 0,
+          serverTotal: 0,
+          distributionStats,
+          filters,
+          setFilter,
+          clearAllFilters,
+          deleteFilter,
+          isLoading: false,
+          isPending: false,
+          isFetchingMore: false,
+        }}
+      >
+        {children}
+      </SearchContext.Provider>
+    );
+  }
 
   return (
     <SearchContext.Provider
@@ -473,13 +583,18 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
         setPage,
         perPage,
         setPerPage,
-        currentPageItems,
-        totalItemCount: packages.length,
-        filteredItemCount: sortedPackages.length,
+        currentPageItems: sortedPageItems,
+        totalItemCount,
+        filteredItemCount,
+        serverTotal,
+        distributionStats,
         filters,
         setFilter,
         clearAllFilters,
         deleteFilter,
+        isLoading,
+        isPending: isPending || isLoadingDetails,
+        isFetchingMore: isLoadingDetails,
       }}
     >
       {children}

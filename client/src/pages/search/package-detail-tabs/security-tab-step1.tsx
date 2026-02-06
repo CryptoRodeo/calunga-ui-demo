@@ -14,10 +14,10 @@ import {
   FlexItem,
   Button,
 } from "@patternfly/react-core";
-import { 
-  ExternalLinkAltIcon, 
+import {
+  ExternalLinkAltIcon,
   ChevronDownIcon,
-  ChevronRightIcon 
+  ChevronRightIcon,
 } from "@patternfly/react-icons";
 import { PackageDetailContext } from "../package-detail-context-simple";
 import { SLSABadge } from "../components/slsa-badge";
@@ -31,9 +31,9 @@ export const SecurityTabStep1: React.FC = () => {
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }));
   };
 
@@ -47,11 +47,11 @@ export const SecurityTabStep1: React.FC = () => {
     );
   }
 
-  const { 
-    currentVersionSbom, 
-    currentVersionAttestations, 
-    slsaLevel, 
-    securityAdvisories 
+  const {
+    currentVersionSbom,
+    currentVersionAttestations,
+    slsaLevel,
+    securityAdvisories,
   } = packageData;
 
   return (
@@ -69,13 +69,32 @@ export const SecurityTabStep1: React.FC = () => {
           <Title headingLevel="h3" size="lg">
             Security Overview
           </Title>
-          <p><strong>Trust Score:</strong> 99/100</p>
-          <p><strong>SLSA Level:</strong> {slsaLevel || 3}</p>
-          <p><strong>Has SBOM:</strong> {currentVersionSbom ? '✅ Yes' : '❌ No'}</p>
-          <p><strong>Has Attestations:</strong> {currentVersionAttestations ? '✅ Yes' : '❌ No'}</p>
-          <p><strong>Security Advisories:</strong> {securityAdvisories || 0}</p>
-          <p><strong>SBOM Components:</strong> {currentVersionSbom?.components?.length || currentVersionSbom?.summary?.totalComponents || 0}</p>
-          <p><strong>Vulnerabilities:</strong> {currentVersionSbom?.summary?.vulnerabilities?.length || 0}</p>
+          <p>
+            <strong>Trust Score:</strong> 99/100
+          </p>
+          <p>
+            <strong>SLSA Level:</strong> {slsaLevel || 3}
+          </p>
+          <p>
+            <strong>Has SBOM:</strong> {currentVersionSbom ? "✅ Yes" : "❌ No"}
+          </p>
+          <p>
+            <strong>Has Attestations:</strong>{" "}
+            {currentVersionAttestations ? "✅ Yes" : "❌ No"}
+          </p>
+          <p>
+            <strong>Security Advisories:</strong> {securityAdvisories || 0}
+          </p>
+          <p>
+            <strong>SBOM Components:</strong>{" "}
+            {currentVersionSbom?.components?.length ||
+              currentVersionSbom?.summary?.totalComponents ||
+              0}
+          </p>
+          <p>
+            <strong>Vulnerabilities:</strong>{" "}
+            {currentVersionSbom?.summary?.vulnerabilities?.length || 0}
+          </p>
         </CardBody>
       </Card>
 
@@ -83,7 +102,11 @@ export const SecurityTabStep1: React.FC = () => {
       {currentVersionAttestations && (
         <Card style={{ marginTop: "1.5rem" }}>
           <CardBody>
-            <Flex direction={{ default: "row" }} justifyContent={{ default: "justifyContentSpaceBetween" }} alignItems={{ default: "alignItemsCenter" }}>
+            <Flex
+              direction={{ default: "row" }}
+              justifyContent={{ default: "justifyContentSpaceBetween" }}
+              alignItems={{ default: "alignItemsCenter" }}
+            >
               <FlexItem>
                 <Title headingLevel="h3" size="lg">
                   Attestation Details
@@ -93,10 +116,14 @@ export const SecurityTabStep1: React.FC = () => {
                 <Button
                   variant="plain"
                   aria-expanded={expandedSections.attestations}
-                  onClick={() => toggleSection('attestations')}
+                  onClick={() => toggleSection("attestations")}
                   aria-label="Toggle attestation details"
                 >
-                  {expandedSections.attestations ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                  {expandedSections.attestations ? (
+                    <ChevronDownIcon />
+                  ) : (
+                    <ChevronRightIcon />
+                  )}
                 </Button>
               </FlexItem>
             </Flex>
@@ -107,34 +134,58 @@ export const SecurityTabStep1: React.FC = () => {
                   <DescriptionListGroup>
                     <DescriptionListTerm>Attestation Type</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionAttestations.attestationType || 'Provenance Attestation'}
+                      {currentVersionAttestations.attestationType ||
+                        "Provenance Attestation"}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Verification Status</DescriptionListTerm>
+                    <DescriptionListTerm>
+                      Verification Status
+                    </DescriptionListTerm>
                     <DescriptionListDescription>
-                      <AttestationStatusBadge status={currentVersionAttestations.verificationStatus} />
+                      <AttestationStatusBadge
+                        status={currentVersionAttestations.verificationStatus}
+                      />
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Platform</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionAttestations.buildPlatform || 'Red Hat Konflux CI/CD Platform'}
+                      {currentVersionAttestations.buildPlatform ||
+                        "Red Hat Konflux CI/CD Platform"}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Certificate</DescriptionListTerm>
                     <DescriptionListDescription>
-                      <Button variant="link" isInline component="a" href="#" target="_blank">
-                        View Certificate <ExternalLinkAltIcon style={{ marginLeft: "0.25rem" }} />
+                      <Button
+                        variant="link"
+                        isInline
+                        component="a"
+                        href="#"
+                        target="_blank"
+                      >
+                        View Certificate{" "}
+                        <ExternalLinkAltIcon
+                          style={{ marginLeft: "0.25rem" }}
+                        />
                       </Button>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Signature</DescriptionListTerm>
                     <DescriptionListDescription>
-                      <Button variant="link" isInline component="a" href="#" target="_blank">
-                        View Signature <ExternalLinkAltIcon style={{ marginLeft: "0.25rem" }} />
+                      <Button
+                        variant="link"
+                        isInline
+                        component="a"
+                        href="#"
+                        target="_blank"
+                      >
+                        View Signature{" "}
+                        <ExternalLinkAltIcon
+                          style={{ marginLeft: "0.25rem" }}
+                        />
                       </Button>
                     </DescriptionListDescription>
                   </DescriptionListGroup>

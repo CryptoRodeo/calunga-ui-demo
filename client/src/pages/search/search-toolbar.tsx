@@ -24,14 +24,17 @@ import "./search-toolbar.css";
 
 interface SearchToolbarProps {
   searchQuery: string;
-  onSearchChange: (_event: React.FormEvent<HTMLInputElement>, value: string) => void;
+  onSearchChange: (
+    _event: React.FormEvent<HTMLInputElement>,
+    value: string,
+  ) => void;
   onSearchClear: () => void;
 }
 
-export const SearchToolbar: React.FC<SearchToolbarProps> = ({ 
-  searchQuery, 
-  onSearchChange, 
-  onSearchClear 
+export const SearchToolbar: React.FC<SearchToolbarProps> = ({
+  searchQuery,
+  onSearchChange,
+  onSearchClear,
 }) => {
   const {
     sortBy,
@@ -48,7 +51,8 @@ export const SearchToolbar: React.FC<SearchToolbarProps> = ({
   } = useContext(SearchContext);
 
   const [isSortOpen, setIsSortOpen] = React.useState(false);
-  const [isClassificationFilterOpen, setIsClassificationFilterOpen] = React.useState(false);
+  const [isClassificationFilterOpen, setIsClassificationFilterOpen] =
+    React.useState(false);
   const [isLicenseFilterOpen, setIsLicenseFilterOpen] = React.useState(false);
 
   const onSortSelect = (
@@ -96,7 +100,6 @@ export const SearchToolbar: React.FC<SearchToolbarProps> = ({
 
   const currentSortLabel =
     sortOptions.find((opt) => opt.value === sortBy)?.label || "Relevance";
-
 
   // Filter handlers
   const onFilterSelect = (
@@ -148,7 +151,7 @@ export const SearchToolbar: React.FC<SearchToolbarProps> = ({
             style={{ width: "100%" }}
           />
         </ToolbarItem>
-        
+
         {/* Classification Filter */}
         <ToolbarItem>
           <ToolbarFilter
@@ -159,42 +162,46 @@ export const SearchToolbar: React.FC<SearchToolbarProps> = ({
             deleteLabelGroup={() => onDeleteFilterGroup("classification")}
             categoryName="Classification"
           >
-              <Select
-                role="menu"
-                isOpen={isClassificationFilterOpen}
-                selected={filters.classification}
-                onSelect={(event, value) =>
-                  onFilterSelect("classification", event, value)
-                }
-                onOpenChange={(isOpen) => setIsClassificationFilterOpen(isOpen)}
-                toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
-                  <MenuToggle
-                    ref={toggleRef}
-                    onClick={() => setIsClassificationFilterOpen(!isClassificationFilterOpen)}
-                    isExpanded={isClassificationFilterOpen}
-                    style={{ minWidth: "150px" }}
+            <Select
+              role="menu"
+              isOpen={isClassificationFilterOpen}
+              selected={filters.classification}
+              onSelect={(event, value) =>
+                onFilterSelect("classification", event, value)
+              }
+              onOpenChange={(isOpen) => setIsClassificationFilterOpen(isOpen)}
+              toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                <MenuToggle
+                  ref={toggleRef}
+                  onClick={() =>
+                    setIsClassificationFilterOpen(!isClassificationFilterOpen)
+                  }
+                  isExpanded={isClassificationFilterOpen}
+                  style={{ minWidth: "150px" }}
+                >
+                  Classification
+                  {filters.classification.length > 0 && (
+                    <Badge isRead style={{ marginLeft: "8px" }}>
+                      {filters.classification.length}
+                    </Badge>
+                  )}
+                </MenuToggle>
+              )}
+            >
+              <SelectList style={{ maxHeight: "230px", overflowY: "auto" }}>
+                {classificationOptions.map((option) => (
+                  <SelectOption
+                    key={option.value}
+                    value={option.value}
+                    hasCheckbox
+                    isSelected={filters.classification.includes(option.value)}
                   >
-                    Classification
-                    {filters.classification.length > 0 && (
-                      <Badge isRead style={{ marginLeft: "8px" }}>{filters.classification.length}</Badge>
-                    )}
-                  </MenuToggle>
-                )}
-              >
-                <SelectList style={{ maxHeight: "230px", overflowY: "auto" }}>
-                  {classificationOptions.map((option) => (
-                    <SelectOption
-                      key={option.value}
-                      value={option.value}
-                      hasCheckbox
-                      isSelected={filters.classification.includes(option.value)}
-                    >
-                      {option.label}
-                    </SelectOption>
-                  ))}
-                </SelectList>
-              </Select>
-            </ToolbarFilter>
+                    {option.label}
+                  </SelectOption>
+                ))}
+              </SelectList>
+            </Select>
+          </ToolbarFilter>
         </ToolbarItem>
 
         {/* License Filter */}
@@ -207,42 +214,44 @@ export const SearchToolbar: React.FC<SearchToolbarProps> = ({
             deleteLabelGroup={() => onDeleteFilterGroup("license")}
             categoryName="License"
           >
-              <Select
-                role="menu"
-                isOpen={isLicenseFilterOpen}
-                selected={filters.license}
-                onSelect={(event, value) =>
-                  onFilterSelect("license", event, value)
-                }
-                onOpenChange={(isOpen) => setIsLicenseFilterOpen(isOpen)}
-                toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
-                  <MenuToggle
-                    ref={toggleRef}
-                    onClick={() => setIsLicenseFilterOpen(!isLicenseFilterOpen)}
-                    isExpanded={isLicenseFilterOpen}
-                    style={{ minWidth: "135px" }}
+            <Select
+              role="menu"
+              isOpen={isLicenseFilterOpen}
+              selected={filters.license}
+              onSelect={(event, value) =>
+                onFilterSelect("license", event, value)
+              }
+              onOpenChange={(isOpen) => setIsLicenseFilterOpen(isOpen)}
+              toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                <MenuToggle
+                  ref={toggleRef}
+                  onClick={() => setIsLicenseFilterOpen(!isLicenseFilterOpen)}
+                  isExpanded={isLicenseFilterOpen}
+                  style={{ minWidth: "135px" }}
+                >
+                  License
+                  {filters.license.length > 0 && (
+                    <Badge isRead style={{ marginLeft: "8px" }}>
+                      {filters.license.length}
+                    </Badge>
+                  )}
+                </MenuToggle>
+              )}
+            >
+              <SelectList style={{ maxHeight: "230px", overflowY: "auto" }}>
+                {licenseOptions.map((option) => (
+                  <SelectOption
+                    key={option.value}
+                    value={option.value}
+                    hasCheckbox
+                    isSelected={filters.license.includes(option.value)}
                   >
-                    License
-                    {filters.license.length > 0 && (
-                      <Badge isRead style={{ marginLeft: "8px" }}>{filters.license.length}</Badge>
-                    )}
-                  </MenuToggle>
-                )}
-              >
-                <SelectList style={{ maxHeight: "230px", overflowY: "auto" }}>
-                  {licenseOptions.map((option) => (
-                    <SelectOption
-                      key={option.value}
-                      value={option.value}
-                      hasCheckbox
-                      isSelected={filters.license.includes(option.value)}
-                    >
-                      {option.label}
-                    </SelectOption>
-                  ))}
-                </SelectList>
-              </Select>
-            </ToolbarFilter>
+                    {option.label}
+                  </SelectOption>
+                ))}
+              </SelectList>
+            </Select>
+          </ToolbarFilter>
         </ToolbarItem>
 
         <ToolbarItem variant="separator" />
@@ -279,7 +288,6 @@ export const SearchToolbar: React.FC<SearchToolbarProps> = ({
             </FlexItem>
           </Flex>
         </ToolbarItem>
-
 
         <ToolbarItem variant="pagination" align={{ default: "alignEnd" }}>
           <Pagination

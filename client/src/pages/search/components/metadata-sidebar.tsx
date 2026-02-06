@@ -45,9 +45,14 @@ export const MetadataSidebar: React.FC<IMetadataSidebarProps> = ({
       <Card>
         <CardBody>
           <Title headingLevel="h4" size="md" style={{ marginBottom: "1rem" }}>
-            <Flex alignItems={{ default: "alignItemsCenter" }} spaceItems={{ default: "spaceItemsSm" }}>
+            <Flex
+              alignItems={{ default: "alignItemsCenter" }}
+              spaceItems={{ default: "spaceItemsSm" }}
+            >
               <FlexItem>
-                <InfoCircleIcon style={{ color: "var(--pf-v6-global--info-color--100)" }} />
+                <InfoCircleIcon
+                  style={{ color: "var(--pf-v6-global--info-color--100)" }}
+                />
               </FlexItem>
               <FlexItem>Package Details</FlexItem>
             </Flex>
@@ -84,8 +89,8 @@ export const MetadataSidebar: React.FC<IMetadataSidebarProps> = ({
       {(packageData.currentVersionAttestations ||
         packageData.currentVersionSbom ||
         packageData.slsaLevel) && (
-        <TrustSidebarCard 
-          packageData={packageData} 
+        <TrustSidebarCard
+          packageData={packageData}
           onNavigateToSecurity={onNavigateToSecurity}
           onNavigateToAttestations={onNavigateToAttestations}
           onNavigateToSbom={onNavigateToSbom}
@@ -94,7 +99,6 @@ export const MetadataSidebar: React.FC<IMetadataSidebarProps> = ({
       )}
 
       <ClassifiersCard packageData={packageData} />
-
     </div>
   );
 };

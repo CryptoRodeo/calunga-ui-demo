@@ -9,7 +9,15 @@
     "author": "The Pandas Development Team",
     "license": "BSD-3-Clause",
     "fullDescription": "pandas is a Python package that provides fast, flexible, and expressive data structures designed to make working with \"relational\" or \"labeled\" data both easy and intuitive. It aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python.",
-    "tags": ["data-analysis", "data-science", "statistics", "time-series", "dataframe", "scientific-computing", "numpy"],
+    "tags": [
+      "data-analysis",
+      "data-science",
+      "statistics",
+      "time-series",
+      "dataframe",
+      "scientific-computing",
+      "numpy"
+    ],
     "wheelName": "pandas-3.0.0-cp311-cp311-win_amd64.whl",
     "pythonVersion": ">=3.11",
     "abi": "cp311",
@@ -67,7 +75,7 @@
           },
           {
             "id": "GHSA-2024-001",
-            "severity": "low", 
+            "severity": "low",
             "cvss": 3.1,
             "component": "pytz",
             "version": "2023.3",
@@ -91,7 +99,7 @@
           }
         },
         {
-          "type": "library", 
+          "type": "library",
           "bomRef": "numpy-2.1.5",
           "name": "numpy",
           "version": "2.1.5",
@@ -105,7 +113,7 @@
           "type": "library",
           "bomRef": "python-dateutil-2.8.2",
           "name": "python-dateutil",
-          "version": "2.8.2", 
+          "version": "2.8.2",
           "description": "Extensions to the standard Python datetime module",
           "licenses": ["Apache-2.0", "BSD-3-Clause"],
           "supplier": {
@@ -288,7 +296,15 @@
     "author": "Amazon Web Services",
     "license": "Apache-2.0",
     "fullDescription": "Boto3 is the Amazon Web Services (AWS) Software Development Kit (SDK) for Python, which allows Python developers to write software that makes use of services like Amazon S3 and Amazon EC2. You can find the latest, most up to date, documentation at our doc site, including a list of services that are supported.",
-    "tags": ["aws", "cloud", "api", "sdk", "amazon", "cloud-services", "devops"],
+    "tags": [
+      "aws",
+      "cloud",
+      "api",
+      "sdk",
+      "amazon",
+      "cloud-services",
+      "devops"
+    ],
     "wheelName": "boto3-1.42.35-py3-none-any.whl",
     "pythonVersion": ">=3.9",
     "abi": "none",
@@ -302,7 +318,7 @@
       "usageExample": "import boto3\ns3 = boto3.resource('s3')\nfor bucket in s3.buckets.all():\n    print(bucket.name)",
       "features": [
         "Comprehensive AWS service coverage",
-        "Resource and client-level interfaces", 
+        "Resource and client-level interfaces",
         "Automatic retry and error handling",
         "Waiters for long-running operations",
         "Session management and credentials",
@@ -313,7 +329,7 @@
       "additionalInfo": "After installing boto3, you'll need to set up credentials in ~/.aws/credentials and configure a default region in ~/.aws/config.",
       "advancedUsage": [
         {
-          "title": "Using Sessions", 
+          "title": "Using Sessions",
           "description": "Create a session to manage configuration and credentials:",
           "example": "import boto3\n\nsession = boto3.Session(\n    aws_access_key_id='YOUR_KEY',\n    aws_secret_access_key='YOUR_SECRET',\n    region_name='us-east-1'\n)\n\ns3 = session.resource('s3')"
         }
@@ -321,7 +337,7 @@
     },
     "currentVersionSbom": {
       "format": "CycloneDX",
-      "version": "1.4", 
+      "version": "1.4",
       "url": "https://calunga.security.redhat.com/sbom/boto3/1.42.35.json",
       "timestamp": "2024-01-18T14:45:00Z",
       "serialNumber": "CycloneDXRef-DOCUMENT",
@@ -412,7 +428,15 @@
     "author": "The Pandas Development Team",
     "license": "BSD-3-Clause",
     "fullDescription": "pandas is a Python package that provides fast, flexible, and expressive data structures designed to make working with \"relational\" or \"labeled\" data both easy and intuitive. It aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python.",
-    "tags": ["data-analysis", "data-science", "statistics", "time-series", "dataframe", "scientific-computing", "numpy"],
+    "tags": [
+      "data-analysis",
+      "data-science",
+      "statistics",
+      "time-series",
+      "dataframe",
+      "scientific-computing",
+      "numpy"
+    ],
     "wheelName": "pandas-3.0.0rc2-cp311-cp311-win_amd64.whl",
     "pythonVersion": ">=3.11",
     "abi": "cp311",
@@ -492,7 +516,15 @@
     "author": "The Pandas Development Team",
     "license": "BSD-3-Clause",
     "fullDescription": "pandas is a Python package that provides fast, flexible, and expressive data structures designed to make working with \"relational\" or \"labeled\" data both easy and intuitive. It aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python.",
-    "tags": ["data-analysis", "data-science", "statistics", "time-series", "dataframe", "scientific-computing", "numpy"],
+    "tags": [
+      "data-analysis",
+      "data-science",
+      "statistics",
+      "time-series",
+      "dataframe",
+      "scientific-computing",
+      "numpy"
+    ],
     "wheelName": "pandas-3.0.0rc1-cp311-cp311-win_amd64.whl",
     "pythonVersion": ">=3.11",
     "abi": "cp311",
@@ -572,7 +604,15 @@
     "author": "The Pandas Development Team",
     "license": "BSD-3-Clause",
     "fullDescription": "pandas is a Python package that provides fast, flexible, and expressive data structures designed to make working with \"relational\" or \"labeled\" data both easy and intuitive. It aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python.",
-    "tags": ["data-analysis", "data-science", "statistics", "time-series", "dataframe", "scientific-computing", "numpy"],
+    "tags": [
+      "data-analysis",
+      "data-science",
+      "statistics",
+      "time-series",
+      "dataframe",
+      "scientific-computing",
+      "numpy"
+    ],
     "wheelName": "pandas-3.0.0rc0-cp311-cp311-win_amd64.whl",
     "pythonVersion": ">=3.11",
     "abi": "cp311",
@@ -644,7 +684,7 @@
   },
   {
     "id": "pandas-2.9.0beta1",
-    "name": "pandas", 
+    "name": "pandas",
     "version": "2.9.0beta1",
     "description": "Powerful data structures for data analysis, time series, and statistics",
     "downloads": 892341,
@@ -652,7 +692,15 @@
     "author": "The Pandas Development Team",
     "license": "BSD-3-Clause",
     "fullDescription": "pandas is a Python package that provides fast, flexible, and expressive data structures designed to make working with \"relational\" or \"labeled\" data both easy and intuitive. It aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python.",
-    "tags": ["data-analysis", "data-science", "statistics", "time-series", "dataframe", "scientific-computing", "numpy"],
+    "tags": [
+      "data-analysis",
+      "data-science",
+      "statistics",
+      "time-series",
+      "dataframe",
+      "scientific-computing",
+      "numpy"
+    ],
     "wheelName": "pandas-2.9.0beta1-cp311-cp311-win_amd64.whl",
     "pythonVersion": ">=3.9",
     "abi": "cp311",
@@ -708,7 +756,7 @@
         },
         {
           "bomRef": "numpy-1.24.3",
-          "name": "numpy", 
+          "name": "numpy",
           "version": "1.24.3",
           "type": "library",
           "description": "Fundamental package for scientific computing with Python",
@@ -734,14 +782,22 @@
   {
     "id": "pandas-2.3.0alpha1",
     "name": "pandas",
-    "version": "2.3.0alpha1", 
+    "version": "2.3.0alpha1",
     "description": "Powerful data structures for data analysis, time series, and statistics",
     "downloads": 456789,
     "updated": "1 week ago",
     "author": "The Pandas Development Team",
     "license": "BSD-3-Clause",
     "fullDescription": "pandas is a Python package that provides fast, flexible, and expressive data structures designed to make working with \"relational\" or \"labeled\" data both easy and intuitive. It aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python.",
-    "tags": ["data-analysis", "data-science", "statistics", "time-series", "dataframe", "scientific-computing", "numpy"],
+    "tags": [
+      "data-analysis",
+      "data-science",
+      "statistics",
+      "time-series",
+      "dataframe",
+      "scientific-computing",
+      "numpy"
+    ],
     "wheelName": "pandas-2.3.0alpha1-cp311-cp311-win_amd64.whl",
     "pythonVersion": ">=3.9",
     "abi": "cp311",
@@ -764,7 +820,7 @@
     "currentVersionSbom": {
       "format": "CycloneDX",
       "version": "1.4",
-      "serialNumber": "CycloneDXRef-DOCUMENT", 
+      "serialNumber": "CycloneDXRef-DOCUMENT",
       "toolName": "konflux-sbom-generator",
       "toolVersion": "v0.2.4",
       "generatedAt": "2026-01-15T09:15:00Z",
@@ -798,7 +854,7 @@
         {
           "bomRef": "numpy-1.24.1",
           "name": "numpy",
-          "version": "1.24.1", 
+          "version": "1.24.1",
           "type": "library",
           "description": "Fundamental package for scientific computing with Python",
           "licenses": ["BSD-3-Clause"],
@@ -810,7 +866,7 @@
       {
         "type": "provenance",
         "verifier": "Red Hat",
-        "status": "verified", 
+        "status": "verified",
         "timestamp": "2024-01-15T09:15:00Z",
         "signatureUrl": "https://calunga.security.redhat.com/attestations/pandas/2.3.0alpha1/provenance.json",
         "buildPlatform": "Red Hat Konflux CI/CD Platform",
@@ -830,7 +886,15 @@
     "author": "Google Inc.",
     "license": "Apache-2.0",
     "fullDescription": "TensorFlow is an end-to-end open source platform for machine learning. It has a comprehensive, flexible ecosystem of tools, libraries, and community resources that lets researchers push the state-of-the-art in ML and developers easily build and deploy ML-powered applications.",
-    "tags": ["machine-learning", "deep-learning", "neural-networks", "ai", "tensorflow", "gpu-computing", "modeling"],
+    "tags": [
+      "machine-learning",
+      "deep-learning",
+      "neural-networks",
+      "ai",
+      "tensorflow",
+      "gpu-computing",
+      "modeling"
+    ],
     "wheelName": "tensorflow-2.16.1-cp311-cp311-linux_x86_64.whl",
     "pythonVersion": ">=3.9",
     "abi": "cp311",
@@ -920,7 +984,15 @@
     "author": "PyTorch Team",
     "license": "BSD-3-Clause",
     "fullDescription": "PyTorch is a Python package that provides tensor computation with strong GPU acceleration and deep neural networks built on a tape-based autograd system.",
-    "tags": ["machine-learning", "deep-learning", "pytorch", "tensor", "gpu", "neural-networks", "autograd"],
+    "tags": [
+      "machine-learning",
+      "deep-learning",
+      "pytorch",
+      "tensor",
+      "gpu",
+      "neural-networks",
+      "autograd"
+    ],
     "wheelName": "torch-2.2.0-cp311-cp311-linux_x86_64.whl",
     "pythonVersion": ">=3.8",
     "abi": "cp311",
@@ -1001,7 +1073,16 @@
     "author": "Hugging Face Inc.",
     "license": "Apache-2.0",
     "fullDescription": "Transformers provides thousands of pretrained models to perform tasks on different modalities such as text, vision, and audio. These models can be applied on text for tasks like text classification, information extraction, question answering, summarization, translation, text generation, and more.",
-    "tags": ["nlp", "transformers", "bert", "gpt", "language-models", "huggingface", "pytorch", "tensorflow"],
+    "tags": [
+      "nlp",
+      "transformers",
+      "bert",
+      "gpt",
+      "language-models",
+      "huggingface",
+      "pytorch",
+      "tensorflow"
+    ],
     "wheelName": "transformers-4.37.2-py3-none-any.whl",
     "pythonVersion": ">=3.8",
     "abi": "none",
@@ -1100,7 +1181,14 @@
     "author": "NumPy Developers",
     "license": "BSD-3-Clause",
     "fullDescription": "NumPy is the fundamental package for scientific computing with Python. It contains among other things: a powerful N-dimensional array object, sophisticated (broadcasting) functions, tools for integrating C/C++ and Fortran code, useful linear algebra, Fourier transform, and random number capabilities.",
-    "tags": ["scientific-computing", "mathematics", "arrays", "linear-algebra", "data-science", "numpy"],
+    "tags": [
+      "scientific-computing",
+      "mathematics",
+      "arrays",
+      "linear-algebra",
+      "data-science",
+      "numpy"
+    ],
     "wheelName": "numpy-2.1.5-cp312-cp312-linux_x86_64.whl",
     "pythonVersion": ">=3.10",
     "abi": "cp312",
@@ -1115,7 +1203,7 @@
       "features": [
         "N-dimensional array object (ndarray)",
         "Broadcasting functions",
-        "Linear algebra operations", 
+        "Linear algebra operations",
         "Fourier transforms",
         "Random number generation",
         "Tools for integrating with C/C++/Fortran",
@@ -1132,7 +1220,7 @@
       ]
     },
     "currentVersionSbom": {
-      "format": "CycloneDX", 
+      "format": "CycloneDX",
       "version": "1.4",
       "url": "https://calunga.security.redhat.com/sbom/numpy/2.1.5.json",
       "timestamp": "2024-01-19T09:15:00Z",
@@ -1197,7 +1285,7 @@
     "currentVersionAttestations": [
       {
         "type": "provenance",
-        "verifier": "Red Hat", 
+        "verifier": "Red Hat",
         "status": "verified",
         "timestamp": "2024-01-19T09:15:00Z",
         "signatureUrl": "https://calunga.security.redhat.com/attestations/numpy/2.1.5/provenance.json",
@@ -1218,14 +1306,22 @@
   {
     "id": "requests-2.32.5",
     "name": "requests",
-    "version": "2.32.5", 
+    "version": "2.32.5",
     "description": "Python HTTP for Humans. A simple, yet elegant, HTTP library.",
     "downloads": 885469123,
     "updated": "1 month ago",
     "author": "Kenneth Reitz",
     "license": "Apache-2.0",
     "fullDescription": "Requests is an elegant and simple HTTP library for Python, built for human beings. Requests allows you to send HTTP/1.1 requests extremely easily. There's no need to manually add query strings to your URLs, or to form-encode your PUT & POST data — but nowadays, just use the json method!",
-    "tags": ["http", "requests", "api", "web", "client", "networking", "web-development"],
+    "tags": [
+      "http",
+      "requests",
+      "api",
+      "web",
+      "client",
+      "networking",
+      "web-development"
+    ],
     "wheelName": "requests-2.32.5-py3-none-any.whl",
     "pythonVersion": ">=3.9",
     "abi": "none",
@@ -1261,7 +1357,7 @@
     "currentVersionSbom": {
       "format": "CycloneDX",
       "version": "1.4",
-      "url": "https://calunga.security.redhat.com/sbom/requests/2.32.5.json", 
+      "url": "https://calunga.security.redhat.com/sbom/requests/2.32.5.json",
       "timestamp": "2024-01-17T11:20:00Z",
       "summary": {
         "totalComponents": 18,
@@ -1340,7 +1436,7 @@
     },
     "currentVersionAttestations": [
       {
-        "type": "provenance", 
+        "type": "provenance",
         "verifier": "Red Hat",
         "status": "verified",
         "timestamp": "2024-01-17T11:20:00Z",
@@ -1367,9 +1463,16 @@
     "downloads": 523789234,
     "updated": "2 weeks ago",
     "author": "Pallets",
-    "license": "BSD-3-Clause", 
+    "license": "BSD-3-Clause",
     "fullDescription": "Flask is a lightweight WSGI web application framework. It is designed to make getting started quick and easy, with the ability to scale up to complex applications. It began as a simple wrapper around Werkzeug and Jinja and has become one of the most popular Python web application frameworks.",
-    "tags": ["web-framework", "wsgi", "web-development", "microframework", "flask", "web"],
+    "tags": [
+      "web-framework",
+      "wsgi",
+      "web-development",
+      "microframework",
+      "flask",
+      "web"
+    ],
     "wheelName": "flask-3.1.0-py3-none-any.whl",
     "pythonVersion": ">=3.8",
     "abi": "none",
@@ -1383,7 +1486,7 @@
       "usageExample": "from flask import Flask\n\napp = Flask(__name__)\n\n@app.route('/')\ndef hello_world():\n    return 'Hello, World!'\n\nif __name__ == '__main__':\n    app.run(debug=True)",
       "features": [
         "Built-in development server and debugger",
-        "RESTful request dispatching", 
+        "RESTful request dispatching",
         "Jinja2 templating",
         "Secure cookie support (client side sessions)",
         "100% WSGI 1.0 compliant",
@@ -1413,7 +1516,7 @@
             "id": "GHSA-2024-003",
             "severity": "critical",
             "cvss": 8.1,
-            "component": "werkzeug", 
+            "component": "werkzeug",
             "version": "3.0.3",
             "description": "Potential path traversal in static file serving",
             "fixedVersion": "3.0.4",
@@ -1484,7 +1587,7 @@
       {
         "type": "provenance",
         "verifier": "Red Hat",
-        "status": "verified", 
+        "status": "verified",
         "timestamp": "2024-01-16T13:45:00Z",
         "signatureUrl": "https://calunga.security.redhat.com/attestations/flask/3.1.0/provenance.json",
         "buildPlatform": "Red Hat Konflux CI/CD Platform",
@@ -1511,10 +1614,18 @@
     "author": "Django Software Foundation",
     "license": "BSD-3-Clause",
     "fullDescription": "Django is a high-level Python web framework that encourages rapid development and clean, pragmatic design. Built by experienced developers, it takes care of much of the hassle of web development, so you can focus on writing your app without needing to reinvent the wheel. It's free and open source.",
-    "tags": ["web-framework", "orm", "admin", "templating", "web-development", "mvc", "django"],
+    "tags": [
+      "web-framework",
+      "orm",
+      "admin",
+      "templating",
+      "web-development",
+      "mvc",
+      "django"
+    ],
     "wheelName": "django-5.1.4-py3-none-any.whl",
     "pythonVersion": ">=3.10",
-    "abi": "none", 
+    "abi": "none",
     "architecture": "any",
     "index": "github",
     "trustScore": 98,
@@ -1527,7 +1638,7 @@
         "Object-relational mapper (ORM)",
         "Automatic admin interface",
         "Elegant URL design",
-        "Template system", 
+        "Template system",
         "Cache framework",
         "Internationalization support",
         "Security features",
@@ -1544,7 +1655,7 @@
     },
     "currentVersionSbom": {
       "format": "CycloneDX",
-      "version": "1.4", 
+      "version": "1.4",
       "url": "https://calunga.security.redhat.com/sbom/django/5.1.4.json",
       "timestamp": "2024-01-15T16:30:00Z",
       "summary": {
@@ -1615,7 +1726,7 @@
         "type": "provenance",
         "verifier": "Red Hat",
         "status": "verified",
-        "timestamp": "2024-01-15T16:30:00Z", 
+        "timestamp": "2024-01-15T16:30:00Z",
         "signatureUrl": "https://calunga.security.redhat.com/attestations/django/5.1.4/provenance.json",
         "buildPlatform": "GitHub Actions (ubuntu-22.04)",
         "subject": "django-5.1.4-py3-none-any.whl",
@@ -1641,7 +1752,15 @@
     "author": "The scikit-learn developers",
     "license": "BSD-3-Clause",
     "fullDescription": "Scikit-learn is a Python module for machine learning built on top of SciPy and is distributed under the 3-Clause BSD license. The project was started in 2007 by David Cournapeau as a Google Summer of Code project, and since then many volunteers have contributed. It is currently maintained by a team of volunteers.",
-    "tags": ["machine-learning", "data-mining", "data-science", "classification", "regression", "clustering", "scikit-learn"],
+    "tags": [
+      "machine-learning",
+      "data-mining",
+      "data-science",
+      "classification",
+      "regression",
+      "clustering",
+      "scikit-learn"
+    ],
     "wheelName": "scikit_learn-1.6.0-cp312-cp312-linux_x86_64.whl",
     "pythonVersion": ">=3.9",
     "abi": "cp312",
@@ -1650,11 +1769,11 @@
     "trustScore": 99,
     "slsaLevel": 2,
     "pypiData": {
-      "usageTitle": "Machine Learning Made Simple", 
+      "usageTitle": "Machine Learning Made Simple",
       "alternativeInstallation": "git clone https://github.com/scikit-learn/scikit-learn.git\ncd scikit-learn\npip install -e .",
       "usageExample": "from sklearn import datasets, svm\nfrom sklearn.model_selection import train_test_split\n\n# Load dataset\niris = datasets.load_iris()\nX_train, X_test, y_train, y_test = train_test_split(\n    iris.data, iris.target, test_size=0.3)\n\n# Train classifier\nclf = svm.SVC(gamma='scale')\nclf.fit(X_train, y_train)\n\n# Make predictions\nprint(clf.score(X_test, y_test))",
       "features": [
-        "Classification algorithms", 
+        "Classification algorithms",
         "Regression algorithms",
         "Clustering algorithms",
         "Dimensionality reduction",
@@ -1679,7 +1798,7 @@
       "timestamp": "2024-01-14T08:15:00Z",
       "summary": {
         "totalComponents": 35,
-        "hasVulnerabilities": true, 
+        "hasVulnerabilities": true,
         "vulnerabilities": [
           {
             "id": "CVE-2024-45230",
@@ -1689,7 +1808,7 @@
             "version": "1.11.4",
             "description": "Buffer overflow in sparse matrix operations",
             "fixedVersion": "1.12.0",
-            "publishedDate": "2024-01-03", 
+            "publishedDate": "2024-01-03",
             "references": ["https://nvd.nist.gov/vuln/detail/CVE-2024-45230"]
           }
         ]
@@ -1775,7 +1894,7 @@
   },
   {
     "id": "matplotlib-3.9.3",
-    "name": "matplotlib", 
+    "name": "matplotlib",
     "version": "3.9.3",
     "description": "Python plotting package",
     "downloads": 234567890,
@@ -1783,10 +1902,17 @@
     "author": "The Matplotlib development team",
     "license": "PSF",
     "fullDescription": "Matplotlib is a comprehensive library for creating static, animated, and interactive visualizations in Python. Matplotlib makes easy things easy and hard things possible. It provides a MATLAB-like plotting framework that is object-oriented and Pythonic.",
-    "tags": ["plotting", "visualization", "graphics", "charts", "data-visualization", "matplotlib"],
+    "tags": [
+      "plotting",
+      "visualization",
+      "graphics",
+      "charts",
+      "data-visualization",
+      "matplotlib"
+    ],
     "wheelName": "matplotlib-3.9.3-cp312-cp312-linux_x86_64.whl",
     "pythonVersion": ">=3.9",
-    "abi": "cp312", 
+    "abi": "cp312",
     "architecture": "linux_x86_64",
     "index": "github",
     "trustScore": 97,
@@ -1797,12 +1923,12 @@
       "usageExample": "import matplotlib.pyplot as plt\nimport numpy as np\n\n# Create data\nx = np.linspace(0, 10, 100)\ny = np.sin(x)\n\n# Create plot\nplt.figure(figsize=(10, 6))\nplt.plot(x, y, 'b-', linewidth=2)\nplt.xlabel('X values')\nplt.ylabel('Y values')\nplt.title('Sine Wave')\nplt.grid(True)\nplt.show()",
       "features": [
         "2D and 3D plotting",
-        "Interactive plots", 
+        "Interactive plots",
         "Publication-quality figures",
         "Wide variety of plot types",
         "Customizable styling",
         "Animation support",
-        "Multiple output formats", 
+        "Multiple output formats",
         "GUI toolkit integration"
       ],
       "additionalInfo": "Matplotlib is the most popular Python plotting library and is used extensively in scientific computing, data analysis, and machine learning workflows.",
@@ -1885,7 +2011,7 @@
     "currentVersionAttestations": [
       {
         "type": "provenance",
-        "verifier": "Red Hat", 
+        "verifier": "Red Hat",
         "status": "verified",
         "timestamp": "2024-01-13T12:00:00Z",
         "signatureUrl": "https://calunga.security.redhat.com/attestations/matplotlib/3.9.3/provenance.json",
@@ -1913,9 +2039,16 @@
     "author": "Jeffrey A. Clark (Alex) and contributors",
     "license": "HPND",
     "fullDescription": "The Python Imaging Library adds image processing capabilities to your Python interpreter. This library provides extensive file format support, an efficient internal representation, and fairly powerful image processing capabilities. The core image library is designed for fast access to data stored in a few basic pixel formats.",
-    "tags": ["imaging", "image-processing", "graphics", "photography", "pil", "pillow"],
+    "tags": [
+      "imaging",
+      "image-processing",
+      "graphics",
+      "photography",
+      "pil",
+      "pillow"
+    ],
     "wheelName": "pillow-11.1.0-cp312-cp312-linux_x86_64.whl",
-    "pythonVersion": ">=3.9", 
+    "pythonVersion": ">=3.9",
     "abi": "cp312",
     "architecture": "linux_x86_64",
     "index": "github",
@@ -1927,7 +2060,7 @@
       "usageExample": "from PIL import Image, ImageFilter\n\n# Open an image\nimg = Image.open('example.jpg')\n\n# Apply a filter\nblurred = img.filter(ImageFilter.BLUR)\n\n# Resize the image\nresized = img.resize((800, 600))\n\n# Save the result\nresized.save('output.jpg')",
       "features": [
         "Extensive file format support",
-        "Image filtering and enhancement", 
+        "Image filtering and enhancement",
         "Drawing and text rendering",
         "Color space conversions",
         "Image transformations",
@@ -1954,7 +2087,7 @@
         "hasVulnerabilities": true,
         "vulnerabilities": [
           {
-            "id": "CVE-2024-28219", 
+            "id": "CVE-2024-28219",
             "severity": "important",
             "cvss": 7.5,
             "component": "pillow",
@@ -2047,7 +2180,7 @@
   },
   {
     "id": "urllib3-2.2.3",
-    "name": "urllib3", 
+    "name": "urllib3",
     "version": "2.2.3",
     "description": "HTTP library with thread-safe connection pooling, file post, and more.",
     "downloads": 445789123,
@@ -2059,7 +2192,7 @@
     "wheelName": "urllib3-2.2.3-py3-none-any.whl",
     "pythonVersion": ">=3.8",
     "abi": "none",
-    "architecture": "any", 
+    "architecture": "any",
     "index": "github",
     "trustScore": 98,
     "slsaLevel": 3,
@@ -2071,7 +2204,7 @@
         "Thread-safe connection pooling",
         "File uploads with multipart encoding",
         "Built-in HTTPS/TLS verification",
-        "Automatic request retries", 
+        "Automatic request retries",
         "HTTP redirect handling",
         "Compression support (gzip, deflate, brotli)",
         "Proxy support (HTTP and SOCKS)",
@@ -2088,7 +2221,7 @@
     },
     "currentVersionSbom": {
       "format": "CycloneDX",
-      "version": "1.4", 
+      "version": "1.4",
       "url": "https://calunga.security.redhat.com/sbom/urllib3/2.2.3.json",
       "summary": {
         "totalComponents": 12,
@@ -2117,7 +2250,15 @@
     "author": "The Pandas Development Team",
     "license": "BSD-3-Clause",
     "fullDescription": "pandas is a Python package that provides fast, flexible, and expressive data structures designed to make working with \"relational\" or \"labeled\" data both easy and intuitive. It aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python.",
-    "tags": ["data-analysis", "data-science", "statistics", "time-series", "dataframe", "scientific-computing", "numpy"],
+    "tags": [
+      "data-analysis",
+      "data-science",
+      "statistics",
+      "time-series",
+      "dataframe",
+      "scientific-computing",
+      "numpy"
+    ],
     "wheelName": "pandas-2.2.3-cp311-cp311-win_amd64.whl",
     "pythonVersion": ">=3.10",
     "abi": "cp311",
@@ -2170,7 +2311,7 @@
           },
           {
             "id": "GHSA-2024-001",
-            "severity": "low", 
+            "severity": "low",
             "cvss": 3.1,
             "component": "pytz",
             "version": "2023.3",
@@ -2208,7 +2349,7 @@
           "type": "library",
           "bomRef": "python-dateutil-2.8.2",
           "name": "python-dateutil",
-          "version": "2.8.2", 
+          "version": "2.8.2",
           "description": "Extensions to the standard Python datetime module",
           "licenses": ["Apache-2.0", "BSD-3-Clause"],
           "supplier": {
@@ -2251,7 +2392,7 @@
   },
   {
     "id": "boto3-1.42.28",
-    "name": "boto3", 
+    "name": "boto3",
     "version": "1.42.28",
     "description": "The AWS SDK for Python (Boto3) provides a Python API for AWS infrastructure services. An easy to use, object-oriented API as well as low-level access to AWS services.",
     "downloads": 1338455634,
@@ -2259,7 +2400,15 @@
     "author": "Amazon Web Services",
     "license": "Apache-2.0",
     "fullDescription": "Boto3 is the Amazon Web Services (AWS) Software Development Kit (SDK) for Python, which allows Python developers to write software that makes use of services like Amazon S3 and Amazon EC2. You can find the latest, most up to date, documentation at our doc site, including a list of services that are supported.",
-    "tags": ["aws", "cloud", "api", "sdk", "amazon", "cloud-services", "devops"],
+    "tags": [
+      "aws",
+      "cloud",
+      "api",
+      "sdk",
+      "amazon",
+      "cloud-services",
+      "devops"
+    ],
     "wheelName": "boto3-1.42.28-py3-none-any.whl",
     "pythonVersion": ">=3.9",
     "abi": "none",
@@ -2273,7 +2422,7 @@
       "usageExample": "import boto3\ns3 = boto3.resource('s3')\nfor bucket in s3.buckets.all():\n    print(bucket.name)",
       "features": [
         "Comprehensive AWS service coverage",
-        "Resource and client-level interfaces", 
+        "Resource and client-level interfaces",
         "Automatic retry and error handling",
         "Waiters for long-running operations",
         "Session management and credentials",
@@ -2284,7 +2433,7 @@
       "additionalInfo": "After installing boto3, you'll need to set up credentials in ~/.aws/credentials and configure a default region in ~/.aws/config.",
       "advancedUsage": [
         {
-          "title": "Using Sessions", 
+          "title": "Using Sessions",
           "description": "Create a session to manage configuration and credentials:",
           "example": "import boto3\n\nsession = boto3.Session(\n    aws_access_key_id='YOUR_KEY',\n    aws_secret_access_key='YOUR_SECRET',\n    region_name='us-east-1'\n)\n\ns3 = session.resource('s3')"
         }
@@ -2292,7 +2441,7 @@
     },
     "currentVersionSbom": {
       "format": "CycloneDX",
-      "version": "1.4", 
+      "version": "1.4",
       "url": "https://calunga.security.redhat.com/sbom/boto3/1.42.28.json",
       "summary": {
         "totalComponents": 15,
@@ -2314,14 +2463,21 @@
   {
     "id": "numpy-2.1.4",
     "name": "numpy",
-    "version": "2.1.4", 
+    "version": "2.1.4",
     "description": "Fundamental package for array computing in Python",
     "downloads": 1689234567,
     "updated": "1 month ago",
     "author": "NumPy Developers",
     "license": "BSD-3-Clause",
     "fullDescription": "NumPy is the fundamental package for scientific computing with Python. It contains among other things: a powerful N-dimensional array object, sophisticated (broadcasting) functions, tools for integrating C/C++ and Fortran code, useful linear algebra, Fourier transform, and random number capabilities.",
-    "tags": ["scientific-computing", "mathematics", "arrays", "linear-algebra", "data-science", "numpy"],
+    "tags": [
+      "scientific-computing",
+      "mathematics",
+      "arrays",
+      "linear-algebra",
+      "data-science",
+      "numpy"
+    ],
     "wheelName": "numpy-2.1.4-cp312-cp312-linux_x86_64.whl",
     "pythonVersion": ">=3.10",
     "abi": "cp312",
@@ -2336,7 +2492,7 @@
       "features": [
         "N-dimensional array object (ndarray)",
         "Broadcasting functions",
-        "Linear algebra operations", 
+        "Linear algebra operations",
         "Fourier transforms",
         "Random number generation",
         "Tools for integrating with C/C++/Fortran",
@@ -2353,7 +2509,7 @@
       ]
     },
     "currentVersionSbom": {
-      "format": "CycloneDX", 
+      "format": "CycloneDX",
       "version": "1.4",
       "url": "https://calunga.security.redhat.com/sbom/numpy/2.1.4.json",
       "summary": {
@@ -2377,7 +2533,7 @@
     "currentVersionAttestations": [
       {
         "type": "provenance",
-        "verifier": "Red Hat", 
+        "verifier": "Red Hat",
         "status": "verified",
         "timestamp": "2024-01-18T09:15:00Z",
         "signatureUrl": "https://calunga.security.redhat.com/attestations/numpy/2.1.4/provenance.json"
@@ -2395,7 +2551,15 @@
     "author": "Kenneth Reitz",
     "license": "Apache-2.0",
     "fullDescription": "Requests is an elegant and simple HTTP library for Python, built for human beings. Requests allows you to send HTTP/1.1 requests extremely easily. There's no need to manually add query strings to your URLs, or to form-encode your PUT & POST data — but nowadays, just use the json method!",
-    "tags": ["http", "requests", "api", "web", "client", "networking", "web-development"],
+    "tags": [
+      "http",
+      "requests",
+      "api",
+      "web",
+      "client",
+      "networking",
+      "web-development"
+    ],
     "wheelName": "requests-2.31.0-py3-none-any.whl",
     "pythonVersion": ">=3.9",
     "abi": "none",
@@ -2431,7 +2595,7 @@
     "currentVersionSbom": {
       "format": "CycloneDX",
       "version": "1.4",
-      "url": "https://calunga.security.redhat.com/sbom/requests/2.31.0.json", 
+      "url": "https://calunga.security.redhat.com/sbom/requests/2.31.0.json",
       "summary": {
         "totalComponents": 17,
         "hasVulnerabilities": true,
@@ -2452,7 +2616,7 @@
     },
     "currentVersionAttestations": [
       {
-        "type": "provenance", 
+        "type": "provenance",
         "verifier": "Red Hat",
         "status": "verified",
         "timestamp": "2024-01-16T11:20:00Z",
@@ -2471,7 +2635,14 @@
     "author": "Pallets",
     "license": "BSD-3-Clause",
     "fullDescription": "Flask is a lightweight WSGI web application framework. It is designed to make getting started quick and easy, with the ability to scale up to complex applications. It began as a simple wrapper around Werkzeug and Jinja and has become one of the most popular Python web application frameworks.",
-    "tags": ["web-framework", "wsgi", "web-development", "microframework", "flask", "web"],
+    "tags": [
+      "web-framework",
+      "wsgi",
+      "web-development",
+      "microframework",
+      "flask",
+      "web"
+    ],
     "wheelName": "flask-3.0.3-py3-none-any.whl",
     "pythonVersion": ">=3.8",
     "abi": "none",
@@ -2485,7 +2656,7 @@
       "usageExample": "from flask import Flask\n\napp = Flask(__name__)\n\n@app.route('/')\ndef hello_world():\n    return 'Hello, World!'\n\nif __name__ == '__main__':\n    app.run(debug=True)",
       "features": [
         "Built-in development server and debugger",
-        "RESTful request dispatching", 
+        "RESTful request dispatching",
         "Jinja2 templating",
         "Secure cookie support (client side sessions)",
         "100% WSGI 1.0 compliant",
@@ -2514,7 +2685,7 @@
             "id": "GHSA-2024-003",
             "severity": "critical",
             "cvss": 8.1,
-            "component": "werkzeug", 
+            "component": "werkzeug",
             "version": "3.0.3",
             "description": "Potential path traversal in static file serving",
             "fixedVersion": "3.0.4",
@@ -2528,7 +2699,7 @@
       {
         "type": "provenance",
         "verifier": "Red Hat",
-        "status": "verified", 
+        "status": "verified",
         "timestamp": "2024-01-15T13:45:00Z",
         "signatureUrl": "https://calunga.security.redhat.com/attestations/flask/3.0.3/provenance.json"
       }
@@ -2536,7 +2707,7 @@
     "securityAdvisories": []
   },
   {
-    "id": "django-5.1.2", 
+    "id": "django-5.1.2",
     "name": "django",
     "version": "5.1.2",
     "description": "A high-level Python web framework that encourages rapid development and clean, pragmatic design.",
@@ -2545,7 +2716,15 @@
     "author": "Django Software Foundation",
     "license": "BSD-3-Clause",
     "fullDescription": "Django is a high-level Python web framework that encourages rapid development and clean, pragmatic design. Built by experienced developers, it takes care of much of the hassle of web development, so you can focus on writing your app without needing to reinvent the wheel. It's free and open source.",
-    "tags": ["web-framework", "orm", "admin", "templating", "web-development", "mvc", "django"],
+    "tags": [
+      "web-framework",
+      "orm",
+      "admin",
+      "templating",
+      "web-development",
+      "mvc",
+      "django"
+    ],
     "wheelName": "django-5.1.2-py3-none-any.whl",
     "pythonVersion": ">=3.10",
     "abi": "none",
@@ -2568,7 +2747,7 @@
         "type": "provenance",
         "verifier": "Red Hat",
         "status": "verified",
-        "timestamp": "2024-01-14T16:30:00Z", 
+        "timestamp": "2024-01-14T16:30:00Z",
         "signatureUrl": "https://calunga.security.redhat.com/attestations/django/5.1.2/provenance.json"
       }
     ],
@@ -2584,10 +2763,18 @@
     "author": "The scikit-learn developers",
     "license": "BSD-3-Clause",
     "fullDescription": "Scikit-learn is a Python module for machine learning built on top of SciPy and is distributed under the 3-Clause BSD license. The project was started in 2007 by David Cournapeau as a Google Summer of Code project, and since then many volunteers have contributed. It is currently maintained by a team of volunteers.",
-    "tags": ["machine-learning", "data-mining", "data-science", "classification", "regression", "clustering", "scikit-learn"],
+    "tags": [
+      "machine-learning",
+      "data-mining",
+      "data-science",
+      "classification",
+      "regression",
+      "clustering",
+      "scikit-learn"
+    ],
     "wheelName": "scikit_learn-1.5.2-cp312-cp312-linux_x86_64.whl",
     "pythonVersion": ">=3.9",
-    "abi": "cp312", 
+    "abi": "cp312",
     "architecture": "linux_x86_64",
     "index": "aipcc",
     "trustScore": 99,
@@ -2635,7 +2822,14 @@
     "author": "The Matplotlib development team",
     "license": "PSF",
     "fullDescription": "Matplotlib is a comprehensive library for creating static, animated, and interactive visualizations in Python. Matplotlib makes easy things easy and hard things possible. It provides a MATLAB-like plotting framework that is object-oriented and Pythonic.",
-    "tags": ["plotting", "visualization", "graphics", "charts", "data-visualization", "matplotlib"],
+    "tags": [
+      "plotting",
+      "visualization",
+      "graphics",
+      "charts",
+      "data-visualization",
+      "matplotlib"
+    ],
     "wheelName": "matplotlib-3.8.4-cp312-cp312-linux_x86_64.whl",
     "pythonVersion": ">=3.9",
     "abi": "cp312",
@@ -2677,7 +2871,7 @@
     "securityAdvisories": []
   },
   {
-    "id": "pillow-10.4.0", 
+    "id": "pillow-10.4.0",
     "name": "pillow",
     "version": "10.4.0",
     "description": "Python Imaging Library (Fork)",
@@ -2686,7 +2880,14 @@
     "author": "Jeffrey A. Clark (Alex) and contributors",
     "license": "HPND",
     "fullDescription": "The Python Imaging Library adds image processing capabilities to your Python interpreter. This library provides extensive file format support, an efficient internal representation, and fairly powerful image processing capabilities. The core image library is designed for fast access to data stored in a few basic pixel formats.",
-    "tags": ["imaging", "image-processing", "graphics", "photography", "pil", "pillow"],
+    "tags": [
+      "imaging",
+      "image-processing",
+      "graphics",
+      "photography",
+      "pil",
+      "pillow"
+    ],
     "wheelName": "pillow-10.4.0-cp312-cp312-linux_x86_64.whl",
     "pythonVersion": ">=3.9",
     "abi": "cp312",
@@ -2734,13 +2935,13 @@
     "description": "HTTP library with thread-safe connection pooling, file post, and more.",
     "downloads": 345789123,
     "updated": "4 months ago",
-    "author": "Andrey Petrov", 
+    "author": "Andrey Petrov",
     "license": "MIT",
     "fullDescription": "urllib3 is a powerful, user-friendly HTTP client for Python. Much of the Python ecosystem already uses urllib3 and you should too. urllib3 brings many critical features that are missing from the Python standard libraries: Thread safety, Connection pooling, Client-side TLS/SSL verification, File uploads with multipart encoding, Helpers for retrying requests and dealing with HTTP redirects, Support for gzip, deflate, and brotli encoding, Proxy support for HTTP and SOCKS.",
     "tags": ["http", "networking", "client", "ssl", "pooling", "urllib3"],
     "wheelName": "urllib3-2.1.0-py3-none-any.whl",
     "pythonVersion": ">=3.8",
-    "abi": "none", 
+    "abi": "none",
     "architecture": "any",
     "index": "github",
     "trustScore": 98,
@@ -2788,7 +2989,15 @@
     "author": "The Pandas Development Team",
     "license": "BSD-3-Clause",
     "fullDescription": "pandas is a Python package that provides fast, flexible, and expressive data structures designed to make working with \"relational\" or \"labeled\" data both easy and intuitive. It aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python.",
-    "tags": ["data-analysis", "data-science", "statistics", "time-series", "dataframe", "scientific-computing", "numpy"],
+    "tags": [
+      "data-analysis",
+      "data-science",
+      "statistics",
+      "time-series",
+      "dataframe",
+      "scientific-computing",
+      "numpy"
+    ],
     "wheelName": "pandas-2.1.4-cp311-cp311-win_amd64.whl",
     "pythonVersion": ">=3.9",
     "abi": "cp311",
@@ -2884,7 +3093,15 @@
     "author": "The Pandas Development Team",
     "license": "BSD-3-Clause",
     "fullDescription": "pandas is a Python package that provides fast, flexible, and expressive data structures designed to make working with \"relational\" or \"labeled\" data both easy and intuitive. It aims to be the fundamental high-level building block for doing practical, real-world data analysis in Python.",
-    "tags": ["data-analysis", "data-science", "statistics", "time-series", "dataframe", "scientific-computing", "numpy"],
+    "tags": [
+      "data-analysis",
+      "data-science",
+      "statistics",
+      "time-series",
+      "dataframe",
+      "scientific-computing",
+      "numpy"
+    ],
     "wheelName": "pandas-2.0.3-cp311-cp311-win_amd64.whl",
     "pythonVersion": ">=3.8",
     "abi": "cp311",
@@ -2969,7 +3186,15 @@
     "author": "Amazon Web Services",
     "license": "Apache-2.0",
     "fullDescription": "Boto3 is the Amazon Web Services (AWS) Software Development Kit (SDK) for Python, which allows Python developers to write software that makes use of services like Amazon S3 and Amazon EC2. You can find the latest, most up to date, documentation at our doc site, including a list of services that are supported.",
-    "tags": ["aws", "cloud", "api", "sdk", "amazon", "cloud-services", "devops"],
+    "tags": [
+      "aws",
+      "cloud",
+      "api",
+      "sdk",
+      "amazon",
+      "cloud-services",
+      "devops"
+    ],
     "wheelName": "boto3-1.42.20-py3-none-any.whl",
     "pythonVersion": ">=3.9",
     "abi": "none",
@@ -2983,7 +3208,7 @@
       "usageExample": "import boto3\ns3 = boto3.resource('s3')\nfor bucket in s3.buckets.all():\n    print(bucket.name)",
       "features": [
         "Comprehensive AWS service coverage",
-        "Resource and client-level interfaces", 
+        "Resource and client-level interfaces",
         "Automatic retry and error handling",
         "Waiters for long-running operations",
         "Session management and credentials",
@@ -2994,7 +3219,7 @@
       "additionalInfo": "After installing boto3, you'll need to set up credentials in ~/.aws/credentials and configure a default region in ~/.aws/config.",
       "advancedUsage": [
         {
-          "title": "Using Sessions", 
+          "title": "Using Sessions",
           "description": "Create a session to manage configuration and credentials:",
           "example": "import boto3\n\nsession = boto3.Session(\n    aws_access_key_id='YOUR_KEY',\n    aws_secret_access_key='YOUR_SECRET',\n    region_name='us-east-1'\n)\n\ns3 = session.resource('s3')"
         }
@@ -3031,7 +3256,15 @@
     "author": "Amazon Web Services",
     "license": "Apache-2.0",
     "fullDescription": "Boto3 is the Amazon Web Services (AWS) Software Development Kit (SDK) for Python, which allows Python developers to write software that makes use of services like Amazon S3 and Amazon EC2. You can find the latest, most up to date, documentation at our doc site, including a list of services that are supported.",
-    "tags": ["aws", "cloud", "api", "sdk", "amazon", "cloud-services", "devops"],
+    "tags": [
+      "aws",
+      "cloud",
+      "api",
+      "sdk",
+      "amazon",
+      "cloud-services",
+      "devops"
+    ],
     "wheelName": "boto3-1.41.30-py3-none-any.whl",
     "pythonVersion": ">=3.8",
     "abi": "none",
@@ -3045,7 +3278,7 @@
       "usageExample": "import boto3\ns3 = boto3.resource('s3')\nfor bucket in s3.buckets.all():\n    print(bucket.name)",
       "features": [
         "Comprehensive AWS service coverage",
-        "Resource and client-level interfaces", 
+        "Resource and client-level interfaces",
         "Automatic retry and error handling",
         "Waiters for long-running operations",
         "Session management and credentials",
@@ -3056,7 +3289,7 @@
       "additionalInfo": "After installing boto3, you'll need to set up credentials in ~/.aws/credentials and configure a default region in ~/.aws/config.",
       "advancedUsage": [
         {
-          "title": "Using Sessions", 
+          "title": "Using Sessions",
           "description": "Create a session to manage configuration and credentials:",
           "example": "import boto3\n\nsession = boto3.Session(\n    aws_access_key_id='YOUR_KEY',\n    aws_secret_access_key='YOUR_SECRET',\n    region_name='us-east-1'\n)\n\ns3 = session.resource('s3')"
         }
@@ -3105,7 +3338,14 @@
     "author": "NumPy Developers",
     "license": "BSD-3-Clause",
     "fullDescription": "NumPy is the fundamental package for scientific computing with Python. It contains among other things: a powerful N-dimensional array object, sophisticated (broadcasting) functions, tools for integrating C/C++ and Fortran code, useful linear algebra, Fourier transform, and random number capabilities.",
-    "tags": ["scientific-computing", "mathematics", "arrays", "linear-algebra", "data-science", "numpy"],
+    "tags": [
+      "scientific-computing",
+      "mathematics",
+      "arrays",
+      "linear-algebra",
+      "data-science",
+      "numpy"
+    ],
     "wheelName": "numpy-2.0.2-cp312-cp312-linux_x86_64.whl",
     "pythonVersion": ">=3.9",
     "abi": "cp312",
@@ -3120,7 +3360,7 @@
       "features": [
         "N-dimensional array object (ndarray)",
         "Broadcasting functions",
-        "Linear algebra operations", 
+        "Linear algebra operations",
         "Fourier transforms",
         "Random number generation",
         "Tools for integrating with C/C++/Fortran",
@@ -3179,7 +3419,14 @@
     "author": "NumPy Developers",
     "license": "BSD-3-Clause",
     "fullDescription": "NumPy is the fundamental package for scientific computing with Python. It contains among other things: a powerful N-dimensional array object, sophisticated (broadcasting) functions, tools for integrating C/C++ and Fortran code, useful linear algebra, Fourier transform, and random number capabilities.",
-    "tags": ["scientific-computing", "mathematics", "arrays", "linear-algebra", "data-science", "numpy"],
+    "tags": [
+      "scientific-computing",
+      "mathematics",
+      "arrays",
+      "linear-algebra",
+      "data-science",
+      "numpy"
+    ],
     "wheelName": "numpy-1.26.4-cp311-cp311-linux_x86_64.whl",
     "pythonVersion": ">=3.9",
     "abi": "cp311",
@@ -3194,7 +3441,7 @@
       "features": [
         "N-dimensional array object (ndarray)",
         "Broadcasting functions",
-        "Linear algebra operations", 
+        "Linear algebra operations",
         "Fourier transforms",
         "Random number generation",
         "Tools for integrating with C/C++/Fortran",
@@ -3253,7 +3500,15 @@
     "author": "Kenneth Reitz",
     "license": "Apache-2.0",
     "fullDescription": "Requests is an elegant and simple HTTP library for Python, built for human beings. Requests allows you to send HTTP/1.1 requests extremely easily. There's no need to manually add query strings to your URLs, or to form-encode your PUT & POST data — but nowadays, just use the json method!",
-    "tags": ["http", "requests", "api", "web", "client", "networking", "web-development"],
+    "tags": [
+      "http",
+      "requests",
+      "api",
+      "web",
+      "client",
+      "networking",
+      "web-development"
+    ],
     "wheelName": "requests-2.30.0-py3-none-any.whl",
     "pythonVersion": ">=3.7",
     "abi": "none",
@@ -3340,7 +3595,15 @@
     "author": "Kenneth Reitz",
     "license": "Apache-2.0",
     "fullDescription": "Requests is an elegant and simple HTTP library for Python, built for human beings. Requests allows you to send HTTP/1.1 requests extremely easily. There's no need to manually add query strings to your URLs, or to form-encode your PUT & POST data — but nowadays, just use the json method!",
-    "tags": ["http", "requests", "api", "web", "client", "networking", "web-development"],
+    "tags": [
+      "http",
+      "requests",
+      "api",
+      "web",
+      "client",
+      "networking",
+      "web-development"
+    ],
     "wheelName": "requests-2.28.2-py3-none-any.whl",
     "pythonVersion": ">=3.7",
     "abi": "none",
@@ -3427,7 +3690,14 @@
     "author": "Pallets",
     "license": "BSD-3-Clause",
     "fullDescription": "Flask is a lightweight WSGI web application framework. It is designed to make getting started quick and easy, with the ability to scale up to complex applications. It began as a simple wrapper around Werkzeug and Jinja and has become one of the most popular Python web application frameworks.",
-    "tags": ["web-framework", "wsgi", "web-development", "microframework", "flask", "web"],
+    "tags": [
+      "web-framework",
+      "wsgi",
+      "web-development",
+      "microframework",
+      "flask",
+      "web"
+    ],
     "wheelName": "flask-2.3.3-py3-none-any.whl",
     "pythonVersion": ">=3.8",
     "abi": "none",
@@ -3441,7 +3711,7 @@
       "usageExample": "from flask import Flask\n\napp = Flask(__name__)\n\n@app.route('/')\ndef hello_world():\n    return 'Hello, World!'\n\nif __name__ == '__main__':\n    app.run(debug=True)",
       "features": [
         "Built-in development server and debugger",
-        "RESTful request dispatching", 
+        "RESTful request dispatching",
         "Jinja2 templating",
         "Secure cookie support (client side sessions)",
         "100% WSGI 1.0 compliant",
@@ -3501,7 +3771,15 @@
     "author": "Django Software Foundation",
     "license": "BSD-3-Clause",
     "fullDescription": "Django is a high-level Python web framework that encourages rapid development and clean, pragmatic design. Built by experienced developers, it takes care of much of the hassle of web development, so you can focus on writing your app without needing to reinvent the wheel. It's free and open source.",
-    "tags": ["web-framework", "orm", "admin", "templating", "web-development", "mvc", "django"],
+    "tags": [
+      "web-framework",
+      "orm",
+      "admin",
+      "templating",
+      "web-development",
+      "mvc",
+      "django"
+    ],
     "wheelName": "django-5.0.8-py3-none-any.whl",
     "pythonVersion": ">=3.10",
     "abi": "none",
@@ -3552,7 +3830,15 @@
     "author": "Django Software Foundation",
     "license": "BSD-3-Clause",
     "fullDescription": "Django is a high-level Python web framework that encourages rapid development and clean, pragmatic design. Built by experienced developers, it takes care of much of the hassle of web development, so you can focus on writing your app without needing to reinvent the wheel. It's free and open source.",
-    "tags": ["web-framework", "orm", "admin", "templating", "web-development", "mvc", "django"],
+    "tags": [
+      "web-framework",
+      "orm",
+      "admin",
+      "templating",
+      "web-development",
+      "mvc",
+      "django"
+    ],
     "wheelName": "django-4.2.16-py3-none-any.whl",
     "pythonVersion": ">=3.8",
     "abi": "none",
@@ -3614,7 +3900,15 @@
     "author": "The scikit-learn developers",
     "license": "BSD-3-Clause",
     "fullDescription": "Scikit-learn is a Python module for machine learning built on top of SciPy and is distributed under the 3-Clause BSD license. The project was started in 2007 by David Cournapeau as a Google Summer of Code project, and since then many volunteers have contributed. It is currently maintained by a team of volunteers.",
-    "tags": ["machine-learning", "data-mining", "data-science", "classification", "regression", "clustering", "scikit-learn"],
+    "tags": [
+      "machine-learning",
+      "data-mining",
+      "data-science",
+      "classification",
+      "regression",
+      "clustering",
+      "scikit-learn"
+    ],
     "wheelName": "scikit_learn-1.4.2-cp311-cp311-linux_x86_64.whl",
     "pythonVersion": ">=3.9",
     "abi": "cp311",
@@ -3665,7 +3959,14 @@
     "author": "The Matplotlib development team",
     "license": "PSF",
     "fullDescription": "Matplotlib is a comprehensive library for creating static, animated, and interactive visualizations in Python. Matplotlib makes easy things easy and hard things possible. It provides a MATLAB-like plotting framework that is object-oriented and Pythonic.",
-    "tags": ["plotting", "visualization", "graphics", "charts", "data-visualization", "matplotlib"],
+    "tags": [
+      "plotting",
+      "visualization",
+      "graphics",
+      "charts",
+      "data-visualization",
+      "matplotlib"
+    ],
     "wheelName": "matplotlib-3.7.5-cp311-cp311-linux_x86_64.whl",
     "pythonVersion": ">=3.8",
     "abi": "cp311",
@@ -3716,7 +4017,14 @@
     "author": "Jeffrey A. Clark (Alex) and contributors",
     "license": "HPND",
     "fullDescription": "The Python Imaging Library adds image processing capabilities to your Python interpreter. This library provides extensive file format support, an efficient internal representation, and fairly powerful image processing capabilities. The core image library is designed for fast access to data stored in a few basic pixel formats.",
-    "tags": ["imaging", "image-processing", "graphics", "photography", "pil", "pillow"],
+    "tags": [
+      "imaging",
+      "image-processing",
+      "graphics",
+      "photography",
+      "pil",
+      "pillow"
+    ],
     "wheelName": "pillow-10.3.0-cp311-cp311-linux_x86_64.whl",
     "pythonVersion": ">=3.8",
     "abi": "cp311",

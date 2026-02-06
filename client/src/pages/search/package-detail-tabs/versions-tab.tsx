@@ -7,98 +7,127 @@ import {
   Flex,
   Label,
   Title,
+  Spinner,
+  Bullseye,
 } from "@patternfly/react-core";
-import {
-  Table,
-  Thead,
-  Tr,
-  Th,
-  Tbody,
-  Td,
-} from "@patternfly/react-table";
+import { Table, Thead, Tr, Th, Tbody, Td } from "@patternfly/react-table";
 import { PackageDetailContext } from "../package-detail-context-simple";
-import { useNavigate } from "react-router-dom";
-import dummyData from "../dummy-data.json";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import type { Package } from "../search-context";
+import type {
+  HubRequestParams,
+  PulpPythonPackageContent,
+} from "@app/api/models";
+import { getPulpPaginatedResult, PULP_ENDPOINTS } from "@app/api/pulp";
+import { transformPulpContentToPackage } from "@app/utils/pulp-transformers";
 
 export const VersionsTab: React.FC = () => {
-  const { packageData } = useContext(PackageDetailContext);
+  const { packageData, allVersions } = useContext(PackageDetailContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Find all versions of this package
+  // Fetch versions via content API ONLY when PyPI JSON API didn't provide them
+  const { data: contentApiVersions, isLoading } = useQuery({
+    queryKey: ["package-versions", packageData?.name],
+    queryFn: async () => {
+      if (!packageData) return [];
+
+      const hubParams: HubRequestParams = {
+        filters: [{ field: "name", operator: "=", value: packageData.name }],
+        page: {
+          pageNumber: 1,
+          itemsPerPage: 100,
+        },
+      };
+
+      const result = await getPulpPaginatedResult<PulpPythonPackageContent>(
+        PULP_ENDPOINTS.PYTHON_CONTENT,
+        hubParams,
+        { fields: "pulp_href,name,version,pulp_created,python_version" },
+      );
+
+      return result.data.map((content) =>
+        transformPulpContentToPackage(content, undefined, undefined, null),
+      );
+    },
+    enabled: !!packageData && allVersions.length === 0,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Use versions from context (PyPI JSON API) if available, otherwise from content API
+  const allVersionsData = allVersions.length > 0 ? allVersions : contentApiVersions;
+
+  // Sort versions
   const packageVersions = useMemo(() => {
-    if (!packageData) return [];
-    
-    const packages: Package[] = dummyData;
-    const allVersions = packages
-      .filter((pkg) => pkg.name === packageData.name)
-      .sort((a, b) => {
-        // Sort versions in descending order (latest first)
-        // Proper semantic versioning with pre-release handling
-        const parseVersion = (version: string) => {
-          // Split version into base version and pre-release parts
-          const match = version.match(/^(\d+\.\d+\.\d+)(.*)$/);
-          if (!match) return { base: [0, 0, 0], preRelease: null };
-          
-          const baseParts = match[1].split('.').map(Number);
-          const preReleasePart = match[2];
-          
-          let preRelease = null;
-          if (preReleasePart) {
-            // Extract pre-release info (rc, alpha, beta, etc.)
-            const preMatch = preReleasePart.match(/^(rc|alpha|beta)(\d+)?$/);
-            if (preMatch) {
-              preRelease = {
-                type: preMatch[1],
-                number: preMatch[2] ? parseInt(preMatch[2], 10) : 0
-              };
-            }
-          }
-          
-          return { base: baseParts, preRelease };
-        };
-        
-        const versionA = parseVersion(a.version);
-        const versionB = parseVersion(b.version);
-        
-        // First compare base versions
-        for (let i = 0; i < 3; i++) {
-          if (versionB.base[i] !== versionA.base[i]) {
-            return versionB.base[i] - versionA.base[i];
+    if (!allVersionsData) return [];
+
+    return [...allVersionsData].sort((a, b) => {
+      const parseVersion = (version: string) => {
+        const match = version.match(/^(\d+\.\d+\.\d+)(.*)$/);
+        if (!match) return { base: [0, 0, 0], preRelease: null };
+
+        const baseParts = match[1].split(".").map(Number);
+        const preReleasePart = match[2];
+
+        let preRelease = null;
+        if (preReleasePart) {
+          const preMatch = preReleasePart.match(/^(rc|alpha|beta)(\d+)?$/);
+          if (preMatch) {
+            preRelease = {
+              type: preMatch[1],
+              number: preMatch[2] ? parseInt(preMatch[2], 10) : 0,
+            };
           }
         }
-        
-        // Base versions are equal, now handle pre-release
-        // Stable releases (no pre-release) come before pre-releases
-        if (!versionA.preRelease && versionB.preRelease) return -1;
-        if (versionA.preRelease && !versionB.preRelease) return 1;
-        
-        // Both are pre-releases, compare them
-        if (versionA.preRelease && versionB.preRelease) {
-          // Compare pre-release types (stable > rc > beta > alpha)
-          const typeOrder = { 'rc': 3, 'beta': 2, 'alpha': 1 };
-          const aTypeOrder = typeOrder[versionA.preRelease.type as keyof typeof typeOrder] || 0;
-          const bTypeOrder = typeOrder[versionB.preRelease.type as keyof typeof typeOrder] || 0;
-          
-          if (bTypeOrder !== aTypeOrder) {
-            return bTypeOrder - aTypeOrder;
-          }
-          
-          // Same pre-release type, compare numbers
-          return versionB.preRelease.number - versionA.preRelease.number;
+
+        return { base: baseParts, preRelease };
+      };
+
+      const versionA = parseVersion(a.version);
+      const versionB = parseVersion(b.version);
+
+      for (let i = 0; i < 3; i++) {
+        if (versionB.base[i] !== versionA.base[i]) {
+          return versionB.base[i] - versionA.base[i];
         }
-        
-        // Both are stable releases, they're equal
-        return 0;
-      });
-    
-    return allVersions;
-  }, [packageData]);
+      }
+
+      if (!versionA.preRelease && versionB.preRelease) return -1;
+      if (versionA.preRelease && !versionB.preRelease) return 1;
+
+      if (versionA.preRelease && versionB.preRelease) {
+        const typeOrder = { rc: 3, beta: 2, alpha: 1 };
+        const aTypeOrder =
+          typeOrder[versionA.preRelease.type as keyof typeof typeOrder] || 0;
+        const bTypeOrder =
+          typeOrder[versionB.preRelease.type as keyof typeof typeOrder] || 0;
+
+        if (bTypeOrder !== aTypeOrder) {
+          return bTypeOrder - aTypeOrder;
+        }
+
+        return versionB.preRelease.number - versionA.preRelease.number;
+      }
+
+      return 0;
+    });
+  }, [allVersionsData]);
 
   if (!packageData) {
     return (
       <PageSection>
         <p>No package information available.</p>
+      </PageSection>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <PageSection>
+        <Bullseye>
+          <Spinner aria-label="Loading versions" />
+        </Bullseye>
       </PageSection>
     );
   }
@@ -115,23 +144,49 @@ export const VersionsTab: React.FC = () => {
 
   const handleVersionClick = (version: string) => {
     window.scrollTo(0, 0);
-    navigate(`/search/${packageData.name}/${version}`);
+    // Preserve dist query param when navigating between versions
+    const searchParams = new URLSearchParams(location.search);
+    const distParam = searchParams.get("dist");
+    const query = distParam
+      ? `?dist=${encodeURIComponent(distParam)}`
+      : "";
+    navigate(`/search/${packageData.name}/${version}${query}`);
   };
 
   const getStabilityBadge = (version: string) => {
-    if (version.includes('rc')) {
-      return <Label color="yellow" isCompact>Release Candidate</Label>;
+    if (version.includes("rc")) {
+      return (
+        <Label color="yellow" isCompact>
+          Release Candidate
+        </Label>
+      );
     }
-    if (version.includes('beta')) {
-      return <Label color="purple" isCompact>Beta</Label>;
+    if (version.includes("beta")) {
+      return (
+        <Label color="purple" isCompact>
+          Beta
+        </Label>
+      );
     }
-    if (version.includes('alpha')) {
-      return <Label color="red" isCompact>Alpha</Label>;
+    if (version.includes("alpha")) {
+      return (
+        <Label color="red" isCompact>
+          Alpha
+        </Label>
+      );
     }
-    if (version.includes('dev')) {
-      return <Label color="grey" isCompact>Development</Label>;
+    if (version.includes("dev")) {
+      return (
+        <Label color="grey" isCompact>
+          Development
+        </Label>
+      );
     }
-    return <Label color="green" isCompact>Stable</Label>;
+    return (
+      <Label color="green" isCompact>
+        Stable
+      </Label>
+    );
   };
 
   const getPythonVersionSupport = (packageVersion: any) => {
@@ -139,13 +194,13 @@ export const VersionsTab: React.FC = () => {
     if (packageVersion.pythonVersion) {
       return packageVersion.pythonVersion;
     }
-    
+
     // Fallback logic based on version patterns
     const version = packageVersion.version;
-    if (version.startsWith('3.0')) return '>=3.11';
-    if (version.startsWith('2.')) return '>=3.9';
-    if (version.startsWith('1.4')) return '>=3.8';
-    return '>=3.8'; // default
+    if (version.startsWith("3.0")) return ">=3.11";
+    if (version.startsWith("2.")) return ">=3.9";
+    if (version.startsWith("1.4")) return ">=3.8";
+    return ">=3.8"; // default
   };
 
   return (
@@ -154,9 +209,14 @@ export const VersionsTab: React.FC = () => {
         Versions
       </Title>
       <p style={{ marginTop: "0.5rem" }}>
-        All available versions of this package, including stable releases and pre-releases.
+        All available versions of this package, including stable releases and
+        pre-releases.
       </p>
-      <Table aria-label="Versions table" variant="compact" style={{ marginTop: "1.5rem" }}>
+      <Table
+        aria-label="Versions table"
+        variant="compact"
+        style={{ marginTop: "1.5rem" }}
+      >
         <Thead>
           <Tr>
             <Th>Version</Th>
@@ -172,20 +232,27 @@ export const VersionsTab: React.FC = () => {
             return (
               <Tr key={version.version}>
                 <Td dataLabel="Version">
-                  <Flex alignItems={{ default: "alignItemsCenter" }} spaceItems={{ default: "spaceItemsSm" }}>
+                  <Flex
+                    alignItems={{ default: "alignItemsCenter" }}
+                    spaceItems={{ default: "spaceItemsSm" }}
+                  >
                     <Button
                       variant="link"
                       isInline
                       onClick={() => handleVersionClick(version.version)}
                       style={{
                         fontWeight: isCurrentVersion ? "bold" : "normal",
-                        color: isCurrentVersion ? "var(--pf-v6-global--primary-color--100)" : undefined,
+                        color: isCurrentVersion
+                          ? "var(--pf-v6-global--primary-color--100)"
+                          : undefined,
                       }}
                     >
                       {version.version}
                     </Button>
                     {isCurrentVersion && (
-                      <Badge variant="outline" color="blue">This version</Badge>
+                      <Badge variant="outline" color="blue">
+                        This version
+                      </Badge>
                     )}
                   </Flex>
                 </Td>
@@ -193,19 +260,24 @@ export const VersionsTab: React.FC = () => {
                   {getStabilityBadge(version.version)}
                 </Td>
                 <Td dataLabel="Python Support" style={{ minWidth: "120px" }}>
-                  <code style={{ 
-                    backgroundColor: "var(--pf-v6-global--BackgroundColor--200)", 
-                    padding: "2px 6px", 
-                    borderRadius: "4px",
-                    fontSize: "var(--pf-v6-global--FontSize--sm)",
-                    fontFamily: "var(--pf-v6-global--FontFamily--monospace)",
-                    whiteSpace: "nowrap"
-                  }}>
+                  <code
+                    style={{
+                      backgroundColor:
+                        "var(--pf-v6-global--BackgroundColor--200)",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      fontSize: "var(--pf-v6-global--FontSize--sm)",
+                      fontFamily: "var(--pf-v6-global--FontFamily--monospace)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {getPythonVersionSupport(version)}
                   </code>
                 </Td>
                 <Td dataLabel="Release Date">{version.updated}</Td>
-                <Td dataLabel="Downloads">{formatDownloads(version.downloads)}</Td>
+                <Td dataLabel="Downloads">
+                  {formatDownloads(version.downloads)}
+                </Td>
               </Tr>
             );
           })}
