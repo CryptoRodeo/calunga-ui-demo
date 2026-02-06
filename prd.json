@@ -38,7 +38,7 @@
     "description": "The service efficiently pulls all packages for the related distribution",
     "steps": [
       "The service pulls all packages for the selected distribution following the plan in ./PULP_DATA_MAPPING_PLAN.md",
-      "Package data for the distribution are retrieved in a performant and best-practice manner",
+      "Package data for the distribution are retrieved in a performant and best-practice manner"
     ],
     "passes": true
   },
@@ -308,7 +308,7 @@
       "Add a package.json script: \"mock:record\": \"npx tsx scripts/record-mock-data.ts\" so it can be run easily. Document that this only needs to be run when you want to refresh the mock data",
       "After recording, verify the JSON files parse correctly and contain the expected PulpPythonPackageContent fields: name, version, summary, description, author, license, classifiers, filename, packagetype, python_version, requires_dist, requires_python, sha256, size, pulp_created, pulp_last_updated"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "Architecture",
@@ -380,5 +380,21 @@
       "Verify that the Pagination component's itemCount updates correctly when a search query is active, reflecting the server's filtered total rather than the unfiltered repository size"
     ],
     "passes": true
+  },
+  {
+    "category": "Bug",
+    "description": "Fix single giant card per page: server paginates on content items (versions) but UI displays deduplicated packages, so pages with heavily-versioned packages like scipy collapse to 1 visible card",
+    "problem": "In search-context.tsx:433-446, the useQuery fetches perPage (default 20) content items from the Pulp API with queryKey ['packages', selectedIndex, page, perPage]. Each content item is a single package version (e.g., scipy-1.0.0, scipy-1.1.0, scipy-1.2.0). After fetching, deduplicateByLatestVersion() at line 457 collapses all versions of the same package name into one entry. When a package like scipy has 20+ versions in the repository, a page of 20 content items can consist entirely of scipy versions, deduplicating to just 1 unique package. This 1 card then fills the page because: (1) Gallery at search.tsx:383 uses minWidths={{ default: '100%' }}, making the card full-width, (2) CardBody at search.tsx:419 renders pkg.description without text truncation, so the card grows very tall with long descriptions. The Pagination at search.tsx:580 shows itemCount={filteredItemCount} which equals serverTotal (line 514) — the raw content item count (e.g., 2422), not the unique package count. Users see '1 - 20 of 2422 Packages' but only 1 package renders. Navigating to the next page shows another single-card page because the next 20 content items are again dominated by another heavily-versioned package.",
+    "rationale": "The fundamental issue is paginating on content items (versions) while displaying deduplicated packages (unique names). The PULP_DATA_MAPPING_PLAN.md 'Recommended Optimization Strategy' section documents that the PyPI Simple API (GET /pypi/<base_path>/simple/) returns unique package names using PostgreSQL DISTINCT at the database level, eliminating client-side deduplication entirely. The existing /pulp proxy in server/src/proxies.js strips the /pulp prefix before forwarding, so the PyPI Simple API is already accessible at /pulp/pypi/<base_path>/simple/ without any proxy changes. Paginating on this name list ensures every page shows exactly perPage unique packages. Metadata for the current page's packages is then fetched via the REST API's name__in filter (supported per PULP_DATA_MAPPING_PLAN.md: name supports 'exact' and 'in' operators), which returns all versions of those specific packages. Deduplication on this bounded set (perPage names × N versions) is fast and predictable. The PyPI root endpoint (GET /pypi/<base_path>/) provides accurate project count using DB-level DISTINCT for the Inventory card. This approach: (1) eliminates the pagination-dedup mismatch, (2) transfers less data (name list is lightweight), (3) fetches full metadata only for visible packages, (4) provides accurate pagination counts.",
+    "steps": [
+      "Add two helper functions in rest.ts: (a) getPackageNames(basePath: string): Promise<string[]> — fetches GET /pulp/pypi/<basePath>/simple/ with Accept: application/vnd.pypi.simple.v1+json header, parses response to return an array of unique package name strings. (b) getDistributionStats(basePath: string): Promise<{projects: number, releases: number, files: number}> — fetches GET /pulp/pypi/<basePath>/ and returns the stats object. Both use the existing /pulp proxy which strips the prefix",
+      "In search-context.tsx, replace the single useQuery (lines 428-450) with a two-phase approach. Phase 1: add a useQuery with queryKey ['packageNames', selectedDistribution?.base_path] that calls getPackageNames(selectedDistribution.base_path). Cache aggressively with staleTime: 1000 * 60 * 30 (30 minutes) since package names rarely change. This returns the full unique name list via DB-level DISTINCT — no client-side deduplication needed",
+      "Client-side filter and paginate the name list: apply deferredSearchQuery as a name.toLowerCase().includes(query) filter on the full name list, then slice the filtered list using page/perPage: pageNames = filteredNames.slice((page-1)*perPage, page*perPage). Set totalItemCount to the full name list length and filteredItemCount to filteredNames.length. This ensures pagination counts reflect unique packages, not content items",
+      "Phase 2: add a second useQuery with queryKey ['packageMetadata', selectedDistribution?.base_path, ...pageNames] that fetches content for the current page's packages via getPulpPaginatedResult with extraParams: { name__in: pageNames.join(','), ...existingExtraParams } and a limit high enough to cover all versions (e.g., limit: pageNames.length * 20). Deduplicate the results with deduplicateByLatestVersion() (bounded to at most pageNames.length unique entries), transform with transformPulpContentToPackage(), and set as currentPageItems. This fetches only metadata for visible packages",
+      "In search.tsx CardBody (line 419), add CSS text truncation to the description <p> element: style={{ overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}. This prevents any card from growing excessively tall regardless of description length, capping it at 3 lines",
+      "Update the Inventory card (search.tsx:266) to use the projects count from getDistributionStats() via a separate useQuery, replacing the serverTotal content-item count with the accurate unique-project count",
+      "Add a useQuery for getDistributionStats in search-context.tsx or search.tsx with queryKey ['distributionStats', selectedDistribution?.base_path] and staleTime: 30 minutes. Expose the projects count via the context's serverTotal field"
+    ],
+    "passes": false
   }
 ]

@@ -554,3 +554,60 @@ Search query now triggers React Query re-fetches and pagination resets when the 
 Pagination counts correctly reflect filtered results instead of always showing the server total.
 Server-side name substring filtering is not available (Pulp only supports name exact/in),
 so client-side filtering on the current page is retained as documented.
+
+Feature: Create mock data recording script to capture live Pulp API responses
+
+Files Changed:
+- scripts/record-mock-data.ts (new file)
+- package.json (added "mock:record" script)
+- client/src/app/api/mock/data/distributions.json (generated fixture)
+- client/src/app/api/mock/data/packages-calunga-dev.json (generated fixture)
+
+Actions Taken:
+1. Created scripts/record-mock-data.ts
+   - Uses dotenv to load PULP_API_URL, PULP_USERNAME, PULP_PASSWORD from root .env
+   - Authenticates with Basic Auth (matching server proxy behavior at server/src/proxies.js:79-83)
+   - Uses Node.js native https/http modules (no axios dependency needed for standalone script)
+   - ESM-compatible using import.meta.url for __dirname equivalent
+
+2. Implemented distribution fetching
+   - Fetches GET /api/v3/distributions/python/pypi/?limit=100
+   - Saves full PulpPaginatedResponse<PulpDistribution> to distributions.json
+
+3. Implemented package fetching per distribution
+   - For each distribution with a repository_version, fetches packages
+   - Fetches up to 5 pages (500 packages) per distribution at 100 items/page
+   - Uses repository_version query parameter to scope to distribution
+   - Saves PulpPaginatedResponse<PulpPythonPackageContent> to packages-<name>.json
+
+4. Implemented data sanitization
+   - Nullifies next/previous pagination URLs (mock mode handles pagination client-side)
+   - Sanitizes pulp_href, repository, repository_version, publication, and package fields
+   - Strips domain-specific URL prefixes, replacing with synthetic /pulp/api/v3/... paths
+   - Recursive sanitization handles nested objects and arrays
+
+5. Added verification step
+   - Script verifies generated JSON files contain expected PulpPythonPackageContent fields:
+     name, version, summary, description, author, license, classifiers, filename,
+     packagetype, python_version, requires_dist, requires_python, sha256, size,
+     pulp_created, pulp_last_updated
+   - Also verifies distribution fields: pulp_href, name, base_path, base_url, repository_version
+
+6. Added npm script
+   - Added "mock:record": "ts-node --esm scripts/record-mock-data.ts" to root package.json
+
+7. Ran script successfully against live Pulp API
+   - Recorded 69 distributions (distributions.json, 56.3 KB)
+   - Recorded 500 of 2422 packages for "calunga-dev" (packages-calunga-dev.json, 31.4 MB)
+   - 68 distributions skipped (no repository_version — expected for empty/unversioned repos)
+   - All field verification checks passed
+
+8. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Mock data recording script successfully captures live Pulp API responses as JSON fixtures.
+Generated fixtures are in PulpPaginatedResponse format matching the real API, ready for
+consumption by the mock API layer (future prd.json task). Script only needs to be run
+when mock data needs refreshing.
