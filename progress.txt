@@ -287,3 +287,76 @@ Status: COMPLETED
 Initial results now appear after a single API round-trip (~100 items). Additional pages are fetched
 progressively as the user paginates, eliminating the blocking full-fetch that previously kept users
 waiting with a spinner until all packages were loaded.
+
+Feature: Explore more efficient API data retrieval approaches (Documentation - prd.json item 3)
+
+Files Changed:
+- PULP_DATA_MAPPING_PLAN.md
+
+Actions Taken:
+1. Explored ~/work/pulpcore for efficient APIs
+   - Confirmed ?minimal=true query parameter support (pulpcore/app/viewsets/base.py:122-130)
+   - Found MinimalPythonPackageContentSerializer returning only filename, packagetype, name, version, sha256
+   - Found ContentFilter with repository_version filtering (pulpcore/app/viewsets/content.py:109-141)
+   - Found ContentSummarySerializer for pre-computed content counts (pulpcore/app/serializers/repository.py:213-242)
+   - Found RepositoryVersionContentDetails model for aggregated counts (pulpcore/app/models/repository.py:1385-1420)
+
+2. Explored ~/work/pulp_python for efficient APIs
+   - Found PyPI Simple API (PEP 503): /pypi/<path>/simple/ returns deduplicated package names
+     via database-level DISTINCT (pulp_python/app/pypi/views.py:301-316)
+   - Found PyPI JSON Metadata API: /pypi/<path>/pypi/<package>/json/ for rich per-package metadata
+     (pulp_python/app/pypi/views.py:439-467)
+   - Found PyPI Root endpoint: /pypi/<path>/ returns project/release/file counts using DISTINCT
+     (pulp_python/app/pypi/views.py:485-492)
+   - Found SimpleView.retrieve for all versions of a package (views.py:353-403)
+   - Noted unimplemented endpoints: search/ and project/ (urls.py:16-18)
+
+3. Explored ~/work/pulp-docs for performance documentation
+   - Found Redis caching provides 5.8x throughput improvement (625 vs 108 req/sec per worker)
+   - Found concurrency recommendations (5-10 concurrent requests optimal)
+   - Found RedisWorker 2.3x throughput improvement over PostgreSQL-based worker
+
+4. Added new section "Alternative, More Efficient API Approaches" to PULP_DATA_MAPPING_PLAN.md
+   - Documented 7 alternative approaches with source code references
+   - Documented recommended optimization strategy: hybrid PyPI Simple API + REST API
+   - Documented trade-offs for each approach
+   - Documented unimplemented endpoints for future potential
+
+5. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Documentation updated with comprehensive analysis of more efficient API retrieval strategies.
+Key finding: PyPI Simple API provides database-level deduplication via DISTINCT, eliminating
+the need for client-side deduplication of all content items.
+
+Feature: Fix invalid Pulp filter operator mapping causing 400 errors on package detail page
+
+Files Changed:
+- client/src/app/api/rest.ts
+
+Actions Taken:
+1. Changed '=' operator mapping in mapHubOperatorToPulpOperator (rest.ts:112)
+   - Changed from "__exact" to "" (empty string)
+   - This produces plain field names (e.g., name=value) instead of name__exact=value
+   - The Pulp API rejects __exact as an invalid filter lookup
+   - Plain field names default to exact matching in Django REST Framework
+
+2. Changed fallback return value in mapHubOperatorToPulpOperator (rest.ts:121)
+   - Changed from "__exact" to "" (empty string) for consistency
+   - Unknown operators now also default to plain field names
+
+3. Verified affected code paths:
+   - package-detail-context-simple.tsx:48-57 uses operator "=" for name and version filters
+   - package-detail.tsx:65-76 uses operator "=" for name filter (all versions query)
+   - search-context.tsx is unaffected (uses empty filters array)
+   - Other operators (~, ~~, !=, >, >=, <, <=) unchanged and still use Django lookup suffixes
+
+4. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Package detail page requests now use plain field names (name=value, version=value) instead of
+invalid __exact suffixes. This fixes 400 Bad Request errors when clicking on packages.

@@ -31,7 +31,7 @@
       "Using all those references, look at the existing PULP_DATA_MAPPING_PLAN.md file and see if there are any more efficient ways to retrieve data from the pulp API",
       "Update ./PULP_DATA_MAPPING_PLAN.md as needed"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "Functional",
@@ -264,5 +264,20 @@
       "Leverage React Query's caching so previously visited pages are served from cache without re-fetching"
     ],
     "passes": false
+  },
+  {
+    "category": "Bug",
+    "description": "Fix invalid Pulp filter operator mapping causing 400 errors on package detail page",
+    "problem": "Clicking a package from the search index navigates to the package detail page, which fetches package data via GET /pulp/api/v3/content/python/packages/?limit=1&offset=0&name__exact=<name>&version__exact=<version>. This returns a 400 Bad Request with the error 'Invalid Filter: name__exact, Invalid Filter: version__exact'. The root cause is in rest.ts:110-122 where mapHubOperatorToPulpOperator maps the '=' operator to '__exact'. This Pulp API instance does not support Django-style '__exact' lookup suffixes — it expects plain field names for exact matching (e.g., name=xxhash instead of name__exact=xxhash). The package detail context at package-detail-context-simple.tsx:48-52 constructs filters with operator '=' for both name and version, which get serialized as name__exact and version__exact by serializeRequestParamsForPulp (rest.ts:132-167). The same bug also affects package-detail.tsx:65-76 which fetches all versions using a name filter with operator '='. The search page (search-context.tsx) is unaffected because it uses filters: [] (empty array) and does all filtering client-side.",
+    "rationale": "In Django REST Framework, using just the plain field name (e.g., ?name=value) defaults to exact matching, making the __exact suffix redundant. This Pulp instance explicitly rejects __exact as an invalid filter lookup. Changing the '=' operator mapping from '__exact' to '' (empty string) will produce plain field names (?name=value) which work correctly for exact matching. This is the most minimal and correct fix since it aligns with how the Pulp API actually validates filter parameters. Verified by testing: GET /pulp/api/v3/content/python/packages/?name=xxhash&version=3.6.0 returns 200 OK with correct results, while the __exact variant returns 400.",
+    "steps": [
+      "In rest.ts:110-122, change the '=' operator mapping in mapHubOperatorToPulpOperator from '__exact' to '' (empty string). This makes operator '=' produce plain field names (e.g., name=value) instead of name__exact=value",
+      "Update the fallback return at rest.ts:121 from '__exact' to '' to match the new default behavior",
+      "Verify that package-detail-context-simple.tsx:48-57 works without changes — the filters with operator '=' will now correctly serialize to name=<value>&version=<value>",
+      "Verify that the all-versions query in package-detail.tsx:65-76 also works — its name filter with operator '=' will correctly serialize to name=<value>",
+      "Test that the search page (search-context.tsx) is unaffected since it uses empty filters",
+      "Test that other filter operators (~, ~~, !=, etc.) still serialize correctly with their Django lookup suffixes (__icontains, __contains, __exclude, etc.)"
+    ],
+    "passes": true
   }
 ]

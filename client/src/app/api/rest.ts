@@ -109,7 +109,7 @@ export const PULP_ENDPOINTS = {
  */
 const mapHubOperatorToPulpOperator = (operator: string): string => {
   const mapping: Record<string, string> = {
-    "=": "__exact",
+    "=": "",
     "!=": "__exclude",
     "~": "__icontains",    // Case-insensitive contains (verified supported)
     "~~": "__contains",    // Case-sensitive contains (verified supported for classifiers)
@@ -118,7 +118,7 @@ const mapHubOperatorToPulpOperator = (operator: string): string => {
     "<": "__lt",           // Less than (verified supported)
     "<=": "__lte",         // Less than or equal (verified supported)
   };
-  return mapping[operator] || "__exact";
+  return mapping[operator] || "";
 };
 
 /**
