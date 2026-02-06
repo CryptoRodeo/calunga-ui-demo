@@ -994,3 +994,47 @@ The name__in filter combines all current page package names into one comma-separ
 parameter. Client-side deduplication keeps the latest version per package name (leveraging
 -pulp_created ordering). This reduces HTTP round-trips from 20 to 1 and database queries
 from 20 to 1, with no functional change to the UI.
+
+Feature: Use Pulp `fields` parameter on package detail page queries to reduce payload
+
+Files Changed:
+- client/src/pages/search/package-detail.tsx
+- client/src/pages/search/package-detail-tabs/versions-tab.tsx
+- client/src/pages/search/package-detail-context-simple.tsx
+- client/src/app/api/mock/mock-api.ts
+
+Actions Taken:
+1. Added `fields` parameter to all-versions query in package-detail.tsx (line 73-76)
+   - Added third argument to getPulpPaginatedResult: { fields: "pulp_href,name,version,pulp_created,python_version" }
+   - This query fetches up to 100 versions to check for newer stable versions
+   - The hasNewerVersion logic only reads `version` from each result
+   - Reduced from ~25 fields per item to 5 fields — estimated 95% payload reduction per item
+
+2. Added `fields` parameter to all-versions query in versions-tab.tsx (line 43-46)
+   - Same fields restriction: { fields: "pulp_href,name,version,pulp_created,python_version" }
+   - Shares the same React Query cache key ["package-versions", name] as package-detail.tsx
+   - The versions table only uses version, updated (from pulp_created), pythonVersion, and downloads (stub)
+   - All needed fields are included in the restricted set
+
+3. Added `exclude_fields` parameter to specific-version query in package-detail-context-simple.tsx (line 59-62)
+   - Added third argument: { exclude_fields: "requires_dist" }
+   - The requires_dist field is an array of 50+ dependency strings never displayed in the current UI
+   - Full object is otherwise needed for the detail page (description, classifiers, author, etc.)
+   - Using exclude_fields rather than fields since most fields are needed for the detail view
+
+4. Updated mock API to handle `exclude_fields` parameter in mock-api.ts
+   - Added "exclude_fields" to the skipKeys set so it's not treated as a filter predicate
+   - Added exclude_fields logic after the existing fields logic: splits comma-separated
+     field names and removes those keys from each result object
+   - Ensures mock mode behaves identically to live mode
+
+5. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Package detail page queries now use Pulp's field selection parameters to reduce payload.
+The all-versions query (used by both hasNewerVersion check and Versions tab) restricts
+response to 5 fields instead of 25+, estimated 95% payload reduction per item (from ~2-5KB
+to ~100 bytes). The specific-version query excludes requires_dist, removing 50+ dependency
+strings from the response. Mock API updated to handle both `fields` and `exclude_fields`.

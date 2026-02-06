@@ -73,6 +73,7 @@ const PackageDetailContent: React.FC = () => {
       const result = await getPulpPaginatedResult<PulpPythonPackageContent>(
         PULP_ENDPOINTS.PYTHON_CONTENT,
         hubParams,
+        { fields: "pulp_href,name,version,pulp_created,python_version" },
       );
 
       return result.data.map((content) =>

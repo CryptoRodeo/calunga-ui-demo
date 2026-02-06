@@ -446,7 +446,7 @@
       "Test that the 'Newer version available' badge in package-detail.tsx:249-263 still appears correctly when a newer stable version exists.",
       "Test that the package detail Overview, Versions, Files, and Security tabs all render correctly with the reduced field set."
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "Performance",

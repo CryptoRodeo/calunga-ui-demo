@@ -59,6 +59,7 @@ export const PackageDetailProvider: React.FunctionComponent<
       const result = await getPulpPaginatedResult<PulpPythonPackageContent>(
         PULP_ENDPOINTS.PYTHON_CONTENT,
         hubParams,
+        { exclude_fields: "requires_dist" },
       );
 
       console.log("Package fetch result:", result);

@@ -262,6 +262,7 @@ async function handlePackagesPaginated<T>(
     "ordering",
     "repository_version",
     "fields",
+    "exclude_fields",
   ]);
 
   for (const [key, value] of Object.entries(pulpParams)) {
@@ -310,6 +311,24 @@ async function handlePackagesPaginated<T>(
       for (const field of requestedFields) {
         if (field in (item as Record<string, unknown>)) {
           filtered[field] = (item as Record<string, unknown>)[field];
+        }
+      }
+      return filtered as PulpPythonPackageContent;
+    });
+  }
+
+  // Apply field exclusion if `exclude_fields` parameter is present
+  if (pulpParams.exclude_fields) {
+    const excludedFields = new Set(
+      String(pulpParams.exclude_fields).split(","),
+    );
+    finalResults = finalResults.map((item) => {
+      const filtered: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(
+        item as Record<string, unknown>,
+      )) {
+        if (!excludedFields.has(key)) {
+          filtered[key] = value;
         }
       }
       return filtered as PulpPythonPackageContent;

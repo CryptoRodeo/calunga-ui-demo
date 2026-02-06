@@ -43,6 +43,7 @@ export const VersionsTab: React.FC = () => {
       const result = await getPulpPaginatedResult<PulpPythonPackageContent>(
         PULP_ENDPOINTS.PYTHON_CONTENT,
         hubParams,
+        { fields: "pulp_href,name,version,pulp_created,python_version" },
       );
 
       // Transform to UI Package model
