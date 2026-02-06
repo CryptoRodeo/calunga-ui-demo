@@ -12,7 +12,7 @@ import {
 } from "@patternfly/react-core";
 import { Table, Thead, Tr, Th, Tbody, Td } from "@patternfly/react-table";
 import { PackageDetailContext } from "../package-detail-context-simple";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { Package } from "../search-context";
 import type {
@@ -23,11 +23,12 @@ import { getPulpPaginatedResult, PULP_ENDPOINTS } from "@app/api/pulp";
 import { transformPulpContentToPackage } from "@app/utils/pulp-transformers";
 
 export const VersionsTab: React.FC = () => {
-  const { packageData } = useContext(PackageDetailContext);
+  const { packageData, allVersions } = useContext(PackageDetailContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Fetch all versions of this package from Pulp API
-  const { data: allVersionsData, isLoading } = useQuery({
+  // Fetch versions via content API ONLY when PyPI JSON API didn't provide them
+  const { data: contentApiVersions, isLoading } = useQuery({
     queryKey: ["package-versions", packageData?.name],
     queryFn: async () => {
       if (!packageData) return [];
@@ -36,7 +37,7 @@ export const VersionsTab: React.FC = () => {
         filters: [{ field: "name", operator: "=", value: packageData.name }],
         page: {
           pageNumber: 1,
-          itemsPerPage: 100, // Fetch up to 100 versions
+          itemsPerPage: 100,
         },
       };
 
@@ -46,83 +47,72 @@ export const VersionsTab: React.FC = () => {
         { fields: "pulp_href,name,version,pulp_created,python_version" },
       );
 
-      // Transform to UI Package model
       return result.data.map((content) =>
         transformPulpContentToPackage(content, undefined, undefined, null),
       );
     },
-    enabled: !!packageData,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    enabled: !!packageData && allVersions.length === 0,
+    staleTime: 1000 * 60 * 5,
   });
+
+  // Use versions from context (PyPI JSON API) if available, otherwise from content API
+  const allVersionsData = allVersions.length > 0 ? allVersions : contentApiVersions;
 
   // Sort versions
   const packageVersions = useMemo(() => {
     if (!allVersionsData) return [];
 
     return [...allVersionsData].sort((a, b) => {
-        // Sort versions in descending order (latest first)
-        // Proper semantic versioning with pre-release handling
-        const parseVersion = (version: string) => {
-          // Split version into base version and pre-release parts
-          const match = version.match(/^(\d+\.\d+\.\d+)(.*)$/);
-          if (!match) return { base: [0, 0, 0], preRelease: null };
+      const parseVersion = (version: string) => {
+        const match = version.match(/^(\d+\.\d+\.\d+)(.*)$/);
+        if (!match) return { base: [0, 0, 0], preRelease: null };
 
-          const baseParts = match[1].split(".").map(Number);
-          const preReleasePart = match[2];
+        const baseParts = match[1].split(".").map(Number);
+        const preReleasePart = match[2];
 
-          let preRelease = null;
-          if (preReleasePart) {
-            // Extract pre-release info (rc, alpha, beta, etc.)
-            const preMatch = preReleasePart.match(/^(rc|alpha|beta)(\d+)?$/);
-            if (preMatch) {
-              preRelease = {
-                type: preMatch[1],
-                number: preMatch[2] ? parseInt(preMatch[2], 10) : 0,
-              };
-            }
-          }
-
-          return { base: baseParts, preRelease };
-        };
-
-        const versionA = parseVersion(a.version);
-        const versionB = parseVersion(b.version);
-
-        // First compare base versions
-        for (let i = 0; i < 3; i++) {
-          if (versionB.base[i] !== versionA.base[i]) {
-            return versionB.base[i] - versionA.base[i];
+        let preRelease = null;
+        if (preReleasePart) {
+          const preMatch = preReleasePart.match(/^(rc|alpha|beta)(\d+)?$/);
+          if (preMatch) {
+            preRelease = {
+              type: preMatch[1],
+              number: preMatch[2] ? parseInt(preMatch[2], 10) : 0,
+            };
           }
         }
 
-        // Base versions are equal, now handle pre-release
-        // Stable releases (no pre-release) come before pre-releases
-        if (!versionA.preRelease && versionB.preRelease) return -1;
-        if (versionA.preRelease && !versionB.preRelease) return 1;
+        return { base: baseParts, preRelease };
+      };
 
-        // Both are pre-releases, compare them
-        if (versionA.preRelease && versionB.preRelease) {
-          // Compare pre-release types (stable > rc > beta > alpha)
-          const typeOrder = { rc: 3, beta: 2, alpha: 1 };
-          const aTypeOrder =
-            typeOrder[versionA.preRelease.type as keyof typeof typeOrder] || 0;
-          const bTypeOrder =
-            typeOrder[versionB.preRelease.type as keyof typeof typeOrder] || 0;
+      const versionA = parseVersion(a.version);
+      const versionB = parseVersion(b.version);
 
-          if (bTypeOrder !== aTypeOrder) {
-            return bTypeOrder - aTypeOrder;
-          }
+      for (let i = 0; i < 3; i++) {
+        if (versionB.base[i] !== versionA.base[i]) {
+          return versionB.base[i] - versionA.base[i];
+        }
+      }
 
-          // Same pre-release type, compare numbers
-          return versionB.preRelease.number - versionA.preRelease.number;
+      if (!versionA.preRelease && versionB.preRelease) return -1;
+      if (versionA.preRelease && !versionB.preRelease) return 1;
+
+      if (versionA.preRelease && versionB.preRelease) {
+        const typeOrder = { rc: 3, beta: 2, alpha: 1 };
+        const aTypeOrder =
+          typeOrder[versionA.preRelease.type as keyof typeof typeOrder] || 0;
+        const bTypeOrder =
+          typeOrder[versionB.preRelease.type as keyof typeof typeOrder] || 0;
+
+        if (bTypeOrder !== aTypeOrder) {
+          return bTypeOrder - aTypeOrder;
         }
 
-        // Both are stable releases, they're equal
-        return 0;
-      });
+        return versionB.preRelease.number - versionA.preRelease.number;
+      }
 
-    return allVersions;
-  }, [packageData]);
+      return 0;
+    });
+  }, [allVersionsData]);
 
   if (!packageData) {
     return (
@@ -154,7 +144,13 @@ export const VersionsTab: React.FC = () => {
 
   const handleVersionClick = (version: string) => {
     window.scrollTo(0, 0);
-    navigate(`/search/${packageData.name}/${version}`);
+    // Preserve dist query param when navigating between versions
+    const searchParams = new URLSearchParams(location.search);
+    const distParam = searchParams.get("dist");
+    const query = distParam
+      ? `?dist=${encodeURIComponent(distParam)}`
+      : "";
+    navigate(`/search/${packageData.name}/${version}${query}`);
   };
 
   const getStabilityBadge = (version: string) => {

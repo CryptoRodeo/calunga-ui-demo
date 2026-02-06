@@ -8,6 +8,7 @@ import type {
   HubFilter,
   HubPaginatedResult,
   HubRequestParams,
+  PyPIPackageMetadata,
   PulpDistribution,
   PulpPaginatedResponse,
 } from "./models";
@@ -365,4 +366,23 @@ export const getDistributionByBasePath = async (
     console.error("Failed to fetch distribution by base_path:", error);
     return null;
   }
+};
+
+/**
+ * Fetches package metadata via the PyPI JSON Metadata API.
+ * Returns full package info + all versions in a single request.
+ *
+ * Endpoint: GET /pypi/{basePath}/pypi/{packageName}/json/
+ * Or with version: GET /pypi/{basePath}/pypi/{packageName}/{version}/json/
+ */
+export const getPackageMetadata = async (
+  basePath: string,
+  packageName: string,
+  version?: string,
+): Promise<PyPIPackageMetadata> => {
+  const versionSegment = version ? `/${version}` : "";
+  const url = `/pypi/${basePath}/pypi/${packageName}${versionSegment}/json/`;
+
+  const response = await axios.get<PyPIPackageMetadata>(url);
+  return response.data;
 };

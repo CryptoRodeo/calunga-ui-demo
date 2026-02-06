@@ -4,4 +4,5 @@ export {
   getDistributionForContent,
   getDistributionByBasePath,
   getSimplePackageNames,
+  getPackageMetadata,
 } from "./mock-api";

@@ -41,7 +41,7 @@ import { transformPulpContentToPackage } from "@app/utils/pulp-transformers";
 import { MetadataSidebar } from "./components/metadata-sidebar";
 
 const PackageDetailContent: React.FC = () => {
-  const { packageData, isLoading, isError, tabControls } = useContext(PackageDetailContext);
+  const { packageData, allVersions, isLoading, isError, tabControls } = useContext(PackageDetailContext);
   const navigate = useNavigate();
   const { packageName, version } = useParams<{
     packageName: string;
@@ -55,9 +55,9 @@ const PackageDetailContent: React.FC = () => {
     document.body.scrollTop = 0;
   }, [packageName, version]);
 
-  // Fetch all versions to check if there's a newer stable version
-  // IMPORTANT: All hooks must be called before any conditional returns
-  const { data: allVersionsData } = useQuery({
+  // Fetch all versions via content API ONLY when PyPI JSON API didn't provide them
+  // (i.e., when allVersions from context is empty — content API fallback path)
+  const { data: contentApiVersions } = useQuery({
     queryKey: ["package-versions", packageData?.name],
     queryFn: async () => {
       if (!packageData) return [];
@@ -80,9 +80,12 @@ const PackageDetailContent: React.FC = () => {
         transformPulpContentToPackage(content, undefined, undefined, null),
       );
     },
-    enabled: !!packageData,
+    enabled: !!packageData && allVersions.length === 0,
     staleTime: 1000 * 60 * 5,
   });
+
+  // Use versions from PyPI JSON API if available, otherwise from content API
+  const allVersionsData = allVersions.length > 0 ? allVersions : contentApiVersions;
 
   // Check if there's a newer stable version available
   const hasNewerVersion = useMemo(() => {

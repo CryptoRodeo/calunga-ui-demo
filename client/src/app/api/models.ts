@@ -160,6 +160,66 @@ export interface PulpPackageProvenance {
 }
 
 /**
+ * PyPI JSON Metadata API response format (PEP 566)
+ * Returned by GET /pypi/{basePath}/pypi/{packageName}/json/
+ */
+export interface PyPIPackageMetadata {
+  info: {
+    name: string;
+    version: string;
+    summary: string;
+    description: string;
+    description_content_type: string | null;
+    author: string;
+    author_email: string;
+    maintainer: string;
+    maintainer_email: string;
+    license: string;
+    license_expression: string | null;
+    requires_python: string | null;
+    classifiers: string[] | null;
+    keywords: string | null;
+    home_page: string | null;
+    project_urls: Record<string, string> | null;
+    requires_dist: string[] | null;
+    platform: string | null;
+    provides_extras: string[] | null;
+    yanked: boolean;
+    yanked_reason: string | null;
+  };
+  releases: Record<
+    string,
+    Array<{
+      filename: string;
+      packagetype: string;
+      python_version: string;
+      requires_python: string | null;
+      size: number;
+      upload_time: string;
+      upload_time_iso_8601: string;
+      digests: { md5: string; sha256: string };
+      yanked: boolean;
+      yanked_reason: string | null;
+      url: string;
+    }>
+  >;
+  urls: Array<{
+    filename: string;
+    packagetype: string;
+    python_version: string;
+    requires_python: string | null;
+    size: number;
+    upload_time: string;
+    upload_time_iso_8601: string;
+    digests: { md5: string; sha256: string };
+    yanked: boolean;
+    yanked_reason: string | null;
+    url: string;
+  }>;
+  last_serial: number;
+}
+
+/**
  * Pulp Distribution model
  * Represents where content is served from (like a PyPI index)
  */

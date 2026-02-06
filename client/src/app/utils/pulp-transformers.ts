@@ -1,4 +1,5 @@
 import type {
+  PyPIPackageMetadata,
   PulpPythonPackageContent,
   PulpPackageProvenance,
   PulpDistribution,
@@ -64,6 +65,63 @@ export const transformPulpContentToPackage = (
     // Computed trust metrics
     trustScore: computeTrustScore(provenances),
     slsaLevel: extractSlsaLevel(provenances),
+  };
+};
+
+/**
+ * Transforms PyPI JSON Metadata API response to UI Package model.
+ * Used by the package detail page for single-request data loading.
+ */
+export const transformPyPIMetadataToPackage = (
+  metadata: PyPIPackageMetadata,
+): Package => {
+  const { info, releases } = metadata;
+
+  // Extract version list from releases keys
+  const versionKeys = Object.keys(releases);
+  const versions: PackageVersion[] = versionKeys.map((ver) => {
+    const files = releases[ver];
+    // Use the earliest upload time for this version's release date
+    const uploadTime =
+      files.length > 0 ? files[0].upload_time_iso_8601 : undefined;
+    return {
+      version: ver,
+      releaseDate: formatDate(uploadTime) || "Unknown",
+      downloads: 0,
+    };
+  });
+
+  // License: prefer license_expression (SPDX) over license (free-text)
+  const license =
+    info.license_expression ||
+    (info.license && info.license.length > 100
+      ? `${info.license.substring(0, 100)}...`
+      : info.license) ||
+    "Unknown";
+
+  return {
+    id: `pypi:${info.name}:${info.version}`,
+    name: info.name,
+    version: info.version,
+    description: info.summary || info.description?.substring(0, 200) || "",
+    fullDescription: info.description,
+    downloads: 0,
+    updated:
+      formatDate(metadata.urls?.[0]?.upload_time_iso_8601) || "Unknown",
+    author: info.author || info.maintainer || "Unknown",
+    license,
+    tags: Array.isArray(info.classifiers) ? info.classifiers : [],
+    wheelName:
+      metadata.urls?.find((u) => u.packagetype === "bdist_wheel")?.filename ||
+      metadata.urls?.[0]?.filename,
+    pythonVersion:
+      metadata.urls?.find((u) => u.packagetype === "bdist_wheel")
+        ?.python_version || "source",
+    index: "unknown",
+    versions,
+    currentVersionAttestations: [],
+    trustScore: 0,
+    slsaLevel: undefined,
   };
 };
 

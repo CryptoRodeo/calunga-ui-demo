@@ -1038,3 +1038,72 @@ The all-versions query (used by both hasNewerVersion check and Versions tab) res
 response to 5 fields instead of 25+, estimated 95% payload reduction per item (from ~2-5KB
 to ~100 bytes). The specific-version query excludes requires_dist, removing 50+ dependency
 strings from the response. Mock API updated to handle both `fields` and `exclude_fields`.
+
+Feature: Use PyPI JSON Metadata API for package detail to eliminate N+1 query pattern
+
+Files Changed:
+- client/src/app/api/models.ts (added PyPIPackageMetadata type)
+- client/src/app/api/rest.ts (added getPackageMetadata function)
+- client/src/app/api/mock/mock-api.ts (added mock getPackageMetadata)
+- client/src/app/api/mock/index.ts (exported getPackageMetadata)
+- client/src/app/api/pulp.ts (wired getPackageMetadata through barrel module)
+- client/src/app/utils/pulp-transformers.ts (added transformPyPIMetadataToPackage)
+- client/src/pages/search/search.tsx (pass dist query param when navigating to detail)
+- client/src/pages/search/package-detail-context-simple.tsx (use PyPI JSON API when basePath available)
+- client/src/pages/search/package-detail.tsx (consume allVersions from context)
+- client/src/pages/search/package-detail-tabs/versions-tab.tsx (consume allVersions from context, preserve dist param)
+
+Actions Taken:
+1. Added PyPIPackageMetadata type to models.ts
+   - Full type definition for PyPI JSON Metadata API response (PEP 566)
+   - Includes info section (name, version, summary, classifiers, etc.)
+   - Includes releases section (version → files mapping)
+   - Includes urls section (current version files)
+
+2. Added getPackageMetadata() function in rest.ts
+   - Calls GET /pypi/{basePath}/pypi/{packageName}/{version}/json/
+   - Single request returns full package metadata + all versions with release files
+   - Uses the /pypi proxy (already configured in server/src/proxies.js and vite.config.ts)
+
+3. Added transformPyPIMetadataToPackage() in pulp-transformers.ts
+   - Transforms PyPI JSON Metadata API response into UI Package model
+   - Extracts all versions from the releases section
+   - Maps info fields (name, version, summary, author, license, classifiers, etc.)
+   - Prefers license_expression (SPDX) over license (free-text)
+
+4. Added mock getPackageMetadata() in mock-api.ts
+   - Constructs PyPI JSON response format from existing package fixture data
+   - Groups content items by version for the releases section
+   - Sorts by pulp_created descending to pick latest version for info source
+
+5. Wired getPackageMetadata through pulp.ts barrel module
+   - Conditionally routes to mock or real implementation based on ENV.MOCK
+
+6. Pass distribution basePath as query param when navigating to package detail
+   - search.tsx: adds ?dist={basePath} when clicking a package card
+   - versions-tab.tsx: preserves ?dist param when navigating between versions
+
+7. Updated package-detail-context-simple.tsx for single-request approach
+   - When ?dist query param is present: uses PyPI JSON Metadata API (1 request)
+   - When ?dist is absent: falls back to content API (2 requests, as before)
+   - Added allVersions to context interface — populated from PyPI JSON API releases
+   - Both queries disabled when not needed (prevents unnecessary requests)
+
+8. Updated package-detail.tsx to consume allVersions from context
+   - Only runs the content API versions query when allVersions is empty (fallback)
+   - Uses whichever source provides versions for the hasNewerVersion check
+
+9. Updated versions-tab.tsx to consume allVersions from context
+   - Only runs the content API versions query when allVersions is empty (fallback)
+   - Fixed pre-existing bug: removed unreachable `return allVersions;` referencing undefined variable
+
+10. Build verification
+    - Ran 'npm run build -w client' successfully
+    - No new type errors or compilation issues introduced
+
+Status: COMPLETED
+Package detail page now uses the PyPI JSON Metadata API when distribution basePath is
+available (passed via ?dist query param). This eliminates the N+1 query pattern:
+previously 2 sequential HTTP requests (1 for package metadata, 1 for all versions),
+now 1 single request that returns both. The content API fallback is preserved for
+direct URL access without a distribution context.

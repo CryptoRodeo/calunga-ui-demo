@@ -460,6 +460,50 @@
       "Update package-detail.tsx to consume the versions from the Package model returned by the context (which now includes all versions from the PyPI JSON response) instead of making a separate Query 2. Remove or simplify the second useQuery call.",
       "Test that the package detail page loads with a single network request instead of two. Verify that the 'Newer version available' badge, Versions tab, and Files tab all work correctly with data from the PyPI JSON API."
     ],
+    "passes": true
+  },
+  {
+    "category": "Performance",
+    "description": "Prefetch adjacent page metadata for instant pagination",
+    "problem": "When the user clicks 'Next Page' in the search results, Query 2 fetches metadata for the new page's packages. This causes a visible loading delay (spinner or opacity change) on every page change because the batch name__in request and deduplication must complete before results render. Users browsing through pages experience a jarring delay on each navigation.",
+    "rationale": "React Query's queryClient.prefetchQuery() allows background data fetching without triggering UI loading states. By prefetching the next (and optionally previous) page's metadata while the user views the current page, pagination becomes near-instant for sequential browsing — the most common navigation pattern. The prefetched data sits in React Query's cache and is served immediately when the user navigates. The cost is minimal: one extra background HTTP request per page view, amortized by the high likelihood the user will navigate to the adjacent page. The prefetch uses the same queryKey structure as Query 2 (['packageDetails', basePath, pageNames]), so it integrates seamlessly with existing cache invalidation.",
+    "steps": [
+      "Import useQueryClient from @tanstack/react-query in search-context.tsx",
+      "After Query 2 completes successfully, compute the next page's package names: nextPageNames = filteredAndSortedNames.slice(startIndex + perPage, startIndex + 2 * perPage)",
+      "Use a useEffect that runs when currentPageItems changes (i.e., after Query 2 resolves) to call queryClient.prefetchQuery with queryKey ['packageDetails', basePath, nextPageNames] and the same queryFn as Query 2 but with nextPageNames instead of currentPageNames",
+      "Optionally prefetch the previous page as well for backward navigation",
+      "Ensure prefetch does NOT run when nextPageNames is empty (last page) or when the component is unmounting",
+      "Test that clicking 'Next Page' renders results instantly (from cache) without any loading indicator"
+    ],
+    "passes": false
+  },
+  {
+    "category": "Performance",
+    "description": "Increase cache duration for package names from 5 to 30 minutes",
+    "problem": "In search-context.tsx:345, the package names query (Query 1 via getSimplePackageNames) uses staleTime: 1000 * 60 * 5 (5 minutes). Package names in a Pulp distribution change very infrequently — typically only when a new package is published or removed, which might happen a few times per day at most. With a 5-minute staleTime, switching between distributions or navigating back to the search page after 5 minutes triggers a full refetch of the names list. Since the Simple API returns ALL unique names for the distribution, this is a lightweight request (~10-50KB), but the refetch still causes a loading state flash and delays rendering.",
+    "rationale": "Package names are highly cacheable data. Increasing staleTime to 30 minutes reduces unnecessary refetches by 6x. Combined with React Query's gcTime (garbage collection time, default 5 minutes after last subscriber unmounts), cached names persist across navigation within a session. For real-time freshness, a manual refresh button (already suggested in the 'smart caching strategy' PRD entry) allows users to force-fetch when needed. The 30-minute window is a conservative choice — PyPI itself caches the Simple API index for hours.",
+    "steps": [
+      "In search-context.tsx:345, change staleTime from 1000 * 60 * 5 to 1000 * 60 * 30",
+      "Also increase gcTime (formerly cacheTime) to 1000 * 60 * 60 (1 hour) to keep names in cache longer after the search page unmounts, so returning to search is instant",
+      "Apply the same staleTime increase to the distributions query in search.tsx:619 (currently 10 minutes, increase to 30 minutes) since distributions change even less frequently than package names",
+      "Verify that switching distributions still triggers a fresh names fetch (the queryKey includes selectedIndex, so different distributions have separate cache entries)",
+      "Verify that navigating to package detail and back renders the search page instantly from cache without a loading spinner"
+    ],
+    "passes": false
+  },
+  {
+    "category": "Performance",
+    "description": "Use PyPI Root API for instant inventory counts before names finish loading",
+    "problem": "The Inventory card on the search page (search.tsx:258-269) displays totalItemCount, which is derived from packageNames.length — meaning the count is only available AFTER the full names list finishes loading from the Simple API (Query 1). During loading, the Inventory card shows '0 Packages'. For distributions with thousands of packages, the Simple API response can take 1-3 seconds, during which the user sees no inventory information. Pulp's PyPI Root API (GET /pypi/{basePath}/) returns pre-computed aggregate counts {projects, releases, files} using database-level DISTINCT — a much faster query than fetching the full name list.",
+    "rationale": "The PyPI Root API (pulp_python/app/pypi/views.py:485-492) executes three DB-level COUNT DISTINCT queries which are significantly faster than the Simple API's full name list retrieval. Fetching this endpoint in parallel with Query 1 provides instant inventory numbers. The 'projects' count from the Root API is the exact same value as packageNames.length (both use DISTINCT on name), but it arrives faster because the response is tiny ({projects: N, releases: N, files: N}) compared to the full name list. This also provides bonus data: release count and file count, which could enhance the Inventory card with richer statistics.",
+    "steps": [
+      "Add a new function in rest.ts: getDistributionStats(basePath: string) that calls GET /pypi/{basePath}/ and returns { projects: number, releases: number, files: number }",
+      "Add the function to pulp.ts barrel module and create a mock implementation in mock-api.ts that computes counts from fixture data",
+      "In search-context.tsx, add a new useQuery with queryKey ['distributionStats', basePath] that calls getDistributionStats. Run it in parallel with Query 1 (package names). Set staleTime: 1000 * 60 * 30",
+      "Expose distributionStats via the SearchContext so the Inventory card can display project/release/file counts immediately, even before the full names list loads",
+      "Update the Inventory card in search.tsx to show distributionStats.projects as the primary count, falling back to totalItemCount (from names list) once loaded. Optionally show releases and files counts as secondary metrics",
+      "Test that the Inventory card shows a count within 200-500ms of page load, before the full names list arrives"
+    ],
     "passes": false
   }
 ]

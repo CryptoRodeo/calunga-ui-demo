@@ -7,13 +7,21 @@ import type {
   HubRequestParams,
   PulpPythonPackageContent,
 } from "@app/api/models";
-import { getPulpPaginatedResult, PULP_ENDPOINTS } from "@app/api/pulp";
-import { transformPulpContentToPackage } from "@app/utils/pulp-transformers";
+import {
+  getPulpPaginatedResult,
+  getPackageMetadata,
+  PULP_ENDPOINTS,
+} from "@app/api/pulp";
+import {
+  transformPulpContentToPackage,
+  transformPyPIMetadataToPackage,
+} from "@app/utils/pulp-transformers";
 
 export type TabKey = "overview" | "versions" | "files" | "security";
 
 interface IPackageDetailContext {
   packageData: Package | null;
+  allVersions: Package[];
   isLoading: boolean;
   isError: boolean;
   tabControls: {
@@ -40,11 +48,42 @@ export const PackageDetailProvider: React.FunctionComponent<
   const decodedPackageName = decodeURIComponent(packageName);
   const decodedVersion = decodeURIComponent(version);
 
-  // Fetch package data from Pulp API
-  const { data: packageData, isLoading, isError } = useQuery({
+  // Get distribution basePath from URL query params
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const basePath = searchParams.get("dist");
+
+  // Strategy: Use PyPI JSON Metadata API when basePath is available (single request),
+  // otherwise fall back to the content API (two requests for package + versions).
+  const usePyPIApi = !!basePath;
+
+  // --- PyPI JSON Metadata API query (single request for package + all versions) ---
+  const {
+    data: pypiData,
+    isLoading: pypiLoading,
+    isError: pypiError,
+  } = useQuery({
+    queryKey: ["package-pypi", basePath, decodedPackageName, decodedVersion],
+    queryFn: async () => {
+      const metadata = await getPackageMetadata(
+        basePath!,
+        decodedPackageName,
+        decodedVersion,
+      );
+      return transformPyPIMetadataToPackage(metadata);
+    },
+    enabled: usePyPIApi,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // --- Content API fallback query (when no basePath available) ---
+  const {
+    data: contentData,
+    isLoading: contentLoading,
+    isError: contentError,
+  } = useQuery({
     queryKey: ["package", decodedPackageName, decodedVersion],
     queryFn: async () => {
-      console.log("Fetching package:", decodedPackageName, decodedVersion);
       const hubParams: HubRequestParams = {
         filters: [
           { field: "name", operator: "=", value: decodedPackageName },
@@ -62,26 +101,45 @@ export const PackageDetailProvider: React.FunctionComponent<
         { exclude_fields: "requires_dist" },
       );
 
-      console.log("Package fetch result:", result);
-
       if (result.data.length === 0) {
-        console.warn("No package found for:", decodedPackageName, decodedVersion);
         return null;
       }
 
-      // Transform to UI Package model
-      const transformed = transformPulpContentToPackage(result.data[0], undefined, undefined, null);
-      console.log("Transformed package:", transformed);
-      return transformed;
+      return transformPulpContentToPackage(
+        result.data[0],
+        undefined,
+        undefined,
+        null,
+      );
     },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    enabled: !usePyPIApi,
+    staleTime: 1000 * 60 * 5,
   });
 
+  // Derive state from whichever query is active
+  const packageData = usePyPIApi ? pypiData || null : contentData || null;
+  const isLoading = usePyPIApi ? pypiLoading : contentLoading;
+  const isError = usePyPIApi ? pypiError : contentError;
+
+  // All versions: available from PyPI API response, empty for content API fallback
+  // (package-detail.tsx will fetch versions separately when allVersions is empty)
+  const allVersions: Package[] =
+    usePyPIApi && pypiData?.versions
+      ? pypiData.versions.map((v) => ({
+          id: `${pypiData.name}:${v.version}`,
+          name: pypiData.name,
+          version: v.version,
+          description: "",
+          downloads: v.downloads,
+          updated: v.releaseDate,
+          author: pypiData.author,
+          license: pypiData.license,
+        }))
+      : [];
+
   // Get initial tab from URL params
-  const location = useLocation();
   const getInitialTab = (): TabKey => {
-    const params = new URLSearchParams(location.search);
-    const activeTab = params.get("activeTab") as TabKey;
+    const activeTab = searchParams.get("activeTab") as TabKey;
     return activeTab &&
       ["overview", "versions", "files", "security"].includes(activeTab)
       ? activeTab
@@ -110,7 +168,8 @@ export const PackageDetailProvider: React.FunctionComponent<
   return (
     <PackageDetailContext.Provider
       value={{
-        packageData: packageData || null,
+        packageData,
+        allVersions,
         isLoading,
         isError,
         tabControls: {

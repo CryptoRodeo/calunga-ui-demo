@@ -1,6 +1,7 @@
 import type {
   HubPaginatedResult,
   HubRequestParams,
+  PyPIPackageMetadata,
   PulpDistribution,
   PulpPaginatedResponse,
   PulpPythonPackageContent,
@@ -394,4 +395,99 @@ export const getDistributionByBasePath = async (
   const distData = await loadDistributions();
   const match = distData.results.find((d) => d.base_path === basePath);
   return match || null;
+};
+
+/**
+ * Mock implementation of getPackageMetadata.
+ * Constructs a PyPI JSON Metadata API response from fixture data.
+ */
+export const getPackageMetadata = async (
+  basePath: string,
+  packageName: string,
+  version?: string,
+): Promise<PyPIPackageMetadata> => {
+  await delay(MOCK_DELAY_MS);
+
+  // Find distribution by basePath
+  const distData = await loadDistributions();
+  const dist = distData.results.find((d) => d.base_path === basePath);
+  const distName = dist?.name || "calunga-dev";
+
+  const pkgData = await loadPackages(distName);
+  if (!pkgData) {
+    throw new Error(`No fixture data for distribution: ${distName}`);
+  }
+
+  // Find all content items for this package name
+  const packageItems = pkgData.results.filter(
+    (item) => item.name.toLowerCase() === packageName.toLowerCase(),
+  );
+
+  if (packageItems.length === 0) {
+    throw new Error(`Package not found: ${packageName}`);
+  }
+
+  // Sort by pulp_created descending to get latest first
+  packageItems.sort(
+    (a, b) =>
+      new Date(b.pulp_created).getTime() - new Date(a.pulp_created).getTime(),
+  );
+
+  // Pick the info source: specific version or latest
+  const infoSource = version
+    ? packageItems.find((item) => item.version === version) || packageItems[0]
+    : packageItems[0];
+
+  // Group by version for releases
+  const releases: PyPIPackageMetadata["releases"] = {};
+  for (const item of packageItems) {
+    if (!releases[item.version]) {
+      releases[item.version] = [];
+    }
+    releases[item.version].push({
+      filename: item.filename,
+      packagetype: item.packagetype,
+      python_version: item.python_version,
+      requires_python: item.requires_python || null,
+      size: item.size,
+      upload_time: item.pulp_created,
+      upload_time_iso_8601: item.pulp_created,
+      digests: { md5: "", sha256: item.sha256 || "" },
+      yanked: false,
+      yanked_reason: null,
+      url: "",
+    });
+  }
+
+  // urls = files for the info version
+  const infoVersionFiles = releases[infoSource.version] || [];
+
+  return {
+    info: {
+      name: infoSource.name,
+      version: infoSource.version,
+      summary: infoSource.summary || "",
+      description: infoSource.description || "",
+      description_content_type: null,
+      author: infoSource.author || "",
+      author_email: infoSource.author_email || "",
+      maintainer: infoSource.maintainer || "",
+      maintainer_email: infoSource.maintainer_email || "",
+      license: infoSource.license || "",
+      license_expression: infoSource.license_expression || null,
+      requires_python: infoSource.requires_python || null,
+      classifiers: infoSource.classifiers || null,
+      keywords: infoSource.keywords || null,
+      home_page: infoSource.home_page || null,
+      project_urls: infoSource.project_urls || null,
+      requires_dist: infoSource.requires_dist || null,
+      platform: infoSource.platform || null,
+      provides_extras: null,
+      yanked: false,
+      yanked_reason: null,
+    },
+    releases,
+    urls: infoVersionFiles,
+    last_serial: 0,
+  };
 };

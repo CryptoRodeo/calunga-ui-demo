@@ -12,6 +12,7 @@ import ENV from "@app/env";
 import type {
   HubPaginatedResult,
   HubRequestParams,
+  PyPIPackageMetadata,
   PulpDistribution,
 } from "./models";
 
@@ -25,6 +26,7 @@ import {
   getDistributionForContent as realGetDistributionForContent,
   getDistributionByBasePath as realGetDistributionByBasePath,
   getSimplePackageNames as realGetSimplePackageNames,
+  getPackageMetadata as realGetPackageMetadata,
 } from "./rest";
 
 import {
@@ -33,6 +35,7 @@ import {
   getDistributionForContent as mockGetDistributionForContent,
   getDistributionByBasePath as mockGetDistributionByBasePath,
   getSimplePackageNames as mockGetSimplePackageNames,
+  getPackageMetadata as mockGetPackageMetadata,
 } from "./mock";
 
 const useMock = ENV.MOCK === "on";
@@ -67,3 +70,11 @@ export const getSimplePackageNames: (
 ) => Promise<string[]> = useMock
   ? mockGetSimplePackageNames
   : realGetSimplePackageNames;
+
+export const getPackageMetadata: (
+  basePath: string,
+  packageName: string,
+  version?: string,
+) => Promise<PyPIPackageMetadata> = useMock
+  ? mockGetPackageMetadata
+  : realGetPackageMetadata;

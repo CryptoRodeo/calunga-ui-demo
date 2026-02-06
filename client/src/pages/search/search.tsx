@@ -391,7 +391,10 @@ const SearchContent: React.FC<SearchContentProps> = ({
                       // isClickable
                       onClick={() => {
                         window.scrollTo(0, 0);
-                        navigate(`/search/${pkg.name}/${pkg.version}`);
+                        const distParam = currentDistribution?.base_path
+                          ? `?dist=${encodeURIComponent(currentDistribution.base_path)}`
+                          : "";
+                        navigate(`/search/${pkg.name}/${pkg.version}${distParam}`);
                       }}
                       style={{
                         cursor: "pointer",
