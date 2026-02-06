@@ -220,6 +220,16 @@ export interface PyPIPackageMetadata {
 }
 
 /**
+ * PyPI Root API response — pre-computed aggregate counts.
+ * Returned by GET /pypi/{basePath}/
+ */
+export interface DistributionStats {
+  projects: number;
+  releases: number;
+  files: number;
+}
+
+/**
  * Pulp Distribution model
  * Represents where content is served from (like a PyPI index)
  */

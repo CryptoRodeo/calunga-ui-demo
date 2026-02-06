@@ -64,6 +64,7 @@ const SearchContent: React.FC<SearchContentProps> = ({
     setPerPage,
     totalItemCount,
     filteredItemCount,
+    distributionStats,
     isLoading,
     isPending,
   } = useContext(SearchContext);
@@ -263,7 +264,7 @@ const SearchContent: React.FC<SearchContentProps> = ({
                           color: "var(--pf-v6-global--Color--100)",
                         }}
                       >
-                        {`${totalItemCount} Packages`}
+                        {`${distributionStats?.projects ?? totalItemCount} Packages`}
                       </span>
                     </FlexItem>
                   </Flex>
@@ -617,7 +618,7 @@ export const Search: React.FC = () => {
     useQuery({
       queryKey: ["distributions"],
       queryFn: getAllDistributions,
-      staleTime: 1000 * 60 * 10, // Cache for 10 minutes
+      staleTime: 1000 * 60 * 30, // Cache for 30 minutes
     });
 
   // Use first distribution as default, or empty string if none available

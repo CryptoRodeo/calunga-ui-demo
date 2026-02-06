@@ -1107,3 +1107,129 @@ available (passed via ?dist query param). This eliminates the N+1 query pattern:
 previously 2 sequential HTTP requests (1 for package metadata, 1 for all versions),
 now 1 single request that returns both. The content API fallback is preserved for
 direct URL access without a distribution context.
+
+Feature: Prefetch adjacent page metadata for instant pagination
+
+Files Changed:
+- client/src/pages/search/search-context.tsx
+
+Actions Taken:
+1. Added useQueryClient import from @tanstack/react-query
+   - Used to call queryClient.prefetchQuery() for background data fetching
+
+2. Added useEffect import from react
+   - Needed for the prefetch side effect
+
+3. Added nextPageNames useMemo (lines 470-477)
+   - Computes the next page's package names from filteredAndSortedNames
+   - Slices from startIndex + perPage to startIndex + 2 * perPage
+   - Returns empty array on the last page (no next page to prefetch)
+
+4. Added prefetch useEffect (lines 479-530)
+   - Runs when current page data has loaded (currentPageItems.length > 0)
+   - Skips when nextPageNames is empty (last page) or no distribution selected
+   - Calls queryClient.prefetchQuery with the same queryKey structure as Query 2:
+     ["packageDetails", basePath, nextPageNames]
+   - Uses identical queryFn as Query 2: batch name__in request, -pulp_created ordering,
+     fields parameter for payload reduction, client-side deduplication
+   - staleTime matches Query 2 (5 minutes) so prefetched data is served from cache
+   - Prefetch runs in background — no loading indicators or UI state changes
+
+5. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Clicking "Next Page" now renders results instantly from React Query's cache when the
+next page has been prefetched. The prefetch fires as a background request after the
+current page's data loads, using the same batch name__in query and field selection
+as Query 2. No UI changes — the prefetch is invisible to the user. On the last page,
+no prefetch occurs (nextPageNames is empty).
+
+Feature: Increase cache duration for package names from 5 to 30 minutes
+
+Files Changed:
+- client/src/pages/search/search-context.tsx
+- client/src/pages/search/search.tsx
+
+Actions Taken:
+1. Increased package names query staleTime from 5 to 30 minutes (search-context.tsx:347)
+   - Changed staleTime from 1000 * 60 * 5 to 1000 * 60 * 30
+   - Package names change very infrequently (only when packages are published/removed)
+   - Reduces unnecessary refetches by 6x
+
+2. Added gcTime of 1 hour to package names query (search-context.tsx:348)
+   - Added gcTime: 1000 * 60 * 60
+   - Keeps names in React Query cache longer after the search page unmounts
+   - Returning to search page is instant when within the 1-hour gc window
+
+3. Increased distributions query staleTime from 10 to 30 minutes (search.tsx:620)
+   - Changed staleTime from 1000 * 60 * 10 to 1000 * 60 * 30
+   - Distributions change even less frequently than package names
+
+4. Query 2 (package details) and prefetch staleTime unchanged at 5 minutes
+   - These cache per-page metadata which is more granular and should refresh more often
+
+5. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Package names and distributions are now cached for 30 minutes (up from 5 and 10 minutes
+respectively). Package names also persist in React Query's garbage collection cache for
+1 hour after the search page unmounts. Switching distributions still triggers a fresh
+names fetch since the queryKey includes selectedIndex.
+
+Feature: Use PyPI Root API for instant inventory counts before names finish loading
+
+Files Changed:
+- client/src/app/api/models.ts (added DistributionStats type)
+- client/src/app/api/rest.ts (added getDistributionStats function)
+- client/src/app/api/mock/mock-api.ts (added mock getDistributionStats)
+- client/src/app/api/mock/index.ts (exported getDistributionStats)
+- client/src/app/api/pulp.ts (wired getDistributionStats through barrel module)
+- client/src/pages/search/search-context.tsx (added distributionStats query and context field)
+- client/src/pages/search/search.tsx (updated Inventory card to use distributionStats)
+
+Actions Taken:
+1. Added DistributionStats type to models.ts
+   - Interface with projects, releases, and files count fields
+   - Matches the PyPI Root API response format (GET /pypi/{basePath}/)
+
+2. Added getDistributionStats() function in rest.ts
+   - Calls GET /pypi/{basePath}/ to fetch pre-computed aggregate counts
+   - Uses database-level DISTINCT for accurate project counts
+   - Returns { projects, releases, files } with safe defaults (0) for missing fields
+
+3. Added mock getDistributionStats() in mock-api.ts
+   - Computes project/release/file counts from fixture data
+   - Uses Set-based deduplication to count unique names and name@version pairs
+   - Files count = total fixture results
+
+4. Wired through pulp.ts barrel module
+   - Conditionally exports mock or real implementation based on ENV.MOCK
+   - Added to both real and mock import blocks
+
+5. Added distributionStats useQuery in search-context.tsx
+   - queryKey: ["distributionStats", selectedDistribution?.base_path]
+   - Runs in parallel with Query 1 (package names) — does not block it
+   - staleTime: 30 minutes (same as package names)
+   - Added distributionStats to ISearchContext interface
+   - Provided in all three Provider value objects (loading, error, success)
+
+6. Updated Inventory card in search.tsx
+   - Uses distributionStats.projects as the primary count, falling back to totalItemCount
+   - Shows accurate project count immediately (before full names list loads)
+   - Expression: distributionStats?.projects ?? totalItemCount
+
+7. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+The Inventory card now shows the project count from the PyPI Root API immediately,
+before the full package names list finishes loading from the Simple API. The PyPI Root
+API uses database-level COUNT DISTINCT queries which are faster than the full name list
+retrieval. The distributionStats query runs in parallel with Query 1, providing instant
+inventory numbers. Also exposes releases and files counts via the context for potential
+future use.

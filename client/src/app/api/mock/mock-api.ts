@@ -1,4 +1,5 @@
 import type {
+  DistributionStats,
   HubPaginatedResult,
   HubRequestParams,
   PyPIPackageMetadata,
@@ -395,6 +396,36 @@ export const getDistributionByBasePath = async (
   const distData = await loadDistributions();
   const match = distData.results.find((d) => d.base_path === basePath);
   return match || null;
+};
+
+/**
+ * Mock implementation of getDistributionStats.
+ * Computes project/release/file counts from fixture data.
+ */
+export const getDistributionStats = async (
+  basePath: string,
+): Promise<DistributionStats> => {
+  await delay(MOCK_DELAY_MS);
+  const distData = await loadDistributions();
+  const dist = distData.results.find((d) => d.base_path === basePath);
+  const distName = dist?.name || "calunga-dev";
+  const pkgData = await loadPackages(distName);
+  if (!pkgData) {
+    return { projects: 0, releases: 0, files: 0 };
+  }
+
+  const names = new Set<string>();
+  const versionKeys = new Set<string>();
+  for (const item of pkgData.results) {
+    names.add(item.name);
+    versionKeys.add(`${item.name}@${item.version}`);
+  }
+
+  return {
+    projects: names.size,
+    releases: versionKeys.size,
+    files: pkgData.results.length,
+  };
 };
 
 /**

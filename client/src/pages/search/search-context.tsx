@@ -4,14 +4,19 @@ import {
   useState,
   useCallback,
   useMemo,
+  useEffect,
   useDeferredValue,
 } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import type { PulpPythonPackageContent } from "@app/api/models";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type {
+  DistributionStats,
+  PulpPythonPackageContent,
+} from "@app/api/models";
 import {
   getPulpPaginatedResult,
   getSimplePackageNames,
+  getDistributionStats,
   PULP_ENDPOINTS,
 } from "@app/api/pulp";
 import { transformPulpContentToPackage } from "@app/utils/pulp-transformers";
@@ -133,6 +138,8 @@ interface ISearchContext {
   setFilter: (category: keyof FilterValues, values: string[]) => void;
   clearAllFilters: () => void;
   deleteFilter: (category: keyof FilterValues, value: string) => void;
+  // Distribution stats (from PyPI Root API, available before names finish loading)
+  distributionStats: DistributionStats | null;
   // Loading state
   isLoading: boolean;
   isPending: boolean;
@@ -159,6 +166,7 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
   selectedIndex,
   availableDistributions,
 }) => {
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Initialize state from URL params
@@ -330,6 +338,17 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     return params;
   }, [selectedDistribution?.repository_version]);
 
+  // ── Distribution stats: fast pre-computed counts from PyPI Root API ──
+  // Runs in parallel with Query 1. Provides instant inventory numbers
+  // before the full names list finishes loading.
+  const { data: distributionStats = null } = useQuery({
+    queryKey: ["distributionStats", selectedDistribution?.base_path],
+    queryFn: () =>
+      getDistributionStats(selectedDistribution?.base_path ?? ""),
+    enabled: !!selectedDistribution,
+    staleTime: 1000 * 60 * 30,
+  });
+
   // ── QUERY 1: Fetch unique package names from Pulp's Simple API ──
   // Uses database-level DISTINCT — returns just names, no content item duplication.
   // This is a single lightweight request regardless of how many content items exist.
@@ -342,7 +361,8 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     queryFn: () =>
       getSimplePackageNames(selectedDistribution?.base_path ?? "", extraParams),
     enabled: !!selectedDistribution,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60,
   });
 
   // Client-side name search and sorting on the full name list.
@@ -462,6 +482,71 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     return currentPageItems;
   }, [currentPageItems, sortBy]);
 
+  // ── Prefetch adjacent page metadata for instant pagination ──
+  // When the current page's data has loaded, prefetch the next page's metadata
+  // so clicking "Next Page" renders results instantly from cache.
+  const nextPageNames = useMemo(
+    () =>
+      filteredAndSortedNames.slice(
+        startIndex + perPage,
+        startIndex + 2 * perPage,
+      ),
+    [filteredAndSortedNames, startIndex, perPage],
+  );
+
+  useEffect(() => {
+    if (
+      nextPageNames.length === 0 ||
+      !selectedDistribution ||
+      currentPageItems.length === 0
+    ) {
+      return;
+    }
+
+    queryClient.prefetchQuery({
+      queryKey: [
+        "packageDetails",
+        selectedDistribution.base_path,
+        nextPageNames,
+      ],
+      queryFn: async () => {
+        const result =
+          await getPulpPaginatedResult<PulpPythonPackageContent>(
+            PULP_ENDPOINTS.PYTHON_CONTENT,
+            { filters: [] },
+            {
+              ...extraParams,
+              name__in: nextPageNames.join(","),
+              ordering: "-pulp_created",
+              limit: 2000,
+              fields:
+                "pulp_href,name,version,summary,author,maintainer,license,license_expression,pulp_created,filename,python_version,classifiers",
+            },
+          );
+
+        const seen = new Set<string>();
+        const deduplicated: PulpPythonPackageContent[] = [];
+        for (const item of result.data) {
+          if (!seen.has(item.name)) {
+            seen.add(item.name);
+            deduplicated.push(item);
+          }
+        }
+
+        return deduplicated.map((content) =>
+          transformPulpContentToPackage(content, undefined, undefined, null),
+        );
+      },
+      staleTime: 1000 * 60 * 5,
+    });
+  }, [
+    nextPageNames,
+    selectedDistribution,
+    currentPageItems,
+    extraParams,
+    queryClient,
+  ]);
+
   // Loading = true until both queries have completed at least once.
   // This prevents a "No Packages Found" flash between Query 1 (names) and
   // Query 2 (details) completing on initial load.
@@ -489,6 +574,7 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
           totalItemCount: 0,
           filteredItemCount: 0,
           serverTotal: 0,
+          distributionStats,
           filters,
           setFilter,
           clearAllFilters,
@@ -520,6 +606,7 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
           totalItemCount: 0,
           filteredItemCount: 0,
           serverTotal: 0,
+          distributionStats,
           filters,
           setFilter,
           clearAllFilters,
@@ -549,6 +636,7 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
         totalItemCount,
         filteredItemCount,
         serverTotal,
+        distributionStats,
         filters,
         setFilter,
         clearAllFilters,

@@ -5,6 +5,7 @@ import type { AdvisoryDetails, ExtractResult, IngestResult } from "@app/client";
 import { serializeRequestParamsForHub } from "@app/hooks/table-controls/getHubRequestParams";
 
 import type {
+  DistributionStats,
   HubFilter,
   HubPaginatedResult,
   HubRequestParams,
@@ -385,4 +386,21 @@ export const getPackageMetadata = async (
 
   const response = await axios.get<PyPIPackageMetadata>(url);
   return response.data;
+};
+
+/**
+ * Fetches aggregate distribution statistics via the PyPI Root API.
+ * Returns pre-computed project, release, and file counts using database-level DISTINCT.
+ *
+ * Endpoint: GET /pypi/{basePath}/
+ */
+export const getDistributionStats = async (
+  basePath: string,
+): Promise<DistributionStats> => {
+  const response = await axios.get(`/pypi/${basePath}/`);
+  return {
+    projects: response.data?.projects ?? 0,
+    releases: response.data?.releases ?? 0,
+    files: response.data?.files ?? 0,
+  };
 };

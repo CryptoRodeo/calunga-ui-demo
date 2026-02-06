@@ -475,7 +475,7 @@
       "Ensure prefetch does NOT run when nextPageNames is empty (last page) or when the component is unmounting",
       "Test that clicking 'Next Page' renders results instantly (from cache) without any loading indicator"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "Performance",
@@ -489,7 +489,7 @@
       "Verify that switching distributions still triggers a fresh names fetch (the queryKey includes selectedIndex, so different distributions have separate cache entries)",
       "Verify that navigating to package detail and back renders the search page instantly from cache without a loading spinner"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "Performance",
@@ -504,6 +504,6 @@
       "Update the Inventory card in search.tsx to show distributionStats.projects as the primary count, falling back to totalItemCount (from names list) once loaded. Optionally show releases and files counts as secondary metrics",
       "Test that the Inventory card shows a count within 200-500ms of page load, before the full names list arrives"
     ],
-    "passes": false
+    "passes": true
   }
 ]
