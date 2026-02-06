@@ -405,6 +405,6 @@
       "For the package detail page (package-detail.tsx), show the full license text since there's room — only truncate in the search card view",
       "Test with the scipy mock data (license field is 55,247 chars) to verify the card renders at a reasonable height"
     ],
-    "passes": false
+    "passes": true
   }
 ]

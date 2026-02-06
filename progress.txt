@@ -827,3 +827,36 @@ When MOCK=on (GitHub Pages demo or local mock mode), a compact yellow "Demo Mode
 appears in the masthead with a tooltip explanation. When MOCK=off (live mode, the default),
 no indicator renders at all. Uses standard PatternFly components that work with both light
 and dark themes and responsive layouts.
+
+Feature: Fix license text overflow rendering full license agreement in package card
+
+Files Changed:
+- client/src/app/utils/pulp-transformers.ts
+- client/src/pages/search/search.tsx
+
+Actions Taken:
+1. Updated license assignment in pulp-transformers.ts (line 41)
+   - Changed priority order: prefer license_expression (SPDX, always short) over license (free-text)
+   - Previously: content.license || content.license_expression || "Unknown"
+   - Now: content.license_expression || (truncated content.license) || "Unknown"
+   - Truncates license field at 100 characters with "..." suffix when it exceeds 100 chars
+   - This handles packages like scipy where the license field contains the full BSD agreement (55,247 chars)
+
+2. Added CSS text truncation to license FlexItem in search.tsx (line 501-503)
+   - Added maxWidth: 200px, overflow: hidden, textOverflow: ellipsis, whiteSpace: nowrap
+   - Acts as a safety net in case the transformer truncation is insufficient
+   - Only affects the search card view, not the package detail page
+
+3. Package detail page verification
+   - Confirmed package-detail.tsx does not render pkg.license anywhere
+   - No risk of truncating license text on the detail page
+
+4. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+License text in package cards is now truncated. Prefers SPDX license_expression (always short
+identifiers like "BSD-3-Clause") over the free-text license field. When license_expression is
+unavailable and the license field exceeds 100 characters, it is truncated with "...". CSS
+truncation on the card provides additional protection against overflow.

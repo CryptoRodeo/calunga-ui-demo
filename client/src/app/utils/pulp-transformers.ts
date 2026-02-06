@@ -37,8 +37,13 @@ export const transformPulpContentToPackage = (
     // Author with fallback to maintainer
     author: content.author || content.maintainer || "Unknown",
 
-    // License with fallback to license_expression
-    license: content.license || content.license_expression || "Unknown",
+    // License: prefer license_expression (SPDX, always short) over license (free-text, potentially very long)
+    license:
+      content.license_expression ||
+      (content.license && content.license.length > 100
+        ? `${content.license.substring(0, 100)}...`
+        : content.license) ||
+      "Unknown",
 
     // Tags from classifiers (ensure it's always an array)
     tags: Array.isArray(content.classifiers) ? content.classifiers : [],

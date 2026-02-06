@@ -498,7 +498,15 @@ const SearchContent: React.FC<SearchContentProps> = ({
                                       }}
                                     />
                                   </FlexItem>
-                                  <FlexItem style={{ marginLeft: "8px" }}>
+                                  <FlexItem
+                                    style={{
+                                      marginLeft: "8px",
+                                      maxWidth: "200px",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
                                     {pkg.license}
                                   </FlexItem>
                                 </Flex>
