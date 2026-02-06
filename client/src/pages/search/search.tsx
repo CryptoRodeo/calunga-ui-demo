@@ -66,7 +66,6 @@ const SearchContent: React.FC<SearchContentProps> = ({
     filteredItemCount,
     isLoading,
     isPending,
-    isFetchingMore,
   } = useContext(SearchContext);
 
   const navigate = useNavigate();
@@ -571,22 +570,6 @@ const SearchContent: React.FC<SearchContentProps> = ({
                   ))}
                 </Gallery>
               </div>
-              {isFetchingMore && (
-                <div
-                  style={{
-                    padding: "0.5rem 1rem",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "0.5rem",
-                    color: "var(--pf-v6-global--Color--200)",
-                    fontSize: "var(--pf-v6-global--FontSize--sm)",
-                  }}
-                >
-                  <Spinner size="sm" />
-                  <span>Loading more packages...</span>
-                </div>
-              )}
               <div
                 style={{
                   padding: "1rem",

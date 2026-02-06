@@ -263,7 +263,7 @@
       "Apply deduplication and transformation only to the current page's results (not an accumulated global dataset)",
       "Leverage React Query's caching so previously visited pages are served from cache without re-fetching"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "Bug",
@@ -293,5 +293,77 @@
       "Verify that the initial load (first visit) still works correctly since queryFn sets state AND the useEffect also sets state from the returned data"
     ],
     "passes": true
+  },
+  {
+    "category": "Architecture",
+    "description": "Create mock data recording script to capture live Pulp API responses",
+    "problem": "The app needs to run in demo mode on GitHub Pages without a Pulp backend, but currently all data comes from live Pulp API calls. Existing dummy-data.json files (client/src/pages/search/dummy-data.json, client/src/pages/python-wheels/dummy-data.json) are in the UI Package format, not the PulpPythonPackageContent format that the transformation pipeline (pulp-transformers.ts), deduplication (version-compare.ts), and filtering logic (search-context.tsx) all expect. Mock data must be in the Pulp API response format (PulpPaginatedResponse<PulpPythonPackageContent> and PulpPaginatedResponse<PulpDistribution>) so the entire downstream pipeline — transform, dedup, filter, sort, paginate — works identically in both modes.",
+    "rationale": "Recording real API responses ensures the mock data is structurally accurate and includes realistic field values, classifiers, dependency lists, and version hierarchies. This avoids subtle bugs from hand-crafted mock data that might miss required fields or have unrealistic data shapes. The recording script runs once against the live Pulp instance (using the credentials in .env), captures the responses, and writes them to static JSON fixture files.",
+    "steps": [
+      "Create scripts/record-mock-data.ts — a Node.js script that uses the PULP_API_URL, PULP_USERNAME, and PULP_PASSWORD from the root .env file to authenticate against the live Pulp API",
+      "The script fetches GET /api/v3/distributions/python/pypi/?limit=100 and saves the full PulpPaginatedResponse<PulpDistribution> to client/src/app/api/mock/data/distributions.json",
+      "For each distribution, the script fetches GET /api/v3/content/python/packages/?repository_version=<repo_version>&limit=100 (first 100 packages) and saves the PulpPaginatedResponse<PulpPythonPackageContent> to client/src/app/api/mock/data/packages-<distribution-name>.json. Fetch up to 5 pages (500 packages) per distribution to have enough data for realistic pagination and filtering",
+      "The script nullifies the 'next' and 'previous' URLs in the saved responses (replace with null) since mock mode won't follow pagination URLs — the mock API layer handles pagination client-side from the full dataset",
+      "The script strips any sensitive data or internal URLs from pulp_href fields, replacing them with synthetic hrefs like /pulp/api/v3/content/python/packages/<uuid>/",
+      "Add a package.json script: \"mock:record\": \"npx tsx scripts/record-mock-data.ts\" so it can be run easily. Document that this only needs to be run when you want to refresh the mock data",
+      "After recording, verify the JSON files parse correctly and contain the expected PulpPythonPackageContent fields: name, version, summary, description, author, license, classifiers, filename, packagetype, python_version, requires_dist, requires_python, sha256, size, pulp_created, pulp_last_updated"
+    ],
+    "passes": false
+  },
+  {
+    "category": "Architecture",
+    "description": "Create mock API layer that intercepts Pulp API calls when MOCK=on",
+    "problem": "The app currently makes live HTTP requests to the Pulp API via 4 functions in rest.ts: getAllDistributions(), getPulpPaginatedResult(), getDistributionForContent(), and getDistributionByBasePath(). On GitHub Pages there is no proxy server to forward these requests, so they fail. The app needs a mock API layer that provides the same function signatures and return types but serves data from static JSON fixture files bundled into the client build.",
+    "rationale": "Intercepting at the API function level (rather than using MSW or network-level mocking) is the simplest approach: no extra dependencies, no service worker registration, no CORS concerns. The mock functions import the recorded JSON fixtures and implement client-side filtering, sorting, and pagination to simulate Pulp's behavior. The existing MOCK env var in CalungaEnvType (common/src/environment.ts:17, default 'off') controls the toggle. Since Vite's EJS plugin bakes window._env at build time for GitHub Pages builds (vite.config.ts:75-78), setting MOCK=on during the build makes it permanent in the static output.",
+    "steps": [
+      "Create client/src/app/api/mock/ directory structure: mock/data/ for JSON fixtures, mock/mock-api.ts for mock function implementations, mock/index.ts as the barrel export",
+      "Create client/src/app/api/mock/mock-api.ts with mock implementations of the 4 Pulp API functions. Each function signature and return type must exactly match the real functions in rest.ts. Specifically: (1) getAllDistributions() returns Promise<PulpDistribution[]> — reads from distributions.json fixture; (2) getPulpPaginatedResult<T>(url, params, extraParams) returns Promise<HubPaginatedResult<T>> — reads from the appropriate packages JSON fixture based on the extraParams.repository_version, then applies client-side filtering using the same operator logic as serializeRequestParamsForPulp (field lookups for =, ~, !=, etc.), then sorts using the params.sort ordering, then paginates using params.page offset/limit, and returns { data: pageSlice, total: filteredTotal, params }; (3) getDistributionForContent(contentHref) returns Promise<PulpDistribution | null> — scans distributions fixture for one whose repository matches the content href prefix; (4) getDistributionByBasePath(basePath) returns Promise<PulpDistribution | null> — finds distribution by base_path in the fixture",
+      "The mock getPulpPaginatedResult must support the same URL-based routing as the real API. Check the url parameter against PULP_ENDPOINTS values (PYTHON_CONTENT, PYTHON_DISTRIBUTIONS, etc.) to select the correct fixture file. This ensures search-context.tsx, package-detail-context-simple.tsx, and package-detail.tsx all work without changes",
+      "Add a small simulated delay (50-200ms via setTimeout/Promise) to mock functions so the loading states and spinners render naturally in the UI, matching the real experience",
+      "Wrap all mock data imports with dynamic import() or top-level await to avoid bundling the JSON fixtures when MOCK=off. Use: const data = await import('./data/distributions.json') pattern. This ensures the ~500KB of mock JSON does not bloat the production (live mode) bundle"
+    ],
+    "passes": false
+  },
+  {
+    "category": "Architecture",
+    "description": "Wire up MOCK env var to conditionally swap real and mock API implementations",
+    "problem": "The mock API functions (from the previous task) exist but nothing routes to them. All consumers (search-context.tsx, package-detail-context-simple.tsx, package-detail.tsx, search.tsx) import directly from @app/api/rest.ts. We need a switching mechanism that routes these imports to mock implementations when MOCK=on, without changing any consumer code.",
+    "rationale": "The cleanest approach is to create a barrel module (client/src/app/api/pulp.ts) that conditionally re-exports from either rest.ts or mock/mock-api.ts based on ENV.MOCK. All consumers then import from @app/api/pulp instead of @app/api/rest for Pulp-specific functions. This keeps rest.ts unchanged (it still has the real implementations), keeps mock-api.ts isolated, and the switch happens in one place. The ENV.MOCK value is available at runtime via window._env (decoded in client/src/app/env.ts:3).",
+    "steps": [
+      "Create client/src/app/api/pulp.ts as the new barrel module for all Pulp API functions. It imports ENV from @app/env and conditionally exports: if ENV.MOCK is 'on', export mock implementations from ./mock/mock-api; otherwise re-export the real implementations from ./rest. The exports are: getAllDistributions, getPulpPaginatedResult, getDistributionForContent, getDistributionByBasePath, and the PULP_ENDPOINTS constant (always from rest.ts since endpoints are just string constants used as keys)",
+      "Update client/src/pages/search/search-context.tsx to import { getPulpPaginatedResult, PULP_ENDPOINTS } from '@app/api/pulp' instead of from '@app/api/rest'",
+      "Update client/src/pages/search/search.tsx to import { getAllDistributions } from '@app/api/pulp' instead of from '@app/api/rest'",
+      "Update client/src/pages/search/package-detail-context-simple.tsx to import { getPulpPaginatedResult, PULP_ENDPOINTS } from '@app/api/pulp' instead of from '@app/api/rest'",
+      "Update client/src/pages/search/package-detail.tsx to import { getPulpPaginatedResult, PULP_ENDPOINTS } from '@app/api/pulp' instead of from '@app/api/rest'",
+      "Verify that in live mode (MOCK=off, the default), the app behaves identically to before — all imports resolve to the real rest.ts functions",
+      "Verify that in mock mode (MOCK=on), the app loads mock data from JSON fixtures with no network requests to /pulp/*"
+    ],
+    "passes": false
+  },
+  {
+    "category": "DevOps",
+    "description": "Update GitHub Pages build to enable mock mode and verify demo deployment",
+    "problem": "The GitHub Actions workflow (.github/workflows/deploy.yml:37) currently builds with NODE_ENV=development BASE_URL=/calunga-ui-demo/ but does not set MOCK=on. The resulting static site deployed to GitHub Pages makes XHR requests to /pulp/api/v3/* which fail with network errors since there is no proxy server. The GitHub Pages demo shows a loading spinner forever or 'No packages found'.",
+    "rationale": "Setting MOCK=on during the GitHub Pages build causes the Vite EJS plugin (vite.config.ts:75-78) to encode MOCK=on into window._env in the built HTML. When the static site loads in the browser, ENV.MOCK evaluates to 'on', the barrel module (pulp.ts) routes to mock implementations, and the app renders using the bundled JSON fixture data. No backend or proxy needed.",
+    "steps": [
+      "Update .github/workflows/deploy.yml line 37: change 'NODE_ENV=development BASE_URL=/calunga-ui-demo/ npm run build' to 'NODE_ENV=development BASE_URL=/calunga-ui-demo/ MOCK=on npm run build'. This single env var addition is the only deployment change needed",
+      "Verify locally that the mock mode build works: run 'NODE_ENV=development BASE_URL=/ MOCK=on npm run build -w common && NODE_ENV=development BASE_URL=/ MOCK=on npm run build -w client', then serve client/dist/ with a static file server (e.g., npx serve client/dist) and confirm the app loads with mock data, package cards render, clicking a package shows the detail page, and navigating back works",
+      "Verify that the live mode build is unaffected: run 'npm run build' without MOCK=on and confirm the production build does not include the mock JSON fixtures in the bundle (check bundle size or inspect the output)",
+      "After pushing the workflow change to main, verify the GitHub Pages deployment at the repo's GitHub Pages URL shows a functional demo with mock package data"
+    ],
+    "passes": false
+  },
+  {
+    "category": "Architecture",
+    "description": "Add visual indicator for demo/mock mode in the UI",
+    "problem": "When users visit the GitHub Pages demo, there is no indication that they are viewing mock data. They might think the app is connected to a real Pulp instance and be confused when data doesn't change or when features like uploads don't work.",
+    "rationale": "A small, non-intrusive banner or badge in the masthead indicating 'Demo Mode' sets correct expectations. This also helps developers during local testing know which mode is active.",
+    "steps": [
+      "In client/src/app/layout/header.tsx (or wherever the masthead/header is defined), check ENV.MOCK === 'on' and conditionally render a PatternFly Label or Badge component with text 'Demo Mode' in the header area, styled with a distinctive color (e.g., gold/warning) so it's noticeable but not alarming",
+      "The indicator should include a tooltip explaining: 'This is a demo running with sample data. No live Pulp server is connected.'",
+      "When MOCK is 'off' (live mode), the indicator should not render at all — no empty space, no hidden element",
+      "Ensure the indicator works in both dark and light PatternFly themes and doesn't break the header layout on narrow screens"
+    ],
+    "passes": false
   }
 ]

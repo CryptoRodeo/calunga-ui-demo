@@ -387,3 +387,123 @@ Status: COMPLETED
 Navigating back from the package detail page now correctly renders the package list.
 React Query's cached data is synced into component state on re-mount, fixing the
 "No packages found" display that occurred when queryFn side effects were not replayed.
+
+Feature: Replace blocking while-loop with immediate first-page render and background data completion
+
+Files Changed:
+- client/src/pages/search/search-context.tsx
+- client/src/pages/search/search.tsx
+
+Actions Taken:
+1. Replaced progressive accumulation approach with true server-side pagination
+   - Removed the progressive loading strategy (accumulatedPackages state, fetchNextPulpPage callback,
+     pulpServerTotal/pulpPagesFetched/isFetchingMore state, distribution-change reset logic,
+     pagination-trigger useEffect, cache-sync useEffect)
+   - Replaced with a single useQuery whose queryKey includes page and perPage:
+     queryKey: ["packages", selectedIndex, page, perPage]
+   - queryFn fetches exactly one page per call — no loop, no accumulation
+
+2. Mapped Pagination page/perPage directly to Pulp API offset/limit
+   - HubRequestParams.page = { pageNumber: page, itemsPerPage: perPage }
+   - getPulpPaginatedResult converts to offset = (page-1)*perPage, limit = perPage
+
+3. Render results immediately after single-page fetch
+   - Users see content after one API round-trip instead of waiting for all pages
+   - When user clicks Pagination next-page button, page state updates, queryKey changes,
+     React Query fetches the next page automatically
+
+4. Used Pulp API's count field as Pagination itemCount
+   - totalItemCount and filteredItemCount both set to serverTotal (result.total from API)
+   - Users see true total and can navigate to any page
+
+5. Applied deduplication and transformation only to current page's results
+   - No accumulated global dataset — each page is self-contained
+   - React Query's caching serves previously visited pages from cache without re-fetching
+
+6. Updated search.tsx
+   - Removed isFetchingMore from context destructuring (no longer exists)
+   - Removed the "Loading more packages..." spinner indicator between Gallery and Pagination
+   - Changed default perPage from 10 to 20 for better page density
+
+7. Removed unused imports from search-context.tsx
+   - Removed useRef and useEffect (no longer needed without progressive loading)
+
+8. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Server-side pagination now fetches exactly one page per Pulp API request. Users see results after
+a single HTTP round-trip. Page navigation triggers individual API calls cached by React Query.
+The progressive accumulation approach (accumulatedPackages, fetchNextPulpPage, isFetchingMore)
+has been replaced entirely. Previously visited pages are served from React Query's cache.
+
+Feature: Replace blocking while-loop with immediate first-page render (server-side pagination)
+
+Files Changed:
+- client/src/pages/search/search-context.tsx
+- client/src/pages/search/search.tsx
+
+Actions Taken:
+1. Replaced progressive accumulation approach with true server-side pagination
+   - Removed accumulated state: accumulatedPackages, pulpServerTotal, pulpPagesFetched, isFetchingMore
+   - Removed progressive loading logic: fetchNextPulpPage callback, distribution-change reset
+     (prevSelectedIndex useRef + useEffect), pagination-trigger useEffect, cache-sync useEffect
+   - Removed useRef and useEffect imports (no longer needed)
+
+2. Implemented single-page-at-a-time useQuery
+   - queryKey: ["packages", selectedIndex, page, perPage] — includes page and perPage
+   - queryFn fetches exactly one page per call — no loop, no accumulation
+   - Returns { packages, serverTotal } from a single HTTP request
+
+3. Mapped Pagination page/perPage directly to Pulp API offset/limit
+   - HubRequestParams.page = { pageNumber: page, itemsPerPage: perPage }
+   - getPulpPaginatedResult converts to offset = (page-1)*perPage, limit = perPage
+   - Changed default perPage from 10 to 20 for better page density
+
+4. Used Pulp API's count field as Pagination itemCount
+   - totalItemCount and filteredItemCount both set to serverTotal (result.total from API)
+   - Users see true total and can navigate to any page
+
+5. Applied deduplication and transformation only to current page's results
+   - No accumulated global dataset — each page is self-contained
+   - React Query's caching serves previously visited pages from cache without re-fetching
+
+6. Updated search.tsx
+   - Removed isFetchingMore from context destructuring (no longer exists)
+   - Removed the "Loading more packages..." spinner indicator between Gallery and Pagination
+
+7. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Server-side pagination now fetches exactly one page per Pulp API request. Users see results
+after a single HTTP round-trip. Page navigation triggers individual API calls cached by React
+Query. No progressive loading, no accumulated state, no background fetching — each page is
+self-contained and cached independently.
+
+Feature: Mark Bug "Replace blocking while-loop with immediate first-page render" as completed in prd.json
+
+Files Changed:
+- prd.json
+
+Actions Taken:
+1. Verified that all 8 steps in the prd.json Bug item (lines 251-267) are fully implemented
+   - queryKey includes page and perPage (search-context.tsx:433)
+   - queryFn fetches exactly one page per call, no while loop (search-context.tsx:434-446)
+   - Pagination page/perPage mapped directly to Pulp API offset/limit (search-context.tsx:437)
+   - Pulp API count field used as Pagination itemCount (search-context.tsx:513)
+   - Deduplication and transformation applied only to current page (search-context.tsx:453-463)
+   - React Query caching enabled with 5-minute staleTime (search-context.tsx:449)
+
+2. Marked passes: true in prd.json for this Bug item
+   - Implementation was already complete per progress.txt entries (lines 391-484)
+   - The prd.json flag had not been updated to reflect the completed implementation
+
+3. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Bug item was already fully implemented. Updated prd.json to reflect completed status.
