@@ -1,255 +1,65 @@
 [
   {
-    "category": "functional",
-    "description": "Create a new project called calunga-ui",
+    "category": "Documentation",
+    "description": "Update documentation on the Packages index",
     "steps": [
-      "A calunga-ui directory is created",
-      "Look at the trustify-ui project. Create a project using similar libraries and structure",
+      "Using the code in ~/work/pulpcore as reference verify that the ./PULP_DATA_MAPPING_PLAN.md file in the current directory  the correct strategy for listing packages",
+      "Using the code in  ~/work/pulp_python/ as reference verify that the ./PULP_DATA_MAPPING_PLAN.md file in the current directory documents the correct strategy for listing packages",
+      "Using the code in  ~/work/pulp-docs/ as reference verify that the ./PULP_DATA_MAPPING_PLAN.md file in the current directory documents the correct strategy for listing packages",
+      "Update ./PULP_DATA_MAPPING_PLAN.md if needed for accuracy"
     ],
     "passes": true
   },
   {
-    "category": "functional",
-    "description": "calunga-ui",
+    "category": "Documentation",
+    "description": "Update documentation on the Packages index search, filter, sorting and pagination",
     "steps": [
-      "Look at the Red Hat branding in the trustify-ui project. Create a similar branding in the calunga-ui project with the text 'Trusted Developer Libraries'.",
+      "Using the code in ~/work/pulpcore as reference verify that the ./PULP_DATA_MAPPING_PLAN.md file in the current directory uses the correct strategy for searching, filtering, sorting and paginating packages",
+      "Using the code in ~/work/pulp_python/ is refrence verify that the ./PULP_DATA_MAPPING_PLAN.md file in the current directory uses the correct strategy for searching, filtering, sorting and paginating packages",
+      "Using the code in  ~/work/pulp-docs/ as reference verify that the ./PULP_DATA_MAPPING_PLAN.md file in the current directory documents the correct strategy for listing packages",
+      "Update ./PULP_DATA_MAPPING_PLAN.md if needed for accuracy"
     ],
     "passes": true
   },
   {
-    "category": "functional",
-    "description": "calunga-ui navigation",
+    "category": "Functional",
+    "description": "The service efficiently pulls all packages for the related distribution",
     "steps": [
-      "Look at the side bar and navigation in the trustify-ui project. Create a similar setup for calunga-ui",
-      "Add an entry for 'Python Wheels'",
+      "The service pulls all packages for the selected distribution following the plan in ./PULP_DATA_MAPPING_PLAN.md",
+      "Package data for the distribution are retrieved in a performant and best-practice manner",
     ],
     "passes": true
   },
   {
-    "category": "functional",
-    "description": "calunga-ui Python Wheels page",
+    "category": "Functional",
+    "description": "Update the Packages index search",
     "steps": [
-      "Create a Python Wheels page in the calunga-ui project",
-      "Add a filter toolbar, see the trustify-ui project for reference",
-      "The toolbar should have a filter search bar where users can select what filter they want. These filter values should be related to Python wheels",
-      "Add a filter for classification",
-      "Add a filter for Platform",
-      "Add a filter for Source Index",
-      "Add a table with the following headers: 'Wheel', 'Version', 'ABI', 'Platform', 'License', 'Published', 'Source Index'",
-      "Clicking on a table header should result in the table contents being filtered by that header value",
-      "I have included a 'calunga-ui.png' file in this directory you can use as reference.",
+      "The service can search for packages following the plan in ./PULP_DATA_MAPPING_PLAN.md . Those packages are for a specific distribution"
     ],
     "passes": true
   },
   {
-    "category": "bug-fix",
-    "description": "Fix the error that occurs when running npm run start:dev",
+    "category": "Functional",
+    "description": "Update the Package filtering",
     "steps": [
-      "Inspect the error that occurs in calunga-ui when running npm run start:dev",
-      "Fix that issue so the app starts without issue",
+      "The service can filter packages following the plan in ./PULP_DATA_MAPPING_PLAN.md . Those packages are for a specific distribution"
     ],
     "passes": true
   },
   {
-    "category": "bug-fix",
-    "description": "Fix weird branding in calunga-ui",
+    "category": "Functional",
+    "description": "Update the Package sorting",
     "steps": [
-      "Inspect the branding used in rhtas-console-ui and apply similar changes to calunga-ui",
-      "Inspect the calunga-ui.png file if you need a reference on what this branding should look like",
-      "I'm specifically referring to the branding that is above the side bar",
-      "The wording should stay the same but the format should change",
-      "The branding in the header.tsx file in calunga-ui should be updated to the desired output",
+      "The service can sort packages following the plan in ./PULP_DATA_MAPPING_PLAN.md . Those packages are for a specific distribution"
     ],
     "passes": true
   },
   {
-    "category": "functional",
-    "description": "calunga-ui Python Wheels page has populated dummy data",
+    "category": "Functional",
+    "description": "Update the Package pagination",
     "steps": [
-      "Look at the table entries in the 'calunga-ui.png' file.",
-      "Populate the calunga ui Python Wheels page table with dummy data that match these entries.",
-      "The dummy data should come from a simple json file that the table uses and is easy to edit.",
+      "The service can paginate packages following the plan in ./PULP_DATA_MAPPING_PLAN.md . Those packages are for a specific distribution"
     ],
-    "passes": true
-  },
-  {
-    "category": "functional",
-    "description": "The table headers that sort the data should work",
-    "steps": [
-      "Look at the table headers in the calunga-ui",
-      "ALL table column headers should have some sort functionality that actually works on the data and sorts the table",
-      "The dummy data should be fully rendered",
-    ],
-    "passes": true
-  },
-  {
-    "category": "mockup",
-    "description": "Each dummy data entry should have a description",
-    "steps": [
-      "Populate each dummy data entry with a description",
-    ],
-    "passes": true
-  },
-  {
-    "category": "functionality",
-    "description": "Each table entry should be Expandable",
-    "steps": [
-      "Each table entry should be Expandable",
-      "Each table entry, when expanded, displays the dummy data description",
-    ],
-    "passes": true
-  },
-  {
-    "category": "functionality",
-    "description": "Each table row header sorts the table entries",
-    "steps": [
-      "Each table row header sorts the data in the table",
-      "The table updates and shows this newly-sorted data",
-    ],
-    "passes": true
-  },
-  {
-    "category": "functionality",
-    "description": "Each table row header sorts the table entries",
-    "steps": [
-      "Each table row header sorts the data in the table",
-      "The table updates and shows this newly-sorted data",
-    ],
-    "passes": true
-  },
-  {
-    "category": "styling",
-    "description": "Masthead is too small",
-    "steps": [
-      "Triple the size of the masthead",
-    ],
-    "passes": true
-  },
-  {
-    "category": "styling",
-    "description": "font size is too small",
-    "steps": [
-      "Double the font size",
-    ],
-    "passes": true
-  },
-  {
-    "category": "investigate",
-    "description": "Investigate difference between rhtas-console-ui font sizing and calunga-ui",
-    "steps": [
-      "The calunga-ui project has to explicitly set the font size but the rhtas-console-ui has the correct sizing without a global.css file",
-      "Investigate why rhtas-console-ui is rendering font sizing correctly and calunga-ui is not",
-      "Update calunga-ui once a reason has been determined.",
-    ],
-    "passes": true
-  },
-  {
-    "category": "functionality",
-    "description": "Update this project so the application can be rendered in Github Pages",
-    "steps": [
-      "The calunga-ui project needs to be able to render in a Github pages page",
-      "Investigate how this can be transformed so it renders in a Github pages page",
-      "Perform any necessary changes for the goal",
-    ],
-    "passes": true
-  },
-  {
-    "category": "functionality",
-    "description": "Update the search filter so it can search by actual value used in the dummy data",
-    "steps": [
-      "Search filter options are options that can be used to filter the dummy data, with the exception of 'Name' which filters by the python wheel name",
-      "The table updtes as the user types in the search bar with a delay of 400ms",
-    ],
-    "passes": true
-  },
-  {
-    "category": "bug-fix",
-    "description": "Nothing is rendered at https://cryptorodeo.github.io/calunga-ui-demo/python-wheels",
-    "steps": [
-      "The github page is now deployed but nothing renders, investigate why and fix the issue.",
-      "The header title is rendered as <%= branding.application.title %> which seems incorrect. This might be a clue."
-    ],
-    "passes": true
-  },
-  {
-    "category": "bug-fix",
-    "description": "The github page is now deployed, but the masthead does not render properly",
-    "steps": [
-      "It looks like the masthead file is missing or something related to it is missing, I see a broken file link where it should be",
-      "Investigate if anything related to how Github pages is deployed could cause this",
-      "Investigate what could cause this if it's not related to Github pages",
-      "Investigate by reviewing what is returned at https://cryptorodeo.github.io/calunga-ui-demo/"
-    ],
-    "passes": true
-  },
-  {
-    "category": "bug-fix",
-    "description": "Clicking on the Python Wheels side nav button leads to https://cryptorodeo.github.io/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/python-wheels?itemsPerPage=10&pageNumber=1&sortColumn=wheel&sortDirection=asc",
-    "steps": [
-      "The github page is now deployed but the side bar nav causes an issue, investigate why and fix the issue.",
-      "When on the root page nothing is rendered correctly also, so maybe this is realted",
-      "Update any code needed to fix the issue",
-      "Invesitgate by reviewing what happens when you go to https://cryptorodeo.github.io/calunga-ui-demo/python-wheels . You should see a redirect"
-    ],
-    "passes": true
-  },
-  {
-    "category": "bug-fix",
-    "description": "Clicking on the Python Wheels side nav button keeps redirecting to https://cryptorodeo.github.io/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/python-wheels?itemsPerPage=10&pageNumber=1&sortColumn=wheel&sortDirection=asc",
-    "steps": [
-      "Clicking on 'Python Wheels' on the side bar nav causes the folllowing link to be rendered: https://cryptorodeo.github.io/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/python-wheels?itemsPerPage=10&pageNumber=1&sortColumn=wheel&sortDirection=asc",
-      "The github page is now deployed but the side bar nav causes an issue, investigate why and fix the issue.",
-      "This is how it's rendered on Github pages: <a class=\"pf-v6-c-nav__link\" href=\"/calunga-ui-demo/python-wheels\" data-discover=\"true\">Python Wheels</a>"
-    ],
-    "passes": true
-  },
-  {
-    "category": "styling",
-    "description": "The masthead-logo.svg text is incorrect",
-    "steps": [
-      "The masthead-logo.svg text should say: Trusted Developer Libraries"
-    ],
-    "passes": true
-  },
-  {
-    "category": "functionality",
-    "description": "app should use vite over rsbuild",
-    "steps": [
-      "The calunga-ui project should use vite over rsbuild, similar to how its done in rhtas-console-ui",
-    ],
-    "passes": true
-  },
-  {
-    "category": "functionality",
-    "description": "masthead missing after refactoring to vite",
-    "steps": [
-      "The masthead is missing after moving the app to vite. Investigate why and resolve the issue.",
-    ],
-    "passes": true
-  },
-  {
-    "category": "blocker-bug",
-    "description": "Github page is empty and white",
-    "steps": [
-      "Visting the github page yields an empty white page, no content is rendered: https://cryptorodeo.github.io/calunga-ui-demo/ ",
-    ],
-    "passes": true
-  },
-  {
-    "category": "Redirect after render",
-    "description": "Github page is empty and white at first then redirects incorrectly on refresh",
-    "steps": [
-      "Visting the github page yields an empty white page, no content is rendered: https://cryptorodeo.github.io/calunga-ui-demo/ ",
-      "After a refresh content gets rendered, but then I'm redirected to https://cryptorodeo.github.io/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/calunga-ui-demo/python-wheels?itemsPerPage=10&pageNumber=1&sortColumn=wheel&sortDirection=asc",
-    ],
-    "passes": true
-  },
-  {
-    "category": "refactor",
-    "description": "Github pages functionality should be the same as in rhtas-console-ui",
-    "steps": [
-      "The Github Pages functionality of calunga-ui project works the same as the rhtas-console-ui project"
-    ],
-    "passes": true
+    "passes": false
   },
 ]
