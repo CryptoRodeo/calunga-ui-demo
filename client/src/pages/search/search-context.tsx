@@ -430,7 +430,7 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["packages", selectedIndex, page, perPage],
+    queryKey: ["packages", selectedIndex, page, perPage, deferredSearchQuery],
     queryFn: async () => {
       const hubParams: HubRequestParams = {
         filters: [],
@@ -508,10 +508,20 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     return packages;
   }, [transformedPackages, deferredSearchQuery, deferredFilters, sortBy]);
 
-  // Pagination: use server total for page count, filtered length for current page display
+  // Pagination: when no client-side filters are active, use server total for page count.
+  // When client-side filters (search, classification, license) are active, show filtered count
+  // since the Pulp API does not support name substring, classifier, or license filtering server-side.
+  const hasActiveFilters =
+    !!deferredSearchQuery ||
+    deferredFilters.classification.length > 0 ||
+    deferredFilters.license.length > 0;
   const currentPageItems = filteredPackages;
-  const totalItemCount = serverTotal;
-  const filteredItemCount = serverTotal;
+  const totalItemCount = hasActiveFilters
+    ? filteredPackages.length
+    : serverTotal;
+  const filteredItemCount = hasActiveFilters
+    ? filteredPackages.length
+    : serverTotal;
 
   // Handle loading and error states
   if (isLoading) {

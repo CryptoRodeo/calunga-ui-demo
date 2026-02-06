@@ -365,5 +365,20 @@
       "Ensure the indicator works in both dark and light PatternFly themes and doesn't break the header layout on narrow screens"
     ],
     "passes": false
+  },
+  {
+    "category": "Bug",
+    "description": "Fix 'Search for packages...' filter returning incorrect results because search query is only applied client-side to the current page",
+    "problem": "In search-context.tsx:428-451, the useQuery fetches a single page of content items from the Pulp API with queryKey ['packages', selectedIndex, page, perPage]. The search query (deferredSearchQuery) is NOT included in the queryKey and NOT sent to the API — hubParams at lines 435-438 has filters: [] (empty array). Consequently, typing in the 'Search for packages...' input never triggers a new API request. The client-side filter at lines 476-483 then runs against transformedPackages, which contains only the current page's worth of items (e.g., 20 content items that dedup to ~5-15 unique packages). Packages matching the search query that exist on other server pages are completely invisible. For example, searching for 'scipy' on a repository with 2422 packages checks only the ~15 packages on the current page — if scipy is not on page 1, the user sees 'No packages found'. Additionally, at lines 514-515, both totalItemCount and filteredItemCount are hardcoded to serverTotal (the unfiltered Pulp API count), so pagination shows '1 - 20 of 2422' even when the client-side filter has removed all items from the current page.",
+    "rationale": "The Pulp Python content API supports server-side name filtering via the name__icontains query parameter (verified in rest.ts:114 where operator '~' maps to '__icontains'). The search query should be sent to the Pulp API as a name__icontains filter so the server returns only matching packages across all pages, not just the current page. The deferredSearchQuery must also be added to the useQuery queryKey so that typing in the search box triggers a new API request with the filter applied. The pagination counts (totalItemCount and filteredItemCount) should then reflect the server's filtered count (PulpPaginatedResponse.count) rather than the unfiltered total. This approach leverages the server's indexing for efficient search and eliminates the client-side filtering mismatch.",
+    "steps": [
+      "In search-context.tsx:433, add deferredSearchQuery to the useQuery queryKey: change ['packages', selectedIndex, page, perPage] to ['packages', selectedIndex, page, perPage, deferredSearchQuery]",
+      "In search-context.tsx:435-438, when deferredSearchQuery is non-empty, add a name filter to hubParams.filters: push { field: 'name', operator: '~', value: deferredSearchQuery } to apply server-side name__icontains filtering via the Pulp API",
+      "Update the totalItemCount and filteredItemCount assignments at lines 514-515 to use pageData?.serverTotal (the filtered count from the API response) instead of the raw serverTotal, so pagination reflects the filtered result count",
+      "Remove or conditionalize the redundant client-side name/description filter at lines 476-483 — with server-side name filtering active, the client-side filter is only needed for description matching (which the Pulp API does not support). If description search is desired, keep the client filter but acknowledge it only applies to the current page",
+      "Verify that clearing the search input (empty string) restores the unfiltered view by ensuring deferredSearchQuery='' produces filters: [] (no name filter sent to API)",
+      "Verify that the Pagination component's itemCount updates correctly when a search query is active, reflecting the server's filtered total rather than the unfiltered repository size"
+    ],
+    "passes": true
   }
 ]

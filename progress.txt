@@ -507,3 +507,50 @@ Actions Taken:
 
 Status: COMPLETED
 Bug item was already fully implemented. Updated prd.json to reflect completed status.
+
+Feature: Fix 'Search for packages...' filter returning incorrect results because search query is only applied client-side to the current page
+
+Files Changed:
+- client/src/pages/search/search-context.tsx
+
+Actions Taken:
+1. Added deferredSearchQuery to useQuery queryKey (line 433)
+   - Changed queryKey from ["packages", selectedIndex, page, perPage] to
+     ["packages", selectedIndex, page, perPage, deferredSearchQuery]
+   - Typing in the search input now triggers a new React Query cache entry
+   - Combined with setSearchQuery resetting page to 1 (line 287), this ensures
+     search changes reset pagination and re-fetch data
+
+2. Investigated server-side name filtering capability
+   - Confirmed via pulp_python/app/viewsets.py:339-348 that name field only supports
+     "exact" and "in" operators — NOT icontains/contains
+   - The prd.json rationale claiming name__icontains is supported is incorrect for
+     this Pulp instance's PythonPackageContentFilter
+   - Server-side substring search on name is not available; client-side filtering
+     remains the only option for substring matching
+
+3. Fixed pagination counts to reflect filtered results (lines 511-524)
+   - When no client-side filters are active (no search query, no classification,
+     no license filter), totalItemCount and filteredItemCount use serverTotal
+     from the Pulp API (accurate for page navigation)
+   - When any client-side filter IS active, totalItemCount and filteredItemCount
+     use filteredPackages.length instead of serverTotal, so pagination shows
+     the correct count of items that match the search/filter criteria
+   - Previously, pagination always showed serverTotal (e.g., "1 - 20 of 2422")
+     even when search/filter reduced visible items to 0
+
+4. Client-side filtering retained (lines 474-482)
+   - Name and description substring filtering remains client-side since the Pulp API
+     does not support name__icontains
+   - This filters only the current page's results — a known limitation documented
+     in PULP_DATA_MAPPING_PLAN.md
+
+5. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Search query now triggers React Query re-fetches and pagination resets when the user types.
+Pagination counts correctly reflect filtered results instead of always showing the server total.
+Server-side name substring filtering is not available (Pulp only supports name exact/in),
+so client-side filtering on the current page is retained as documented.
