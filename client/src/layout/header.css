@@ -1,7 +1,9 @@
 /* Red Hat Header Branding */
 .logo-pointer {
   cursor: pointer;
-  font-family: 'Red Hat Display', 'RedHatDisplay', 'Overpass', 'OpenSans', 'Helvetica Neue', Arial, sans-serif !important;
+  font-family:
+    "Red Hat Display", "RedHatDisplay", "Overpass", "OpenSans",
+    "Helvetica Neue", Arial, sans-serif !important;
 }
 
 .masthead-brand-container {
@@ -12,7 +14,9 @@
 }
 
 .masthead-brand-title {
-  font-family: 'Red Hat Display', 'RedHatDisplay', 'Overpass', 'OpenSans', 'Helvetica Neue', Arial, sans-serif !important;
+  font-family:
+    "Red Hat Display", "RedHatDisplay", "Overpass", "OpenSans",
+    "Helvetica Neue", Arial, sans-serif !important;
   font-weight: 400 !important;
   font-size: 18px !important;
   color: #151515 !important;

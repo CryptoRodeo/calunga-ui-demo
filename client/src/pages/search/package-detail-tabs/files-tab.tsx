@@ -1,11 +1,11 @@
 import type React from "react";
 import { useContext, useState, useMemo } from "react";
-import { 
-  PageSection, 
-  Title, 
-  Label, 
-  Flex, 
-  FlexItem, 
+import {
+  PageSection,
+  Title,
+  Label,
+  Flex,
+  FlexItem,
   Button,
   Toolbar,
   ToolbarContent,
@@ -17,7 +17,7 @@ import {
   SelectOption,
   MenuToggle,
   type MenuToggleElement,
-  Badge
+  Badge,
 } from "@patternfly/react-core";
 import { Table, Thead, Tr, Th, Tbody, Td } from "@patternfly/react-table";
 import { DownloadIcon } from "@patternfly/react-icons";
@@ -35,12 +35,12 @@ interface FileData {
 
 export const FilesTab: React.FC = () => {
   const { packageData } = useContext(PackageDetailContext);
-  
+
   // Filter states
   const [filenameFilter, setFilenameFilter] = useState("");
   const [abiFilters, setAbiFilters] = useState<string[]>([]);
   const [platformFilters, setPlatformFilters] = useState<string[]>([]);
-  
+
   // Dropdown states
   const [isAbiOpen, setIsAbiOpen] = useState(false);
   const [isPlatformOpen, setIsPlatformOpen] = useState(false);
@@ -67,102 +67,102 @@ export const FilesTab: React.FC = () => {
   };
 
   const getPlatformLabel = (platform: string) => {
-    if (platform.includes('win_amd64') || platform.includes('win_arm64')) {
-      if (platform.includes('arm64')) return 'Windows ARM64';
-      return 'Windows x86-64';
+    if (platform.includes("win_amd64") || platform.includes("win_arm64")) {
+      if (platform.includes("arm64")) return "Windows ARM64";
+      return "Windows x86-64";
     }
-    if (platform.includes('win32')) return 'Windows x86';
-    if (platform.includes('macosx')) {
-      if (platform.includes('arm64')) return 'macOS ARM64';
-      if (platform.includes('x86_64')) return 'macOS x86-64';
-      return 'macOS';
+    if (platform.includes("win32")) return "Windows x86";
+    if (platform.includes("macosx")) {
+      if (platform.includes("arm64")) return "macOS ARM64";
+      if (platform.includes("x86_64")) return "macOS x86-64";
+      return "macOS";
     }
-    if (platform.includes('manylinux') || platform.includes('linux')) {
-      if (platform.includes('aarch64')) return 'Linux ARM64';
-      return 'Linux x86-64';
+    if (platform.includes("manylinux") || platform.includes("linux")) {
+      if (platform.includes("aarch64")) return "Linux ARM64";
+      return "Linux x86-64";
     }
-    if (platform.includes('musllinux')) {
-      if (platform.includes('aarch64')) return 'musllinux ARM64';
-      return 'musllinux x86-64';
+    if (platform.includes("musllinux")) {
+      if (platform.includes("aarch64")) return "musllinux ARM64";
+      return "musllinux x86-64";
     }
-    return 'Any';
+    return "Any";
   };
 
   const getPythonVersionFromTag = (tag: string) => {
-    if (tag === 'cp314') return '3.14';
-    if (tag === 'cp313') return '3.13';
-    if (tag === 'cp312') return '3.12';
-    if (tag === 'cp311') return '3.11';
-    if (tag === 'cp310') return '3.10';
-    if (tag === 'cp39') return '3.9';
-    return 'Any';
+    if (tag === "cp314") return "3.14";
+    if (tag === "cp313") return "3.13";
+    if (tag === "cp312") return "3.12";
+    if (tag === "cp311") return "3.11";
+    if (tag === "cp310") return "3.10";
+    if (tag === "cp39") return "3.9";
+    return "Any";
   };
 
   const extractWheelTags = (filename: string) => {
-    if (!filename.endsWith('.whl')) {
-      return { pythonTag: 'Source', abiTag: 'Source', platformTag: 'Source' };
+    if (!filename.endsWith(".whl")) {
+      return { pythonTag: "Source", abiTag: "Source", platformTag: "Source" };
     }
-    
+
     // Remove .whl extension and split by -
-    const parts = filename.slice(0, -4).split('-');
+    const parts = filename.slice(0, -4).split("-");
     if (parts.length >= 5) {
       return {
         pythonTag: parts[2],
-        abiTag: parts[3], 
-        platformTag: parts.slice(4).join('-')
+        abiTag: parts[3],
+        platformTag: parts.slice(4).join("-"),
       };
     }
-    
-    return { pythonTag: 'Any', abiTag: 'Any', platformTag: 'Any' };
+
+    return { pythonTag: "Any", abiTag: "Any", platformTag: "Any" };
   };
 
   // Mock file data based on the package - in a real app this would come from the API
   const generateMockFiles = (): FileData[] => {
     const files: FileData[] = [];
-    
+
     // Source distribution
     files.push({
       filename: `${packageData.name}-${packageData.version}.tar.gz`,
       size: Math.floor(Math.random() * 5000000) + 2000000, // 2-7 MB
-      type: 'Source Distribution',
+      type: "Source Distribution",
       uploadDate: packageData.updated,
-      pythonVersion: 'Source',
-      abi: 'Source',
-      platform: 'Source'
+      pythonVersion: "Source",
+      abi: "Source",
+      platform: "Source",
     });
 
     // Python 3.12 manylinux wheels for x86_64 and aarch64 architectures
     const wheelConfigs = [
       // Python 3.12 - version-specific ABI
-      { 
-        python: 'cp312', 
-        abi: 'cp312', 
+      {
+        python: "cp312",
+        abi: "cp312",
         platforms: [
-          'manylinux_2_24_x86_64.manylinux_2_28_x86_64',  // x86_64 architecture
-          'manylinux_2_24_aarch64.manylinux_2_28_aarch64'  // aarch64 architecture
-        ] 
+          "manylinux_2_24_x86_64.manylinux_2_28_x86_64", // x86_64 architecture
+          "manylinux_2_24_aarch64.manylinux_2_28_aarch64", // aarch64 architecture
+        ],
       },
       // Python 3.12 - stable ABI3 (compatible with Python 3.12+)
-      { 
-        python: 'cp312', 
-        abi: 'abi3', 
+      {
+        python: "cp312",
+        abi: "abi3",
         platforms: [
-          'manylinux_2_24_x86_64.manylinux_2_28_x86_64',  // x86_64 architecture
-          'manylinux_2_24_aarch64.manylinux_2_28_aarch64'  // aarch64 architecture
-        ] 
-      }
+          "manylinux_2_24_x86_64.manylinux_2_28_x86_64", // x86_64 architecture
+          "manylinux_2_24_aarch64.manylinux_2_28_aarch64", // aarch64 architecture
+        ],
+      },
     ];
 
-    wheelConfigs.forEach(config => {
-      config.platforms.forEach(platform => {
+    wheelConfigs.forEach((config) => {
+      config.platforms.forEach((platform) => {
         files.push({
           filename: `${packageData.name}-${packageData.version}-${config.python}-${config.abi}-${platform}.whl`,
           size: Math.floor(Math.random() * 5000000) + 9000000, // 9-14 MB
-          type: 'Built Distribution',
+          type: "Built Distribution",
           uploadDate: packageData.updated,
           pythonVersion: getPythonVersionFromTag(config.python),
           abi: config.abi,
-          platform: platform
+          platform: platform,
         });
       });
     });
@@ -171,64 +171,70 @@ export const FilesTab: React.FC = () => {
   };
 
   const allFiles = useMemo(() => generateMockFiles(), [packageData]);
-  
+
   // Get unique values for filter options
   const filterOptions = useMemo(() => {
     const abis = new Set<string>();
     const platforms = new Set<string>();
-    
-    allFiles.forEach(file => {
-      if (file.type === 'Built Distribution') {
+
+    allFiles.forEach((file) => {
+      if (file.type === "Built Distribution") {
         const tags = extractWheelTags(file.filename);
         abis.add(tags.abiTag);
         platforms.add(file.platform);
       }
     });
-    
+
     return {
       abis: Array.from(abis).sort(),
-      platforms: Array.from(platforms).sort()
+      platforms: Array.from(platforms).sort(),
     };
   }, [allFiles]);
-  
+
   // Apply filters
   const filteredFiles = useMemo(() => {
-    return allFiles.filter(file => {
+    return allFiles.filter((file) => {
       // Filename filter
-      if (filenameFilter && !file.filename.toLowerCase().includes(filenameFilter.toLowerCase())) {
+      if (
+        filenameFilter &&
+        !file.filename.toLowerCase().includes(filenameFilter.toLowerCase())
+      ) {
         return false;
       }
-      
+
       // Skip other filters for source files
-      if (file.type === 'Source Distribution') {
+      if (file.type === "Source Distribution") {
         return true;
       }
-      
+
       const tags = extractWheelTags(file.filename);
-      
+
       // ABI filter
       if (abiFilters.length > 0 && !abiFilters.includes(tags.abiTag)) {
         return false;
       }
-      
+
       // Platform filter
-      if (platformFilters.length > 0 && !platformFilters.includes(file.platform)) {
+      if (
+        platformFilters.length > 0 &&
+        !platformFilters.includes(file.platform)
+      ) {
         return false;
       }
-      
+
       return true;
     });
   }, [allFiles, filenameFilter, abiFilters, platformFilters]);
 
   // Filter handlers
   const onFilterSelect = (
-    category: 'abi' | 'platform',
+    category: "abi" | "platform",
     _event: React.MouseEvent<Element, MouseEvent> | undefined,
     value: string | number | undefined,
   ) => {
     const valueStr = value as string;
-    const currentFilters = category === 'abi' ? abiFilters : platformFilters;
-    const setFilter = category === 'abi' ? setAbiFilters : setPlatformFilters;
+    const currentFilters = category === "abi" ? abiFilters : platformFilters;
+    const setFilter = category === "abi" ? setAbiFilters : setPlatformFilters;
 
     if (currentFilters.includes(valueStr)) {
       setFilter(currentFilters.filter((v) => v !== valueStr));
@@ -238,18 +244,18 @@ export const FilesTab: React.FC = () => {
   };
 
   const onDeleteFilterChip = (
-    category: 'abi' | 'platform',
+    category: "abi" | "platform",
     chip: string | string[],
   ) => {
     if (typeof chip === "string") {
-      const setFilter = category === 'abi' ? setAbiFilters : setPlatformFilters;
-      const currentFilters = category === 'abi' ? abiFilters : platformFilters;
+      const setFilter = category === "abi" ? setAbiFilters : setPlatformFilters;
+      const currentFilters = category === "abi" ? abiFilters : platformFilters;
       setFilter(currentFilters.filter((v) => v !== chip));
     }
   };
 
-  const onDeleteFilterGroup = (category: 'abi' | 'platform') => {
-    const setFilter = category === 'abi' ? setAbiFilters : setPlatformFilters;
+  const onDeleteFilterGroup = (category: "abi" | "platform") => {
+    const setFilter = category === "abi" ? setAbiFilters : setPlatformFilters;
     setFilter([]);
   };
 
@@ -265,12 +271,13 @@ export const FilesTab: React.FC = () => {
         Files
       </Title>
       <p style={{ marginTop: "0.5rem" }}>
-        Download files for this package version, including source distributions and compiled manylinux wheels for x86_64
+        Download files for this package version, including source distributions
+        and compiled manylinux wheels for x86_64
       </p>
-      
+
       {/* Filters */}
-      <Toolbar 
-        id="files-toolbar" 
+      <Toolbar
+        id="files-toolbar"
         style={{ marginTop: "1.5rem" }}
         clearAllFilters={clearAllFilters}
         collapseListedFiltersBreakpoint="xl"
@@ -292,9 +299,7 @@ export const FilesTab: React.FC = () => {
           <ToolbarItem>
             <ToolbarFilter
               labels={abiFilters}
-              deleteLabel={(_category, chip) =>
-                onDeleteFilterChip("abi", chip)
-              }
+              deleteLabel={(_category, chip) => onDeleteFilterChip("abi", chip)}
               deleteLabelGroup={() => onDeleteFilterGroup("abi")}
               categoryName="ABI"
             >
@@ -302,9 +307,7 @@ export const FilesTab: React.FC = () => {
                 role="menu"
                 isOpen={isAbiOpen}
                 selected={abiFilters}
-                onSelect={(event, value) =>
-                  onFilterSelect("abi", event, value)
-                }
+                onSelect={(event, value) => onFilterSelect("abi", event, value)}
                 onOpenChange={(isOpen) => setIsAbiOpen(isOpen)}
                 toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
                   <MenuToggle
@@ -315,7 +318,9 @@ export const FilesTab: React.FC = () => {
                   >
                     ABI
                     {abiFilters.length > 0 && (
-                      <Badge isRead style={{ marginLeft: "8px" }}>{abiFilters.length}</Badge>
+                      <Badge isRead style={{ marginLeft: "8px" }}>
+                        {abiFilters.length}
+                      </Badge>
                     )}
                   </MenuToggle>
                 )}
@@ -363,7 +368,9 @@ export const FilesTab: React.FC = () => {
                   >
                     Platform
                     {platformFilters.length > 0 && (
-                      <Badge isRead style={{ marginLeft: "8px" }}>{platformFilters.length}</Badge>
+                      <Badge isRead style={{ marginLeft: "8px" }}>
+                        {platformFilters.length}
+                      </Badge>
                     )}
                   </MenuToggle>
                 )}
@@ -385,7 +392,7 @@ export const FilesTab: React.FC = () => {
           </ToolbarItem>
         </ToolbarContent>
       </Toolbar>
-      
+
       <Table aria-label="Package files table" variant="compact">
         <Thead>
           <Tr>
@@ -404,7 +411,13 @@ export const FilesTab: React.FC = () => {
               <Tr key={index}>
                 <Td dataLabel="File">
                   <div>
-                    <div style={{ fontFamily: "var(--pf-v6-global--FontFamily--monospace)", fontSize: "var(--pf-v6-global--FontSize--sm)" }}>
+                    <div
+                      style={{
+                        fontFamily:
+                          "var(--pf-v6-global--FontFamily--monospace)",
+                        fontSize: "var(--pf-v6-global--FontSize--sm)",
+                      }}
+                    >
                       {file.filename}
                     </div>
                     <div style={{ marginTop: "0.25rem" }}>
@@ -415,15 +428,22 @@ export const FilesTab: React.FC = () => {
                   </div>
                 </Td>
                 <Td dataLabel="Type">
-                  <Label color={file.type === 'Source Distribution' ? 'blue' : 'green'} isCompact>
-                    {file.type === 'Source Distribution' ? 'Source' : 'Wheel'}
+                  <Label
+                    color={
+                      file.type === "Source Distribution" ? "blue" : "green"
+                    }
+                    isCompact
+                  >
+                    {file.type === "Source Distribution" ? "Source" : "Wheel"}
                   </Label>
                 </Td>
                 <Td dataLabel="Size">
-                  <span style={{ 
-                    fontFamily: "var(--pf-v6-global--FontFamily--monospace)",
-                    fontSize: "var(--pf-v6-global--FontSize--sm)"
-                  }}>
+                  <span
+                    style={{
+                      fontFamily: "var(--pf-v6-global--FontFamily--monospace)",
+                      fontSize: "var(--pf-v6-global--FontSize--sm)",
+                    }}
+                  >
                     {formatFileSize(file.size)}
                   </span>
                 </Td>
@@ -438,7 +458,11 @@ export const FilesTab: React.FC = () => {
                   </Label>
                 </Td>
                 <Td dataLabel="Actions">
-                  <Button variant="plain" size="sm" aria-label={`Download ${file.filename}`}>
+                  <Button
+                    variant="plain"
+                    size="sm"
+                    aria-label={`Download ${file.filename}`}
+                  >
                     <DownloadIcon />
                   </Button>
                 </Td>

@@ -37,11 +37,11 @@ export const HeaderApp: React.FC = () => {
                 src={leftBrand.src}
                 alt={leftBrand.alt}
                 heights={{ default: leftBrand.height }}
-                style={{ 
-                  height: "60px", 
+                style={{
+                  height: "60px",
                   width: "auto",
                   transform: "translateX(0px) scale(1.35)",
-                  transformOrigin: "left top"
+                  transformOrigin: "left top",
                 }}
               />
             ) : null}

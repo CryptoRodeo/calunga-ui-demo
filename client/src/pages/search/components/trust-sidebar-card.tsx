@@ -28,7 +28,6 @@ interface ITrustSidebarCardProps {
   onNavigateToVulnerabilities?: () => void;
 }
 
-
 export const TrustSidebarCard: React.FC<ITrustSidebarCardProps> = ({
   packageData,
   onNavigateToSecurity,
@@ -36,17 +35,10 @@ export const TrustSidebarCard: React.FC<ITrustSidebarCardProps> = ({
   onNavigateToSbom,
   onNavigateToVulnerabilities,
 }) => {
-  const {
-    currentVersionAttestations,
-    currentVersionSbom,
-    slsaLevel,
-  } = packageData;
+  const { currentVersionAttestations, currentVersionSbom, slsaLevel } =
+    packageData;
 
-  if (
-    !currentVersionAttestations &&
-    !currentVersionSbom &&
-    !slsaLevel
-  ) {
+  if (!currentVersionAttestations && !currentVersionSbom && !slsaLevel) {
     return null;
   }
 
@@ -66,101 +58,121 @@ export const TrustSidebarCard: React.FC<ITrustSidebarCardProps> = ({
           </Flex>
         </Title>
         <DescriptionList isCompact>
-            {/* SLSA Level */}
-            {slsaLevel && (
-              <DescriptionListGroup>
-                <DescriptionListTerm>SLSA Level</DescriptionListTerm>
-                <DescriptionListDescription>
-                  <SLSABadge level={slsaLevel} />
-                </DescriptionListDescription>
-              </DescriptionListGroup>
-            )}
+          {/* SLSA Level */}
+          {slsaLevel && (
+            <DescriptionListGroup>
+              <DescriptionListTerm>SLSA Level</DescriptionListTerm>
+              <DescriptionListDescription>
+                <SLSABadge level={slsaLevel} />
+              </DescriptionListDescription>
+            </DescriptionListGroup>
+          )}
 
-            {/* Verification Status */}
-            {currentVersionAttestations &&
-              currentVersionAttestations.length > 0 && (
-                <DescriptionListGroup>
-                  <DescriptionListTerm>Verification</DescriptionListTerm>
-                  <DescriptionListDescription>
-                    <Flex alignItems={{ default: "alignItemsCenter" }} spaceItems={{ default: "spaceItemsSm" }}>
-                      <FlexItem>
-                        <Button
-                          variant="link"
-                          isInline
-                          isSmall
-                          onClick={onNavigateToAttestations || onNavigateToSecurity}
-                          style={{
-                            padding: 0,
-                            fontSize: "var(--pf-v6-global--FontSize--sm)",
-                            color: "#0066cc",
-                          }}
-                        >
-                          {verifiedCount}/{totalCount} attestations verified
-                        </Button>
-                      </FlexItem>
-                      <FlexItem>
-                        <CheckCircleIcon style={{ color: "#52c41a", fontSize: "var(--pf-v6-global--FontSize--sm)" }} />
-                      </FlexItem>
-                    </Flex>
-                  </DescriptionListDescription>
-                </DescriptionListGroup>
-              )}
-
-            {/* SBOM */}
-            {currentVersionSbom && (
+          {/* Verification Status */}
+          {currentVersionAttestations &&
+            currentVersionAttestations.length > 0 && (
               <DescriptionListGroup>
-                <DescriptionListTerm>SBOM</DescriptionListTerm>
+                <DescriptionListTerm>Verification</DescriptionListTerm>
                 <DescriptionListDescription>
-                  <Button
-                    variant="link"
-                    isInline
-                    isSmall
-                    onClick={onNavigateToSbom || onNavigateToSecurity}
-                    style={{
-                      padding: 0,
-                      fontSize: "var(--pf-v6-global--FontSize--sm)",
-                      color: "#0066cc",
-                    }}
+                  <Flex
+                    alignItems={{ default: "alignItemsCenter" }}
+                    spaceItems={{ default: "spaceItemsSm" }}
                   >
-                    {currentVersionSbom.components?.length || currentVersionSbom.summary?.totalComponents || 0} components
-                  </Button>
-                </DescriptionListDescription>
-              </DescriptionListGroup>
-            )}
-
-            {/* Vulnerabilities */}
-            {currentVersionSbom?.summary && (
-              <DescriptionListGroup>
-                <DescriptionListTerm>Vulnerabilities</DescriptionListTerm>
-                <DescriptionListDescription>
-                  <Flex alignItems={{ default: "alignItemsCenter" }} spaceItems={{ default: "spaceItemsSm" }}>
                     <FlexItem>
                       <Button
                         variant="link"
                         isInline
                         isSmall
-                        onClick={onNavigateToVulnerabilities || onNavigateToSecurity}
+                        onClick={
+                          onNavigateToAttestations || onNavigateToSecurity
+                        }
                         style={{
                           padding: 0,
                           fontSize: "var(--pf-v6-global--FontSize--sm)",
                           color: "#0066cc",
                         }}
                       >
-                        {currentVersionSbom.summary.hasVulnerabilities ? (
-                          `${currentVersionSbom.summary.vulnerabilities?.length || 0} found`
-                        ) : (
-                          "None found"
-                        )}
+                        {verifiedCount}/{totalCount} attestations verified
                       </Button>
                     </FlexItem>
                     <FlexItem>
-                      <ExclamationTriangleIcon style={{ color: "#d73027", fontSize: "var(--pf-v6-global--FontSize--sm)" }} />
+                      <CheckCircleIcon
+                        style={{
+                          color: "#52c41a",
+                          fontSize: "var(--pf-v6-global--FontSize--sm)",
+                        }}
+                      />
                     </FlexItem>
                   </Flex>
                 </DescriptionListDescription>
               </DescriptionListGroup>
             )}
 
+          {/* SBOM */}
+          {currentVersionSbom && (
+            <DescriptionListGroup>
+              <DescriptionListTerm>SBOM</DescriptionListTerm>
+              <DescriptionListDescription>
+                <Button
+                  variant="link"
+                  isInline
+                  isSmall
+                  onClick={onNavigateToSbom || onNavigateToSecurity}
+                  style={{
+                    padding: 0,
+                    fontSize: "var(--pf-v6-global--FontSize--sm)",
+                    color: "#0066cc",
+                  }}
+                >
+                  {currentVersionSbom.components?.length ||
+                    currentVersionSbom.summary?.totalComponents ||
+                    0}{" "}
+                  components
+                </Button>
+              </DescriptionListDescription>
+            </DescriptionListGroup>
+          )}
+
+          {/* Vulnerabilities */}
+          {currentVersionSbom?.summary && (
+            <DescriptionListGroup>
+              <DescriptionListTerm>Vulnerabilities</DescriptionListTerm>
+              <DescriptionListDescription>
+                <Flex
+                  alignItems={{ default: "alignItemsCenter" }}
+                  spaceItems={{ default: "spaceItemsSm" }}
+                >
+                  <FlexItem>
+                    <Button
+                      variant="link"
+                      isInline
+                      isSmall
+                      onClick={
+                        onNavigateToVulnerabilities || onNavigateToSecurity
+                      }
+                      style={{
+                        padding: 0,
+                        fontSize: "var(--pf-v6-global--FontSize--sm)",
+                        color: "#0066cc",
+                      }}
+                    >
+                      {currentVersionSbom.summary.hasVulnerabilities
+                        ? `${currentVersionSbom.summary.vulnerabilities?.length || 0} found`
+                        : "None found"}
+                    </Button>
+                  </FlexItem>
+                  <FlexItem>
+                    <ExclamationTriangleIcon
+                      style={{
+                        color: "#d73027",
+                        fontSize: "var(--pf-v6-global--FontSize--sm)",
+                      }}
+                    />
+                  </FlexItem>
+                </Flex>
+              </DescriptionListDescription>
+            </DescriptionListGroup>
+          )}
         </DescriptionList>
       </CardBody>
     </Card>

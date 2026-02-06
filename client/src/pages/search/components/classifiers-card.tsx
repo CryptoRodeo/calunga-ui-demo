@@ -24,7 +24,11 @@ export const ClassifiersCard: React.FC<IClassifiersCardProps> = ({
   // Derive development status from package data
   const getDevelopmentStatus = () => {
     // Check for pre-release versions to determine status
-    if (packageData.version.includes('rc') || packageData.version.includes('beta') || packageData.version.includes('alpha')) {
+    if (
+      packageData.version.includes("rc") ||
+      packageData.version.includes("beta") ||
+      packageData.version.includes("alpha")
+    ) {
       return "4 - Beta";
     }
     // If it has high downloads and is stable, it's production/stable
@@ -37,13 +41,30 @@ export const ClassifiersCard: React.FC<IClassifiersCardProps> = ({
   // Get intended audience based on tags
   const getIntendedAudience = () => {
     const audiences = [];
-    if (packageData.tags?.some(tag => ['data-science', 'data-analysis', 'scientific-computing', 'machine-learning'].includes(tag))) {
+    if (
+      packageData.tags?.some((tag) =>
+        [
+          "data-science",
+          "data-analysis",
+          "scientific-computing",
+          "machine-learning",
+        ].includes(tag),
+      )
+    ) {
       audiences.push("Science/Research");
     }
-    if (packageData.tags?.some(tag => ['web-development', 'gui', 'networking'].includes(tag))) {
+    if (
+      packageData.tags?.some((tag) =>
+        ["web-development", "gui", "networking"].includes(tag),
+      )
+    ) {
       audiences.push("Developers");
     }
-    if (packageData.tags?.some(tag => ['system', 'utilities', 'devops'].includes(tag))) {
+    if (
+      packageData.tags?.some((tag) =>
+        ["system", "utilities", "devops"].includes(tag),
+      )
+    ) {
       audiences.push("System Administrators");
     }
     return audiences.length > 0 ? audiences : ["Developers"];
@@ -52,22 +73,43 @@ export const ClassifiersCard: React.FC<IClassifiersCardProps> = ({
   // Get topic based on tags and description
   const getTopics = () => {
     const topics = [];
-    if (packageData.tags?.some(tag => ['data-science', 'data-analysis', 'statistics', 'scientific-computing'].includes(tag))) {
+    if (
+      packageData.tags?.some((tag) =>
+        [
+          "data-science",
+          "data-analysis",
+          "statistics",
+          "scientific-computing",
+        ].includes(tag),
+      )
+    ) {
       topics.push("Scientific/Engineering");
     }
-    if (packageData.tags?.some(tag => ['web-development', 'networking', 'http'].includes(tag))) {
+    if (
+      packageData.tags?.some((tag) =>
+        ["web-development", "networking", "http"].includes(tag),
+      )
+    ) {
       topics.push("Internet :: WWW/HTTP");
     }
-    if (packageData.tags?.some(tag => ['database', 'storage'].includes(tag))) {
+    if (
+      packageData.tags?.some((tag) => ["database", "storage"].includes(tag))
+    ) {
       topics.push("Database");
     }
-    if (packageData.tags?.some(tag => ['security', 'cryptography'].includes(tag))) {
+    if (
+      packageData.tags?.some((tag) =>
+        ["security", "cryptography"].includes(tag),
+      )
+    ) {
       topics.push("Security");
     }
-    if (packageData.tags?.some(tag => ['testing', 'quality'].includes(tag))) {
+    if (packageData.tags?.some((tag) => ["testing", "quality"].includes(tag))) {
       topics.push("Software Development :: Testing");
     }
-    if (packageData.tags?.some(tag => ['utilities', 'system'].includes(tag))) {
+    if (
+      packageData.tags?.some((tag) => ["utilities", "system"].includes(tag))
+    ) {
       topics.push("System :: Systems Administration");
     }
     return topics.length > 0 ? topics : ["Software Development"];
@@ -76,14 +118,14 @@ export const ClassifiersCard: React.FC<IClassifiersCardProps> = ({
   // Get programming languages
   const getProgrammingLanguages = () => {
     const languages = ["Python", "Python :: 3", "Python :: 3 :: Only"];
-    
+
     // Add Python 3.12 support specifically
     languages.push("Python :: 3.12");
-    
-    if (packageData.tags?.includes('cython')) {
+
+    if (packageData.tags?.includes("cython")) {
       languages.push("Cython");
     }
-    
+
     return languages;
   };
 
@@ -91,9 +133,14 @@ export const ClassifiersCard: React.FC<IClassifiersCardProps> = ({
     <Card style={{ marginTop: "1rem" }}>
       <CardBody>
         <Title headingLevel="h4" size="md" style={{ marginBottom: "1rem" }}>
-          <Flex alignItems={{ default: "alignItemsCenter" }} spaceItems={{ default: "spaceItemsSm" }}>
+          <Flex
+            alignItems={{ default: "alignItemsCenter" }}
+            spaceItems={{ default: "spaceItemsSm" }}
+          >
             <FlexItem>
-              <TagIcon style={{ color: "var(--pf-v6-global--palette--purple--400)" }} />
+              <TagIcon
+                style={{ color: "var(--pf-v6-global--palette--purple--400)" }}
+              />
             </FlexItem>
             <FlexItem>Classifiers</FlexItem>
           </Flex>
@@ -107,17 +154,20 @@ export const ClassifiersCard: React.FC<IClassifiersCardProps> = ({
           </DescriptionListGroup>
           <DescriptionListGroup>
             <DescriptionListTerm>Environment</DescriptionListTerm>
-            <DescriptionListDescription>
-              Console
-            </DescriptionListDescription>
+            <DescriptionListDescription>Console</DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
             <DescriptionListTerm>Intended Audience</DescriptionListTerm>
             <DescriptionListDescription>
-              <Flex spaceItems={{ default: "spaceItemsXs" }} direction={{ default: "column" }}>
+              <Flex
+                spaceItems={{ default: "spaceItemsXs" }}
+                direction={{ default: "column" }}
+              >
                 {getIntendedAudience().map((audience) => (
                   <FlexItem key={audience}>
-                    <Label color="blue" isCompact>{audience}</Label>
+                    <Label color="blue" isCompact>
+                      {audience}
+                    </Label>
                   </FlexItem>
                 ))}
               </Flex>
@@ -126,21 +176,33 @@ export const ClassifiersCard: React.FC<IClassifiersCardProps> = ({
           <DescriptionListGroup>
             <DescriptionListTerm>License</DescriptionListTerm>
             <DescriptionListDescription>
-              OSI Approved :: {packageData.license === 'BSD-3-Clause' ? 'BSD License' : packageData.license}
+              OSI Approved ::{" "}
+              {packageData.license === "BSD-3-Clause"
+                ? "BSD License"
+                : packageData.license}
             </DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
             <DescriptionListTerm>Operating System</DescriptionListTerm>
             <DescriptionListDescription>
-              <Flex spaceItems={{ default: "spaceItemsXs" }} direction={{ default: "column" }}>
+              <Flex
+                spaceItems={{ default: "spaceItemsXs" }}
+                direction={{ default: "column" }}
+              >
                 <FlexItem>
-                  <Label color="orange" isCompact>POSIX :: Linux</Label>
+                  <Label color="orange" isCompact>
+                    POSIX :: Linux
+                  </Label>
                 </FlexItem>
                 <FlexItem>
-                  <Label color="orange" isCompact>MacOS</Label>
+                  <Label color="orange" isCompact>
+                    MacOS
+                  </Label>
                 </FlexItem>
                 <FlexItem>
-                  <Label color="orange" isCompact>Microsoft :: Windows</Label>
+                  <Label color="orange" isCompact>
+                    Microsoft :: Windows
+                  </Label>
                 </FlexItem>
               </Flex>
             </DescriptionListDescription>
@@ -148,10 +210,15 @@ export const ClassifiersCard: React.FC<IClassifiersCardProps> = ({
           <DescriptionListGroup>
             <DescriptionListTerm>Programming Language</DescriptionListTerm>
             <DescriptionListDescription>
-              <Flex spaceItems={{ default: "spaceItemsXs" }} direction={{ default: "column" }}>
+              <Flex
+                spaceItems={{ default: "spaceItemsXs" }}
+                direction={{ default: "column" }}
+              >
                 {getProgrammingLanguages().map((language) => (
                   <FlexItem key={language}>
-                    <Label color="green" isCompact>{language}</Label>
+                    <Label color="green" isCompact>
+                      {language}
+                    </Label>
                   </FlexItem>
                 ))}
               </Flex>
@@ -160,12 +227,19 @@ export const ClassifiersCard: React.FC<IClassifiersCardProps> = ({
           <DescriptionListGroup>
             <DescriptionListTerm>System Support & Version</DescriptionListTerm>
             <DescriptionListDescription>
-              <Flex spaceItems={{ default: "spaceItemsXs" }} direction={{ default: "column" }}>
+              <Flex
+                spaceItems={{ default: "spaceItemsXs" }}
+                direction={{ default: "column" }}
+              >
                 <FlexItem>
-                  <Label color="purple" isCompact>Python 3.12+</Label>
+                  <Label color="purple" isCompact>
+                    Python 3.12+
+                  </Label>
                 </FlexItem>
                 <FlexItem>
-                  <Label color="blue" isCompact>manylinux wheels</Label>
+                  <Label color="blue" isCompact>
+                    manylinux wheels
+                  </Label>
                 </FlexItem>
               </Flex>
             </DescriptionListDescription>
@@ -173,12 +247,19 @@ export const ClassifiersCard: React.FC<IClassifiersCardProps> = ({
           <DescriptionListGroup>
             <DescriptionListTerm>Available Architecture</DescriptionListTerm>
             <DescriptionListDescription>
-              <Flex spaceItems={{ default: "spaceItemsXs" }} direction={{ default: "column" }}>
+              <Flex
+                spaceItems={{ default: "spaceItemsXs" }}
+                direction={{ default: "column" }}
+              >
                 <FlexItem>
-                  <Label color="cyan" isCompact>x86_64</Label>
+                  <Label color="cyan" isCompact>
+                    x86_64
+                  </Label>
                 </FlexItem>
                 <FlexItem>
-                  <Label color="cyan" isCompact>aarch64</Label>
+                  <Label color="cyan" isCompact>
+                    aarch64
+                  </Label>
                 </FlexItem>
               </Flex>
             </DescriptionListDescription>
@@ -186,10 +267,15 @@ export const ClassifiersCard: React.FC<IClassifiersCardProps> = ({
           <DescriptionListGroup>
             <DescriptionListTerm>Topic</DescriptionListTerm>
             <DescriptionListDescription>
-              <Flex spaceItems={{ default: "spaceItemsXs" }} direction={{ default: "column" }}>
+              <Flex
+                spaceItems={{ default: "spaceItemsXs" }}
+                direction={{ default: "column" }}
+              >
                 {getTopics().map((topic) => (
                   <FlexItem key={topic}>
-                    <Label color="purple" isCompact>{topic}</Label>
+                    <Label color="purple" isCompact>
+                      {topic}
+                    </Label>
                   </FlexItem>
                 ))}
               </Flex>

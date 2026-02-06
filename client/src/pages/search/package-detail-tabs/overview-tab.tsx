@@ -1,14 +1,15 @@
 import type React from "react";
 import { useContext, useState } from "react";
-import { 
-  PageSection, 
-  Title, 
-  Button, 
-  Flex, 
+import {
+  PageSection,
+  Title,
+  Button,
+  Flex,
   FlexItem,
-  Tooltip 
+  Tooltip,
 } from "@patternfly/react-core";
 import { CopyIcon } from "@patternfly/react-icons";
+import ReactMarkdown from "react-markdown";
 import { PackageDetailContext } from "../package-detail-context-simple";
 
 interface CodeBlockProps {
@@ -17,7 +18,11 @@ interface CodeBlockProps {
   showCopyButton?: boolean;
 }
 
-const CodeBlock: React.FC<CodeBlockProps> = ({ children, language = "bash", showCopyButton = false }) => {
+const CodeBlock: React.FC<CodeBlockProps> = ({
+  children,
+  language = "bash",
+  showCopyButton = false,
+}) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -26,20 +31,20 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ children, language = "bash", show
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy text: ', err);
+      console.error("Failed to copy text: ", err);
     }
   };
 
   // Get background color based on language
   const getBackgroundColor = (lang: string) => {
     switch (lang) {
-      case 'python':
+      case "python":
         return "#f8f9fa";
-      case 'bash':
+      case "bash":
         return "#f1f3f4";
-      case 'json':
+      case "json":
         return "#f6f8fa";
-      case 'toml':
+      case "toml":
         return "#faf9f7";
       default:
         return "#f8f9fa";
@@ -47,10 +52,21 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ children, language = "bash", show
   };
 
   const getLanguageFromContent = (content: string): string => {
-    if (content.includes('pip install') || content.includes('git clone') || content.includes('export ')) return 'bash';
-    if (content.includes('import ') || content.includes('def ') || content.includes('class ')) return 'python';
-    if (content.includes('[build-system]') || content.includes('[project]')) return 'toml';
-    if (content.includes('{"') || content.includes('"name":')) return 'json';
+    if (
+      content.includes("pip install") ||
+      content.includes("git clone") ||
+      content.includes("export ")
+    )
+      return "bash";
+    if (
+      content.includes("import ") ||
+      content.includes("def ") ||
+      content.includes("class ")
+    )
+      return "python";
+    if (content.includes("[build-system]") || content.includes("[project]"))
+      return "toml";
+    if (content.includes('{"') || content.includes('"name":')) return "json";
     return language;
   };
 
@@ -64,7 +80,8 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ children, language = "bash", show
         borderRadius: "6px",
         marginTop: "0.5rem",
         position: "relative",
-        fontFamily: "'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace",
+        fontFamily:
+          "'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace",
         boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
       }}
     >
@@ -151,9 +168,20 @@ export const OverviewTab: React.FC = () => {
       <Title headingLevel="h2" size="xl">
         About
       </Title>
-      <p style={{ marginTop: "0.5rem" }}>
-        {packageData.fullDescription || packageData.description}
-      </p>
+      <div
+        style={{
+          marginTop: "0.5rem",
+          backgroundColor: "#f8f9fa",
+          border: "1px solid #e9ecef",
+          borderRadius: "6px",
+          padding: "1rem",
+          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+        }}
+      >
+        <ReactMarkdown>
+          {packageData.fullDescription || packageData.description}
+        </ReactMarkdown>
+      </div>
 
       {/* Notices section for packages that have important notices */}
       {hasRealData && packageData.pypiData.notices && (
@@ -161,17 +189,25 @@ export const OverviewTab: React.FC = () => {
           <Title headingLevel="h2" size="xl" style={{ marginTop: "2rem" }}>
             Important Notices
           </Title>
-          <div 
-            style={{ 
-              backgroundColor: "#fff3cd", 
-              border: "1px solid #ffeaa7", 
-              borderRadius: "4px", 
-              padding: "1rem", 
-              marginTop: "0.5rem" 
+          <div
+            style={{
+              backgroundColor: "#fff3cd",
+              border: "1px solid #ffeaa7",
+              borderRadius: "4px",
+              padding: "1rem",
+              marginTop: "0.5rem",
             }}
           >
             {packageData.pypiData.notices.map((notice, index) => (
-              <div key={index} style={{ marginBottom: index < packageData.pypiData.notices.length - 1 ? "0.5rem" : "0" }}>
+              <div
+                key={index}
+                style={{
+                  marginBottom:
+                    index < packageData.pypiData.notices.length - 1
+                      ? "0.5rem"
+                      : "0",
+                }}
+              >
                 {notice}
               </div>
             ))}
@@ -182,21 +218,29 @@ export const OverviewTab: React.FC = () => {
       <Title headingLevel="h2" size="xl" style={{ marginTop: "2rem" }}>
         Installation
       </Title>
-      <CodeBlock showCopyButton={true} language="bash">pip install {packageData.name}</CodeBlock>
+      <CodeBlock showCopyButton={true} language="bash">
+        pip install {packageData.name}
+      </CodeBlock>
 
       {hasRealData && packageData.pypiData.alternativeInstallation && (
         <div style={{ marginTop: "0.5rem" }}>
           <p>Alternatively, you can install from source:</p>
-          <CodeBlock language="bash">{packageData.pypiData.alternativeInstallation}</CodeBlock>
+          <CodeBlock language="bash">
+            {packageData.pypiData.alternativeInstallation}
+          </CodeBlock>
         </div>
       )}
 
       <Title headingLevel="h2" size="xl" style={{ marginTop: "2rem" }}>
-        {hasRealData && packageData.pypiData.usageTitle ? packageData.pypiData.usageTitle : "Basic Usage"}
+        {hasRealData && packageData.pypiData.usageTitle
+          ? packageData.pypiData.usageTitle
+          : "Basic Usage"}
       </Title>
-      
+
       {hasRealData && packageData.pypiData.usageExample ? (
-        <CodeBlock language="python">{packageData.pypiData.usageExample}</CodeBlock>
+        <CodeBlock language="python">
+          {packageData.pypiData.usageExample}
+        </CodeBlock>
       ) : (
         <CodeBlock language="python">{`import ${packageData.name}\n\n# Use ${packageData.name} in your project`}</CodeBlock>
       )}
@@ -209,7 +253,9 @@ export const OverviewTab: React.FC = () => {
           </Title>
           <ul style={{ marginTop: "0.5rem", paddingLeft: "1.5rem" }}>
             {packageData.pypiData.features.map((feature, index) => (
-              <li key={index} style={{ marginBottom: "0.25rem" }}>{feature}</li>
+              <li key={index} style={{ marginBottom: "0.25rem" }}>
+                {feature}
+              </li>
             ))}
           </ul>
         </>
@@ -228,18 +274,31 @@ export const OverviewTab: React.FC = () => {
           <Title headingLevel="h2" size="xl" style={{ marginTop: "2rem" }}>
             Configuration
           </Title>
-          <p style={{ marginTop: "0.5rem" }}>{packageData.pypiData.configurationSetup.description}</p>
-          {packageData.pypiData.configurationSetup.steps && packageData.pypiData.configurationSetup.steps.map((step, index) => (
-            <div key={index} style={{ marginTop: "1rem" }}>
-              <Title headingLevel="h4" size="md">{step.title}</Title>
-              <p style={{ marginTop: "0.5rem" }}>{step.description}</p>
-              {step.codeExample && (
-                <CodeBlock language={step.codeExample.includes('[default]') ? 'toml' : step.codeExample.includes('export') ? 'bash' : 'python'}>
-                  {step.codeExample}
-                </CodeBlock>
-              )}
-            </div>
-          ))}
+          <p style={{ marginTop: "0.5rem" }}>
+            {packageData.pypiData.configurationSetup.description}
+          </p>
+          {packageData.pypiData.configurationSetup.steps &&
+            packageData.pypiData.configurationSetup.steps.map((step, index) => (
+              <div key={index} style={{ marginTop: "1rem" }}>
+                <Title headingLevel="h4" size="md">
+                  {step.title}
+                </Title>
+                <p style={{ marginTop: "0.5rem" }}>{step.description}</p>
+                {step.codeExample && (
+                  <CodeBlock
+                    language={
+                      step.codeExample.includes("[default]")
+                        ? "toml"
+                        : step.codeExample.includes("export")
+                          ? "bash"
+                          : "python"
+                    }
+                  >
+                    {step.codeExample}
+                  </CodeBlock>
+                )}
+              </div>
+            ))}
         </>
       )}
 
@@ -251,7 +310,9 @@ export const OverviewTab: React.FC = () => {
           </Title>
           {packageData.pypiData.advancedUsage.map((usage, index) => (
             <div key={index} style={{ marginTop: "1.5rem" }}>
-              <Title headingLevel="h4" size="md">{usage.title}</Title>
+              <Title headingLevel="h4" size="md">
+                {usage.title}
+              </Title>
               <p style={{ marginTop: "0.5rem" }}>{usage.description}</p>
               <CodeBlock language="python">{usage.example}</CodeBlock>
             </div>
@@ -265,8 +326,12 @@ export const OverviewTab: React.FC = () => {
           <Title headingLevel="h2" size="xl" style={{ marginTop: "2rem" }}>
             Running Tests
           </Title>
-          <p style={{ marginTop: "0.5rem" }}>{packageData.pypiData.testing.description}</p>
-          <CodeBlock language="bash">{packageData.pypiData.testing.commands}</CodeBlock>
+          <p style={{ marginTop: "0.5rem" }}>
+            {packageData.pypiData.testing.description}
+          </p>
+          <CodeBlock language="bash">
+            {packageData.pypiData.testing.commands}
+          </CodeBlock>
           {packageData.pypiData.testing.additionalInfo && (
             <div style={{ marginTop: "1rem" }}>
               <p>{packageData.pypiData.testing.additionalInfo}</p>
@@ -281,20 +346,29 @@ export const OverviewTab: React.FC = () => {
           <Title headingLevel="h2" size="xl" style={{ marginTop: "2rem" }}>
             Getting Help
           </Title>
-          <p style={{ marginTop: "0.5rem" }}>{packageData.pypiData.gettingHelp.description}</p>
+          <p style={{ marginTop: "0.5rem" }}>
+            {packageData.pypiData.gettingHelp.description}
+          </p>
           <div style={{ marginTop: "1rem" }}>
-            {packageData.pypiData.gettingHelp.resources && packageData.pypiData.gettingHelp.resources.map((resource, index) => (
-              <div key={index} style={{ marginBottom: "0.5rem" }}>
-                <strong>{resource.type}:</strong>{' '}
-                {resource.url ? (
-                  <a href={resource.url} target="_blank" rel="noopener noreferrer">
-                    {resource.description}
-                  </a>
-                ) : (
-                  resource.description
-                )}
-              </div>
-            ))}
+            {packageData.pypiData.gettingHelp.resources &&
+              packageData.pypiData.gettingHelp.resources.map(
+                (resource, index) => (
+                  <div key={index} style={{ marginBottom: "0.5rem" }}>
+                    <strong>{resource.type}:</strong>{" "}
+                    {resource.url ? (
+                      <a
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {resource.description}
+                      </a>
+                    ) : (
+                      resource.description
+                    )}
+                  </div>
+                ),
+              )}
           </div>
         </>
       )}
@@ -305,12 +379,16 @@ export const OverviewTab: React.FC = () => {
           <Title headingLevel="h2" size="xl" style={{ marginTop: "2rem" }}>
             Contributing
           </Title>
-          <p style={{ marginTop: "0.5rem" }}>{packageData.pypiData.contributing.description}</p>
+          <p style={{ marginTop: "0.5rem" }}>
+            {packageData.pypiData.contributing.description}
+          </p>
           {packageData.pypiData.contributing.steps && (
             <div style={{ marginTop: "1rem" }}>
               <ol style={{ paddingLeft: "1.5rem" }}>
                 {packageData.pypiData.contributing.steps.map((step, index) => (
-                  <li key={index} style={{ marginBottom: "0.5rem" }}>{step}</li>
+                  <li key={index} style={{ marginBottom: "0.5rem" }}>
+                    {step}
+                  </li>
                 ))}
               </ol>
             </div>
@@ -318,7 +396,12 @@ export const OverviewTab: React.FC = () => {
           {packageData.pypiData.contributing.repositoryUrl && (
             <div style={{ marginTop: "1rem" }}>
               <p>
-                🔗 <a href={packageData.pypiData.contributing.repositoryUrl} target="_blank" rel="noopener noreferrer">
+                🔗{" "}
+                <a
+                  href={packageData.pypiData.contributing.repositoryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   View on GitHub
                 </a>
               </p>
@@ -333,11 +416,18 @@ export const OverviewTab: React.FC = () => {
           <Title headingLevel="h2" size="xl" style={{ marginTop: "2rem" }}>
             Security
           </Title>
-          <p style={{ marginTop: "0.5rem" }}>{packageData.pypiData.security.description}</p>
+          <p style={{ marginTop: "0.5rem" }}>
+            {packageData.pypiData.security.description}
+          </p>
           {packageData.pypiData.security.reportingUrl && (
             <div style={{ marginTop: "1rem" }}>
               <p>
-                🛡️ <a href={packageData.pypiData.security.reportingUrl} target="_blank" rel="noopener noreferrer">
+                🛡️{" "}
+                <a
+                  href={packageData.pypiData.security.reportingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Report Security Vulnerabilities
                 </a>
               </p>
@@ -345,11 +435,17 @@ export const OverviewTab: React.FC = () => {
           )}
           {packageData.pypiData.security.bestPractices && (
             <div style={{ marginTop: "1rem" }}>
-              <Title headingLevel="h4" size="md">Security Best Practices</Title>
+              <Title headingLevel="h4" size="md">
+                Security Best Practices
+              </Title>
               <ul style={{ marginTop: "0.5rem", paddingLeft: "1.5rem" }}>
-                {packageData.pypiData.security.bestPractices.map((practice, index) => (
-                  <li key={index} style={{ marginBottom: "0.25rem" }}>{practice}</li>
-                ))}
+                {packageData.pypiData.security.bestPractices.map(
+                  (practice, index) => (
+                    <li key={index} style={{ marginBottom: "0.25rem" }}>
+                      {practice}
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
           )}
@@ -370,7 +466,13 @@ export const OverviewTab: React.FC = () => {
                 {maintainer.role && ` (${maintainer.role})`}
                 {maintainer.github && (
                   <>
-                    {' '}- <a href={`https://github.com/${maintainer.github}`} target="_blank" rel="noopener noreferrer">
+                    {" "}
+                    -{" "}
+                    <a
+                      href={`https://github.com/${maintainer.github}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       @{maintainer.github}
                     </a>
                   </>
@@ -381,7 +483,12 @@ export const OverviewTab: React.FC = () => {
           {packageData.pypiData.sponsorship && (
             <div style={{ marginTop: "1rem" }}>
               <p>
-                💖 <a href={packageData.pypiData.sponsorship.url} target="_blank" rel="noopener noreferrer">
+                💖{" "}
+                <a
+                  href={packageData.pypiData.sponsorship.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   {packageData.pypiData.sponsorship.description}
                 </a>
               </p>
@@ -391,29 +498,43 @@ export const OverviewTab: React.FC = () => {
       )}
 
       {/* Links section */}
-      {hasRealData && (packageData.pypiData.documentationUrl || packageData.pypiData.homepageUrl) && (
-        <>
-          <Title headingLevel="h2" size="xl" style={{ marginTop: "2rem" }}>
-            Resources
-          </Title>
-          <div style={{ marginTop: "0.5rem" }}>
-            {packageData.pypiData.documentationUrl && (
-              <p>
-                📖 <a href={packageData.pypiData.documentationUrl} target="_blank" rel="noopener noreferrer">
-                  Official Documentation
-                </a>
-              </p>
-            )}
-            {packageData.pypiData.homepageUrl && packageData.pypiData.homepageUrl !== packageData.pypiData.documentationUrl && (
-              <p>
-                🏠 <a href={packageData.pypiData.homepageUrl} target="_blank" rel="noopener noreferrer">
-                  Homepage
-                </a>
-              </p>
-            )}
-          </div>
-        </>
-      )}
+      {hasRealData &&
+        (packageData.pypiData.documentationUrl ||
+          packageData.pypiData.homepageUrl) && (
+          <>
+            <Title headingLevel="h2" size="xl" style={{ marginTop: "2rem" }}>
+              Resources
+            </Title>
+            <div style={{ marginTop: "0.5rem" }}>
+              {packageData.pypiData.documentationUrl && (
+                <p>
+                  📖{" "}
+                  <a
+                    href={packageData.pypiData.documentationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Official Documentation
+                  </a>
+                </p>
+              )}
+              {packageData.pypiData.homepageUrl &&
+                packageData.pypiData.homepageUrl !==
+                  packageData.pypiData.documentationUrl && (
+                  <p>
+                    🏠{" "}
+                    <a
+                      href={packageData.pypiData.homepageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Homepage
+                    </a>
+                  </p>
+                )}
+            </div>
+          </>
+        )}
     </PageSection>
   );
 };

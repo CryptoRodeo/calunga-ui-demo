@@ -1,6 +1,7 @@
 import type React from "react";
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   PageSection,
   PageSectionVariants,
@@ -20,24 +21,39 @@ import {
   GridItem,
   Button,
   Tooltip,
+  Spinner,
+  Bullseye,
 } from "@patternfly/react-core";
-import { 
-  CopyIcon, 
-  DownloadIcon, 
-  ClockIcon, 
-  UserIcon, 
-  CertificateIcon 
+import {
+  CopyIcon,
+  DownloadIcon,
+  ClockIcon,
+  UserIcon,
+  CertificateIcon,
 } from "@patternfly/react-icons";
 import { SearchContext, SearchProvider } from "./search-context";
 import { SearchToolbar } from "./search-toolbar";
 import { IndexContextSelector } from "./components/index-context-selector";
+import { getAllDistributions } from "@app/api/rest";
 
 interface SearchContentProps {
   selectedIndex: string;
   setSelectedIndex: (index: string) => void;
+  availableDistributions: {
+    name: string;
+    base_path: string;
+    base_url: string;
+    repository_version: string | null;
+  }[];
+  isLoadingDistributions: boolean;
 }
 
-const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelectedIndex }) => {
+const SearchContent: React.FC<SearchContentProps> = ({
+  selectedIndex,
+  setSelectedIndex,
+  availableDistributions,
+  isLoadingDistributions,
+}) => {
   const {
     searchQuery,
     setSearchQuery,
@@ -47,6 +63,8 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
     perPage,
     setPerPage,
     filteredItemCount,
+    isLoading,
+    isPending,
   } = useContext(SearchContext);
 
   const navigate = useNavigate();
@@ -56,59 +74,47 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
     try {
       await navigator.clipboard.writeText(text);
     } catch (err) {
-      console.error('Failed to copy text: ', err);
+      console.error("Failed to copy text: ", err);
     }
   };
+
+  // Get the current distribution details
+  const currentDistribution = availableDistributions.find(
+    (dist) => dist.name === selectedIndex,
+  );
 
   // Get display name for the selected index
   const getIndexDisplayName = () => {
-    switch (selectedIndex) {
-      case "trusted-libraries": return "Trusted Libraries";
-      case "aipcc": return "AIPCC";
-      default: return "Trusted Libraries";
-    }
+    return currentDistribution?.name || "Package Index";
   };
 
-  // Get index information based on selected index
+  // Get index information based on selected distribution
   const getIndexInfo = () => {
-    switch (selectedIndex) {
-      case "trusted-libraries":
-        return {
-          url: "https://packages.redhat.com/simple",
-          description: "Curated collection of verified and secure open source packages",
-          subscription: "Red Hat Enterprise subscription required",
-          support: "enterprise-support@redhat.com",
-          contact: "Red Hat Support",
-          status: "Online",
-          statusDetail: "(Last sync: 2h ago)",
-          inventory: "523 Projects",
-          lastUpdated: "Updated 2 hours ago"
-        };
-      case "aipcc":
-        return {
-          url: "https://aipcc.packages.redhat.com/ai/simple/",
-          description: "AI Package Control & Compliance - Government approved AI libraries",
-          subscription: "Security clearance required",
-          support: "aipcc-support@redhat.com",
-          contact: "Red Hat AIPCC Team",
-          status: "Online", 
-          statusDetail: "(Last sync: 1d ago)",
-          inventory: "6 Projects",
-          lastUpdated: "Updated 1 day ago"
-        };
-      default:
-        return {
-          url: "https://packages.redhat.com/simple",
-          description: "Curated collection of verified and secure open source packages",
-          subscription: "Red Hat Enterprise subscription required",
-          support: "enterprise-support@redhat.com",
-          contact: "Red Hat Support",
-          status: "Online",
-          statusDetail: "(Last sync: 2h ago)",
-          inventory: "523 Projects",
-          lastUpdated: "Updated 2 hours ago"
-        };
+    if (!currentDistribution) {
+      return {
+        url: "",
+        description: "No distribution selected",
+        subscription: "",
+        support: "",
+        contact: "",
+        status: "Unknown",
+        statusDetail: "",
+        inventory: "0 Projects",
+        lastUpdated: "",
+      };
     }
+
+    return {
+      url: currentDistribution.base_url,
+      description: `Pulp distribution: ${currentDistribution.name}`,
+      subscription: "",
+      support: "",
+      contact: "Repository Administrator",
+      status: "Online",
+      statusDetail: "",
+      inventory: "", // Will be populated from package count
+      lastUpdated: "",
+    };
   };
 
   const formatDownloads = (downloads: number): string => {
@@ -136,63 +142,84 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
     <>
       <PageSection variant={PageSectionVariants.default}>
         <div style={{ marginBottom: "1rem" }}>
-          <IndexContextSelector 
+          <IndexContextSelector
             selectedIndex={selectedIndex}
             onIndexChange={setSelectedIndex}
+            availableDistributions={availableDistributions}
+            isLoading={isLoadingDistributions}
           />
         </div>
         <Divider style={{ marginBottom: "1rem" }} />
         <Title headingLevel="h1" size="2xl">
           {getIndexDisplayName()} Index
         </Title>
-        
+
         <div style={{ marginTop: "0.375rem", marginBottom: "1.5rem" }}>
-          <Label variant="outline" isCompact style={{
-            fontSize: "var(--pf-v6-global--FontSize--xs)",
-            fontFamily: "var(--pf-v6-global--FontFamily--monospace)",
-            color: "var(--pf-v6-global--Color--200)"
-          }}>
+          <Label
+            variant="outline"
+            isCompact
+            style={{
+              fontSize: "var(--pf-v6-global--FontSize--xs)",
+              fontFamily: "var(--pf-v6-global--FontFamily--monospace)",
+              color: "var(--pf-v6-global--Color--200)",
+            }}
+          >
             {getIndexInfo().url}
           </Label>
         </div>
-        
+
         <div>
-          
           <Grid hasGutter>
             {/* Status Card */}
             <GridItem span={12} md={4}>
-              <Card style={{ 
-                backgroundColor: "var(--pf-v6-global--BackgroundColor--dark-100)",
-                border: "1px solid var(--pf-v6-global--BorderColor--200)",
-                height: "100%"
-              }}>
+              <Card
+                style={{
+                  backgroundColor:
+                    "var(--pf-v6-global--BackgroundColor--dark-100)",
+                  border: "1px solid var(--pf-v6-global--BorderColor--200)",
+                  height: "100%",
+                }}
+              >
                 <CardBody>
-                  <Flex direction={{ default: "column" }} spaceItems={{ default: "spaceItemsSm" }}>
+                  <Flex
+                    direction={{ default: "column" }}
+                    spaceItems={{ default: "spaceItemsSm" }}
+                  >
                     <FlexItem>
-                      <span style={{ 
-                        fontSize: "var(--pf-v6-global--FontSize--lg)", 
-                        fontWeight: "600",
-                        color: "var(--pf-v6-global--Color--100)"
-                      }}>
+                      <span
+                        style={{
+                          fontSize: "var(--pf-v6-global--FontSize--lg)",
+                          fontWeight: "600",
+                          color: "var(--pf-v6-global--Color--100)",
+                        }}
+                      >
                         Status
                       </span>
                     </FlexItem>
                     <FlexItem>
-                      <Flex alignItems={{ default: "alignItemsCenter" }} spaceItems={{ default: "spaceItemsXs" }}>
+                      <Flex
+                        alignItems={{ default: "alignItemsCenter" }}
+                        spaceItems={{ default: "spaceItemsXs" }}
+                      >
                         <FlexItem>
-                          <div style={{
-                            width: "8px",
-                            height: "8px",
-                            borderRadius: "50%",
-                            backgroundColor: "#3E8635"
-                          }} />
+                          <div
+                            style={{
+                              width: "8px",
+                              height: "8px",
+                              borderRadius: "50%",
+                              backgroundColor: "#3E8635",
+                            }}
+                          />
                         </FlexItem>
                         <FlexItem>
-                          <span style={{ 
-                            fontSize: "var(--pf-v6-global--FontSize--md)",
-                            color: "var(--pf-v6-global--Color--100)"
-                          }}>
-                            {getIndexInfo().status} {getIndexInfo().statusDetail}
+                          <span
+                            style={{
+                              fontSize: "var(--pf-v6-global--FontSize--md)",
+                              color: "var(--pf-v6-global--Color--100)",
+                            }}
+                          >
+                            {getIndexInfo().status}{" "}
+                            {getIndexInfo().statusDetail}
                           </span>
                         </FlexItem>
                       </Flex>
@@ -201,30 +228,40 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
                 </CardBody>
               </Card>
             </GridItem>
-            
+
             {/* Inventory Card */}
             <GridItem span={12} md={4}>
-              <Card style={{ 
-                backgroundColor: "var(--pf-v6-global--BackgroundColor--dark-100)",
-                border: "1px solid var(--pf-v6-global--BorderColor--200)",
-                height: "100%"
-              }}>
+              <Card
+                style={{
+                  backgroundColor:
+                    "var(--pf-v6-global--BackgroundColor--dark-100)",
+                  border: "1px solid var(--pf-v6-global--BorderColor--200)",
+                  height: "100%",
+                }}
+              >
                 <CardBody>
-                  <Flex direction={{ default: "column" }} spaceItems={{ default: "spaceItemsSm" }}>
+                  <Flex
+                    direction={{ default: "column" }}
+                    spaceItems={{ default: "spaceItemsSm" }}
+                  >
                     <FlexItem>
-                      <span style={{ 
-                        fontSize: "var(--pf-v6-global--FontSize--lg)", 
-                        fontWeight: "600",
-                        color: "var(--pf-v6-global--Color--100)"
-                      }}>
+                      <span
+                        style={{
+                          fontSize: "var(--pf-v6-global--FontSize--lg)",
+                          fontWeight: "600",
+                          color: "var(--pf-v6-global--Color--100)",
+                        }}
+                      >
                         Inventory
                       </span>
                     </FlexItem>
                     <FlexItem>
-                      <span style={{ 
-                        fontSize: "var(--pf-v6-global--FontSize--md)",
-                        color: "var(--pf-v6-global--Color--100)"
-                      }}>
+                      <span
+                        style={{
+                          fontSize: "var(--pf-v6-global--FontSize--md)",
+                          color: "var(--pf-v6-global--Color--100)",
+                        }}
+                      >
                         {getIndexInfo().inventory}
                       </span>
                     </FlexItem>
@@ -232,33 +269,47 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
                 </CardBody>
               </Card>
             </GridItem>
-            
+
             {/* Support Card */}
             <GridItem span={12} md={4}>
-              <Card style={{ 
-                backgroundColor: "var(--pf-v6-global--BackgroundColor--dark-100)",
-                border: "1px solid var(--pf-v6-global--BorderColor--200)",
-                height: "100%"
-              }}>
+              <Card
+                style={{
+                  backgroundColor:
+                    "var(--pf-v6-global--BackgroundColor--dark-100)",
+                  border: "1px solid var(--pf-v6-global--BorderColor--200)",
+                  height: "100%",
+                }}
+              >
                 <CardBody>
-                  <Flex direction={{ default: "column" }} spaceItems={{ default: "spaceItemsSm" }}>
+                  <Flex
+                    direction={{ default: "column" }}
+                    spaceItems={{ default: "spaceItemsSm" }}
+                  >
                     <FlexItem>
-                      <span style={{ 
-                        fontSize: "var(--pf-v6-global--FontSize--lg)", 
-                        fontWeight: "600",
-                        color: "var(--pf-v6-global--Color--100)"
-                      }}>
+                      <span
+                        style={{
+                          fontSize: "var(--pf-v6-global--FontSize--lg)",
+                          fontWeight: "600",
+                          color: "var(--pf-v6-global--Color--100)",
+                        }}
+                      >
                         Support
                       </span>
                     </FlexItem>
                     <FlexItem>
-                      <a href={`mailto:${getIndexInfo().support}`} style={{ 
-                        fontSize: "var(--pf-v6-global--FontSize--md)",
-                        color: "#0066CC",
-                        textDecoration: "underline"
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.textDecoration = "underline"}
-                      onMouseLeave={(e) => e.currentTarget.style.textDecoration = "underline"}
+                      <a
+                        href={`mailto:${getIndexInfo().support}`}
+                        style={{
+                          fontSize: "var(--pf-v6-global--FontSize--md)",
+                          color: "#0066CC",
+                          textDecoration: "underline",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.textDecoration = "underline")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.textDecoration = "underline")
+                        }
                       >
                         {getIndexInfo().contact}
                       </a>
@@ -276,12 +327,31 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
             backgroundColor: "var(--pf-v6-global--BackgroundColor--100)",
           }}
         >
-          <SearchToolbar 
+          <SearchToolbar
             searchQuery={searchQuery}
             onSearchChange={onSearchChange}
             onSearchClear={onSearchClear}
           />
-          {currentPageItems.length === 0 ? (
+          {isLoading ? (
+            <Bullseye>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "4rem 2rem",
+                }}
+              >
+                <Spinner size="xl" />
+                <div
+                  style={{
+                    marginTop: "1rem",
+                    color: "var(--pf-v6-global--Color--200)",
+                  }}
+                >
+                  Loading packages...
+                </div>
+              </div>
+            </Bullseye>
+          ) : currentPageItems.length === 0 ? (
             <div
               style={{
                 textAlign: "center",
@@ -300,7 +370,13 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
             </div>
           ) : (
             <>
-              <div style={{ padding: "1rem" }}>
+              <div
+                style={{
+                  padding: "1rem",
+                  opacity: isPending ? 0.6 : 1,
+                  transition: "opacity 0.2s ease",
+                }}
+              >
                 <Gallery
                   hasGutter
                   minWidths={{
@@ -343,7 +419,9 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
                       </CardBody>
                       <CardFooter>
                         <Flex
-                          justifyContent={{ default: "justifyContentSpaceBetween" }}
+                          justifyContent={{
+                            default: "justifyContentSpaceBetween",
+                          }}
                           alignItems={{ default: "alignItemsCenter" }}
                           style={{
                             fontSize: "var(--pf-v6-global--FontSize--sm)",
@@ -353,9 +431,17 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
                           <FlexItem>
                             <Flex spaceItems={{ default: "spaceItemsLg" }}>
                               <FlexItem>
-                                <Flex alignItems={{ default: "alignItemsCenter" }} spaceItems={{ default: "spaceItemsNone" }}>
+                                <Flex
+                                  alignItems={{ default: "alignItemsCenter" }}
+                                  spaceItems={{ default: "spaceItemsNone" }}
+                                >
                                   <FlexItem>
-                                    <DownloadIcon style={{ fontSize: "14px", color: "#9ca3af" }} />
+                                    <DownloadIcon
+                                      style={{
+                                        fontSize: "14px",
+                                        color: "#9ca3af",
+                                      }}
+                                    />
                                   </FlexItem>
                                   <FlexItem style={{ marginLeft: "8px" }}>
                                     {formatDownloads(pkg.downloads)} downloads
@@ -363,9 +449,17 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
                                 </Flex>
                               </FlexItem>
                               <FlexItem>
-                                <Flex alignItems={{ default: "alignItemsCenter" }} spaceItems={{ default: "spaceItemsNone" }}>
+                                <Flex
+                                  alignItems={{ default: "alignItemsCenter" }}
+                                  spaceItems={{ default: "spaceItemsNone" }}
+                                >
                                   <FlexItem>
-                                    <ClockIcon style={{ fontSize: "14px", color: "#9ca3af" }} />
+                                    <ClockIcon
+                                      style={{
+                                        fontSize: "14px",
+                                        color: "#9ca3af",
+                                      }}
+                                    />
                                   </FlexItem>
                                   <FlexItem style={{ marginLeft: "8px" }}>
                                     Updated {pkg.updated}
@@ -373,9 +467,17 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
                                 </Flex>
                               </FlexItem>
                               <FlexItem>
-                                <Flex alignItems={{ default: "alignItemsCenter" }} spaceItems={{ default: "spaceItemsNone" }}>
+                                <Flex
+                                  alignItems={{ default: "alignItemsCenter" }}
+                                  spaceItems={{ default: "spaceItemsNone" }}
+                                >
                                   <FlexItem>
-                                    <UserIcon style={{ fontSize: "14px", color: "#9ca3af" }} />
+                                    <UserIcon
+                                      style={{
+                                        fontSize: "14px",
+                                        color: "#9ca3af",
+                                      }}
+                                    />
                                   </FlexItem>
                                   <FlexItem style={{ marginLeft: "8px" }}>
                                     {pkg.author}
@@ -383,9 +485,17 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
                                 </Flex>
                               </FlexItem>
                               <FlexItem>
-                                <Flex alignItems={{ default: "alignItemsCenter" }} spaceItems={{ default: "spaceItemsNone" }}>
+                                <Flex
+                                  alignItems={{ default: "alignItemsCenter" }}
+                                  spaceItems={{ default: "spaceItemsNone" }}
+                                >
                                   <FlexItem>
-                                    <CertificateIcon style={{ fontSize: "14px", color: "#9ca3af" }} />
+                                    <CertificateIcon
+                                      style={{
+                                        fontSize: "14px",
+                                        color: "#9ca3af",
+                                      }}
+                                    />
                                   </FlexItem>
                                   <FlexItem style={{ marginLeft: "8px" }}>
                                     {pkg.license}
@@ -416,28 +526,38 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
                                   fontSize: "var(--pf-v6-global--FontSize--sm)",
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = "rgba(0, 0, 0, 0.1)";
+                                  e.currentTarget.style.backgroundColor =
+                                    "rgba(0, 0, 0, 0.1)";
                                   const textNodes = e.currentTarget.childNodes;
-                                  for (let node of textNodes) {
+                                  for (const node of textNodes) {
                                     if (node.nodeType === Node.TEXT_NODE) {
-                                      e.currentTarget.style.color = "var(--pf-v6-global--Color--100)";
+                                      e.currentTarget.style.color =
+                                        "var(--pf-v6-global--Color--100)";
                                     }
                                   }
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = "transparent";
-                                  e.currentTarget.style.color = "var(--pf-v6-global--Color--200)";
+                                  e.currentTarget.style.backgroundColor =
+                                    "transparent";
+                                  e.currentTarget.style.color =
+                                    "var(--pf-v6-global--Color--200)";
                                 }}
                                 aria-label="Copy pip install command"
                               >
-                                <CopyIcon style={{ 
-                                  width: "12px", 
-                                  height: "12px", 
-                                  marginRight: "8px",
-                                  color: "#9ca3af",
-                                  transform: "translateY(2px)"
-                                }} />
-                                <span style={{ color: "var(--pf-v6-global--Color--200)" }}>
+                                <CopyIcon
+                                  style={{
+                                    width: "12px",
+                                    height: "12px",
+                                    marginRight: "8px",
+                                    color: "#9ca3af",
+                                    transform: "translateY(2px)",
+                                  }}
+                                />
+                                <span
+                                  style={{
+                                    color: "var(--pf-v6-global--Color--200)",
+                                  }}
+                                >
                                   pip install
                                 </span>
                               </Button>
@@ -480,11 +600,40 @@ const SearchContent: React.FC<SearchContentProps> = ({ selectedIndex, setSelecte
 };
 
 export const Search: React.FC = () => {
-  const [selectedIndex, setSelectedIndex] = useState<string>("trusted-libraries");
+  // Fetch all available distributions from Pulp
+  const { data: distributions = [], isLoading: isLoadingDistributions } =
+    useQuery({
+      queryKey: ["distributions"],
+      queryFn: getAllDistributions,
+      staleTime: 1000 * 60 * 10, // Cache for 10 minutes
+    });
+
+  // Use first distribution as default, or empty string if none available
+  const [selectedIndex, setSelectedIndex] = useState<string>("");
+
+  // Update selectedIndex when distributions load and it's not set
+  const effectiveSelectedIndex =
+    selectedIndex || (distributions.length > 0 ? distributions[0].name : "");
+
+  // Map distributions to simple format for props (including repository_version for filtering)
+  const availableDistributions = distributions.map((dist) => ({
+    name: dist.name,
+    base_path: dist.base_path,
+    base_url: dist.base_url,
+    repository_version: dist.repository_version,
+  }));
 
   return (
-    <SearchProvider selectedIndex={selectedIndex}>
-      <SearchContent selectedIndex={selectedIndex} setSelectedIndex={setSelectedIndex} />
+    <SearchProvider
+      selectedIndex={effectiveSelectedIndex}
+      availableDistributions={availableDistributions}
+    >
+      <SearchContent
+        selectedIndex={effectiveSelectedIndex}
+        setSelectedIndex={setSelectedIndex}
+        availableDistributions={availableDistributions}
+        isLoadingDistributions={isLoadingDistributions}
+      />
     </SearchProvider>
   );
 };

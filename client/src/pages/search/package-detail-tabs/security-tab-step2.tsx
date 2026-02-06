@@ -15,11 +15,11 @@ import {
   Button,
   Badge,
 } from "@patternfly/react-core";
-import { 
-  ExternalLinkAltIcon, 
+import {
+  ExternalLinkAltIcon,
   DownloadIcon,
   ChevronDownIcon,
-  ChevronRightIcon 
+  ChevronRightIcon,
 } from "@patternfly/react-icons";
 import { PackageDetailContext } from "../package-detail-context-simple";
 import { SLSABadge } from "../components/slsa-badge";
@@ -34,9 +34,9 @@ export const SecurityTabStep2: React.FC = () => {
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }));
   };
 
@@ -50,11 +50,11 @@ export const SecurityTabStep2: React.FC = () => {
     );
   }
 
-  const { 
-    currentVersionSbom, 
-    currentVersionAttestations, 
-    slsaLevel, 
-    securityAdvisories 
+  const {
+    currentVersionSbom,
+    currentVersionAttestations,
+    slsaLevel,
+    securityAdvisories,
   } = packageData;
 
   return (
@@ -72,13 +72,32 @@ export const SecurityTabStep2: React.FC = () => {
           <Title headingLevel="h3" size="lg">
             Security Overview
           </Title>
-          <p><strong>Trust Score:</strong> 99/100</p>
-          <p><strong>SLSA Level:</strong> {slsaLevel || 3}</p>
-          <p><strong>Has SBOM:</strong> {currentVersionSbom ? '✅ Yes' : '❌ No'}</p>
-          <p><strong>Has Attestations:</strong> {currentVersionAttestations ? '✅ Yes' : '❌ No'}</p>
-          <p><strong>Security Advisories:</strong> {securityAdvisories || 0}</p>
-          <p><strong>SBOM Components:</strong> {currentVersionSbom?.components?.length || currentVersionSbom?.summary?.totalComponents || 0}</p>
-          <p><strong>Vulnerabilities:</strong> {currentVersionSbom?.summary?.vulnerabilities?.length || 0}</p>
+          <p>
+            <strong>Trust Score:</strong> 99/100
+          </p>
+          <p>
+            <strong>SLSA Level:</strong> {slsaLevel || 3}
+          </p>
+          <p>
+            <strong>Has SBOM:</strong> {currentVersionSbom ? "✅ Yes" : "❌ No"}
+          </p>
+          <p>
+            <strong>Has Attestations:</strong>{" "}
+            {currentVersionAttestations ? "✅ Yes" : "❌ No"}
+          </p>
+          <p>
+            <strong>Security Advisories:</strong> {securityAdvisories || 0}
+          </p>
+          <p>
+            <strong>SBOM Components:</strong>{" "}
+            {currentVersionSbom?.components?.length ||
+              currentVersionSbom?.summary?.totalComponents ||
+              0}
+          </p>
+          <p>
+            <strong>Vulnerabilities:</strong>{" "}
+            {currentVersionSbom?.summary?.vulnerabilities?.length || 0}
+          </p>
         </CardBody>
       </Card>
 
@@ -86,7 +105,11 @@ export const SecurityTabStep2: React.FC = () => {
       {currentVersionAttestations && (
         <Card style={{ marginTop: "1.5rem" }}>
           <CardBody>
-            <Flex direction={{ default: "row" }} justifyContent={{ default: "justifyContentSpaceBetween" }} alignItems={{ default: "alignItemsCenter" }}>
+            <Flex
+              direction={{ default: "row" }}
+              justifyContent={{ default: "justifyContentSpaceBetween" }}
+              alignItems={{ default: "alignItemsCenter" }}
+            >
               <FlexItem>
                 <Title headingLevel="h3" size="lg">
                   Attestation Details
@@ -96,10 +119,14 @@ export const SecurityTabStep2: React.FC = () => {
                 <Button
                   variant="plain"
                   aria-expanded={expandedSections.attestations}
-                  onClick={() => toggleSection('attestations')}
+                  onClick={() => toggleSection("attestations")}
                   aria-label="Toggle attestation details"
                 >
-                  {expandedSections.attestations ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                  {expandedSections.attestations ? (
+                    <ChevronDownIcon />
+                  ) : (
+                    <ChevronRightIcon />
+                  )}
                 </Button>
               </FlexItem>
             </Flex>
@@ -110,34 +137,58 @@ export const SecurityTabStep2: React.FC = () => {
                   <DescriptionListGroup>
                     <DescriptionListTerm>Attestation Type</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionAttestations.attestationType || 'Provenance Attestation'}
+                      {currentVersionAttestations.attestationType ||
+                        "Provenance Attestation"}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Verification Status</DescriptionListTerm>
+                    <DescriptionListTerm>
+                      Verification Status
+                    </DescriptionListTerm>
                     <DescriptionListDescription>
-                      <AttestationStatusBadge status={currentVersionAttestations.verificationStatus} />
+                      <AttestationStatusBadge
+                        status={currentVersionAttestations.verificationStatus}
+                      />
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Platform</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionAttestations.buildPlatform || 'Red Hat Konflux CI/CD Platform'}
+                      {currentVersionAttestations.buildPlatform ||
+                        "Red Hat Konflux CI/CD Platform"}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Certificate</DescriptionListTerm>
                     <DescriptionListDescription>
-                      <Button variant="link" isInline component="a" href="#" target="_blank">
-                        View Certificate <ExternalLinkAltIcon style={{ marginLeft: "0.25rem" }} />
+                      <Button
+                        variant="link"
+                        isInline
+                        component="a"
+                        href="#"
+                        target="_blank"
+                      >
+                        View Certificate{" "}
+                        <ExternalLinkAltIcon
+                          style={{ marginLeft: "0.25rem" }}
+                        />
                       </Button>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Signature</DescriptionListTerm>
                     <DescriptionListDescription>
-                      <Button variant="link" isInline component="a" href="#" target="_blank">
-                        View Signature <ExternalLinkAltIcon style={{ marginLeft: "0.25rem" }} />
+                      <Button
+                        variant="link"
+                        isInline
+                        component="a"
+                        href="#"
+                        target="_blank"
+                      >
+                        View Signature{" "}
+                        <ExternalLinkAltIcon
+                          style={{ marginLeft: "0.25rem" }}
+                        />
                       </Button>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
@@ -152,7 +203,11 @@ export const SecurityTabStep2: React.FC = () => {
       {currentVersionSbom && (
         <Card style={{ marginTop: "1.5rem" }}>
           <CardBody>
-            <Flex direction={{ default: "row" }} justifyContent={{ default: "justifyContentSpaceBetween" }} alignItems={{ default: "alignItemsCenter" }}>
+            <Flex
+              direction={{ default: "row" }}
+              justifyContent={{ default: "justifyContentSpaceBetween" }}
+              alignItems={{ default: "alignItemsCenter" }}
+            >
               <FlexItem>
                 <Title headingLevel="h3" size="lg">
                   Software Bill of Materials (SBOM)
@@ -168,17 +223,22 @@ export const SecurityTabStep2: React.FC = () => {
                   </FlexItem>
                   <FlexItem>
                     <Button variant="link" isInline>
-                      View Raw <ExternalLinkAltIcon style={{ marginLeft: "0.25rem" }} />
+                      View Raw{" "}
+                      <ExternalLinkAltIcon style={{ marginLeft: "0.25rem" }} />
                     </Button>
                   </FlexItem>
                   <FlexItem>
                     <Button
                       variant="plain"
                       aria-expanded={expandedSections.sbom}
-                      onClick={() => toggleSection('sbom')}
+                      onClick={() => toggleSection("sbom")}
                       aria-label="Toggle SBOM details"
                     >
-                      {expandedSections.sbom ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                      {expandedSections.sbom ? (
+                        <ChevronDownIcon />
+                      ) : (
+                        <ChevronRightIcon />
+                      )}
                     </Button>
                   </FlexItem>
                 </Flex>
@@ -192,38 +252,54 @@ export const SecurityTabStep2: React.FC = () => {
                     <DescriptionListTerm>Format</DescriptionListTerm>
                     <DescriptionListDescription>
                       <Badge isRead variant="outline">
-                        {currentVersionSbom.format} v{currentVersionSbom.version}
+                        {currentVersionSbom.format} v
+                        {currentVersionSbom.version}
                       </Badge>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Serial Number</DescriptionListTerm>
                     <DescriptionListDescription>
-                      <code style={{ fontSize: "var(--pf-v6-global--FontSize--sm)" }}>
-                        {currentVersionSbom.serialNumber || 'CycloneDXRef-DOCUMENT'}
+                      <code
+                        style={{
+                          fontSize: "var(--pf-v6-global--FontSize--sm)",
+                        }}
+                      >
+                        {currentVersionSbom.serialNumber ||
+                          "CycloneDXRef-DOCUMENT"}
                       </code>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Generated At</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionSbom.generatedAt ? new Date(currentVersionSbom.generatedAt).toLocaleDateString() : 'January 15, 2026'}
+                      {currentVersionSbom.generatedAt
+                        ? new Date(
+                            currentVersionSbom.generatedAt,
+                          ).toLocaleDateString()
+                        : "January 15, 2026"}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Generation Tool</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionSbom.toolName || 'konflux-sbom-generator'} {currentVersionSbom.toolVersion || 'v0.2.4'}
+                      {currentVersionSbom.toolName || "konflux-sbom-generator"}{" "}
+                      {currentVersionSbom.toolVersion || "v0.2.4"}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Total Components</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionSbom.components?.length || currentVersionSbom.summary?.totalComponents || 0} (view components)
+                      {currentVersionSbom.components?.length ||
+                        currentVersionSbom.summary?.totalComponents ||
+                        0}{" "}
+                      (view components)
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Direct Dependencies</DescriptionListTerm>
+                    <DescriptionListTerm>
+                      Direct Dependencies
+                    </DescriptionListTerm>
                     <DescriptionListDescription>
                       {currentVersionSbom.summary?.directDependencies ?? 0}
                     </DescriptionListDescription>
@@ -232,13 +308,22 @@ export const SecurityTabStep2: React.FC = () => {
                     <DescriptionListTerm>Licenses Found</DescriptionListTerm>
                     <DescriptionListDescription>
                       {currentVersionSbom.summary?.licensesFound?.length ? (
-                        currentVersionSbom.summary.licensesFound.map((license) => (
-                          <Badge key={license} isRead variant="outline" style={{ marginRight: "0.5rem" }}>
-                            {license}
-                          </Badge>
-                        ))
+                        currentVersionSbom.summary.licensesFound.map(
+                          (license) => (
+                            <Badge
+                              key={license}
+                              isRead
+                              variant="outline"
+                              style={{ marginRight: "0.5rem" }}
+                            >
+                              {license}
+                            </Badge>
+                          ),
+                        )
                       ) : (
-                        <Badge isRead variant="outline">MIT</Badge>
+                        <Badge isRead variant="outline">
+                          MIT
+                        </Badge>
                       )}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
@@ -246,11 +331,23 @@ export const SecurityTabStep2: React.FC = () => {
                     <DescriptionListTerm>Vulnerabilities</DescriptionListTerm>
                     <DescriptionListDescription>
                       {currentVersionSbom.summary?.hasVulnerabilities ? (
-                        <Badge variant="outline" style={{ color: "var(--pf-v6-global--warning-color--100)" }}>
-                          {currentVersionSbom.summary.vulnerabilities?.length || 0} found
+                        <Badge
+                          variant="outline"
+                          style={{
+                            color: "var(--pf-v6-global--warning-color--100)",
+                          }}
+                        >
+                          {currentVersionSbom.summary.vulnerabilities?.length ||
+                            0}{" "}
+                          found
                         </Badge>
                       ) : (
-                        <Badge variant="outline" style={{ color: "var(--pf-v6-global--info-color--100)" }}>
+                        <Badge
+                          variant="outline"
+                          style={{
+                            color: "var(--pf-v6-global--info-color--100)",
+                          }}
+                        >
                           None
                         </Badge>
                       )}
@@ -266,8 +363,9 @@ export const SecurityTabStep2: React.FC = () => {
                     style={{ marginTop: "1rem" }}
                   >
                     <p>
-                      This SBOM contains components with known security vulnerabilities.
-                      Review the vulnerabilities section below for details.
+                      This SBOM contains components with known security
+                      vulnerabilities. Review the vulnerabilities section below
+                      for details.
                     </p>
                   </Alert>
                 )}

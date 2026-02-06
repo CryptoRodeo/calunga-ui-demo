@@ -1,8 +1,24 @@
 /// <reference types="vitest/config" />
 
+// IMPORTANT: Load environment variables BEFORE importing @calunga-ui/common
+// because that package reads process.env during module initialization
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootDir = path.resolve(__dirname, "..");
+const envPath = path.join(rootDir, ".env");
+console.log("[DOTENV] Loading .env from:", envPath);
+const result = dotenv.config({ path: envPath });
+if (result.error) {
+  console.error("[DOTENV] Error loading .env:", result.error);
+} else {
+  console.log("[DOTENV] Loaded environment variables:", Object.keys(result.parsed || {}).length);
+}
+
 import fs from "fs";
 import { createRequire } from "module";
-import path from "path";
 
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -25,6 +41,11 @@ export const brandingAssetPath = () =>
 
 const brandingPath: string = brandingAssetPath();
 const manifestPath = path.resolve(brandingPath, "manifest.json");
+
+// Log environment for debugging (use process.env directly since dotenv loads after module imports)
+console.log("[VITE CONFIG] PULP_API_URL:", process.env.PULP_API_URL);
+console.log("[VITE CONFIG] PULP_USERNAME:", process.env.PULP_USERNAME ? "***SET***" : "NOT SET");
+console.log("[VITE CONFIG] PULP_VERIFY_SSL:", process.env.PULP_VERIFY_SSL);
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -103,13 +124,56 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/auth": {
-        target: CALUNGA_ENV.OIDC_SERVER_URL || "http://localhost:8090",
+      // Only enable /auth proxy if OIDC server is configured
+      ...(process.env.OIDC_SERVER_URL && {
+        "/auth": {
+          target: process.env.OIDC_SERVER_URL,
+          changeOrigin: true,
+        },
+      }),
+      // Only enable /api proxy if backend API URL is configured
+      ...(process.env.CALUNGA_API_URL && {
+        "/api": {
+          target: process.env.CALUNGA_API_URL,
+          changeOrigin: true,
+        },
+      }),
+      "/pulp": {
+        target: process.env.PULP_API_URL || "http://localhost:24817",
         changeOrigin: true,
-      },
-      "/api": {
-        target: CALUNGA_ENV.CALUNGA_API_URL || "http://localhost:8080",
-        changeOrigin: true,
+        secure: process.env.PULP_VERIFY_SSL !== "false",
+        rewrite: (path) => {
+          // Remove /pulp prefix since target already has the full base path
+          const rewritten = path.replace(/^\/pulp/, "");
+          console.log(`[PULP PROXY] Rewriting: ${path} -> ${rewritten}`);
+          console.log(`[PULP PROXY] Target: ${process.env.PULP_API_URL}`);
+          return rewritten;
+        },
+        configure: (proxy, _options) => {
+          proxy.on("error", (err, _req, _res) => {
+            console.error("[PULP PROXY ERROR]", err);
+          });
+
+          proxy.on("proxyReq", (proxyReq, req, _res) => {
+            console.log(`[PULP PROXY] Request to: ${proxyReq.protocol}//${proxyReq.host}${proxyReq.path}`);
+
+            // Add Basic Auth from environment variables
+            if (process.env.PULP_USERNAME && process.env.PULP_PASSWORD) {
+              const credentials = Buffer.from(
+                `${process.env.PULP_USERNAME}:${process.env.PULP_PASSWORD}`
+              ).toString("base64");
+              proxyReq.setHeader("Authorization", `Basic ${credentials}`);
+            }
+
+            // Add Accept and Content-Type headers
+            proxyReq.setHeader("Accept", "application/json");
+            proxyReq.setHeader("Content-Type", "application/json");
+          });
+
+          proxy.on("proxyRes", (proxyRes, req, res) => {
+            console.log(`[PULP PROXY] Response: ${proxyRes.statusCode}`);
+          });
+        },
       },
     },
   },

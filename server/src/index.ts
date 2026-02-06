@@ -1,7 +1,13 @@
 /* eslint-env node */
 
+import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+// Load environment variables from .env file in project root
+const rootDir = path.resolve(__dirname, "../../../");
+dotenv.config({ path: path.join(rootDir, ".env") });
 
 import ejs from "ejs";
 import express from "express";

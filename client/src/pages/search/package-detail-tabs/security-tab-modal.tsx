@@ -30,19 +30,12 @@ import {
   MenuToggle,
   type MenuToggleElement,
 } from "@patternfly/react-core";
+import { Table, Thead, Tbody, Tr, Th, Td } from "@patternfly/react-table";
 import {
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-} from "@patternfly/react-table";
-import { 
-  ExternalLinkAltIcon, 
+  ExternalLinkAltIcon,
   DownloadIcon,
   ChevronDownIcon,
-  ChevronRightIcon 
+  ChevronRightIcon,
 } from "@patternfly/react-icons";
 import { PackageDetailContext } from "../package-detail-context-simple";
 import { SLSABadge } from "../components/slsa-badge";
@@ -57,7 +50,8 @@ export const SecurityTabModal: React.FC = () => {
     vulnerabilities: true,
   });
 
-  const [isSbomComponentsModalOpen, setIsSbomComponentsModalOpen] = useState(false);
+  const [isSbomComponentsModalOpen, setIsSbomComponentsModalOpen] =
+    useState(false);
 
   // Vulnerabilities filter states
   const [cveIdFilter, setCveIdFilter] = useState("");
@@ -72,9 +66,9 @@ export const SecurityTabModal: React.FC = () => {
   const [componentLicenseFilter, setComponentLicenseFilter] = useState("");
 
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }));
   };
 
@@ -88,11 +82,11 @@ export const SecurityTabModal: React.FC = () => {
     );
   }
 
-  const { 
-    currentVersionSbom, 
-    currentVersionAttestations, 
-    slsaLevel, 
-    securityAdvisories 
+  const {
+    currentVersionSbom,
+    currentVersionAttestations,
+    slsaLevel,
+    securityAdvisories,
   } = packageData;
 
   // Filter options
@@ -114,19 +108,27 @@ export const SecurityTabModal: React.FC = () => {
 
     return currentVersionSbom.summary.vulnerabilities.filter((vuln) => {
       // CVE ID filter
-      if (cveIdFilter && !vuln.cve.toLowerCase().includes(cveIdFilter.toLowerCase())) {
+      if (
+        cveIdFilter &&
+        !vuln.cve.toLowerCase().includes(cveIdFilter.toLowerCase())
+      ) {
         return false;
       }
 
       // Severity filter
-      if (severityFilters.length > 0 && !severityFilters.includes(vuln.severity)) {
+      if (
+        severityFilters.length > 0 &&
+        !severityFilters.includes(vuln.severity)
+      ) {
         return false;
       }
 
       // Fixable filter
       if (fixableFilter) {
         const isFixable = !!vuln.fixedVersion;
-        const matchesFilter = (fixableFilter === "Yes" && isFixable) || (fixableFilter === "No" && !isFixable);
+        const matchesFilter =
+          (fixableFilter === "Yes" && isFixable) ||
+          (fixableFilter === "No" && !isFixable);
         if (!matchesFilter) {
           return false;
         }
@@ -134,26 +136,50 @@ export const SecurityTabModal: React.FC = () => {
 
       return true;
     });
-  }, [currentVersionSbom?.summary?.vulnerabilities, cveIdFilter, severityFilters, fixableFilter]);
+  }, [
+    currentVersionSbom?.summary?.vulnerabilities,
+    cveIdFilter,
+    severityFilters,
+    fixableFilter,
+  ]);
 
   // Filter components for modal
   const filteredComponents = useMemo(() => {
     if (!currentVersionSbom?.components) return [];
 
     return currentVersionSbom.components.filter((component) => {
-      if (componentNameFilter && !component.name.toLowerCase().includes(componentNameFilter.toLowerCase())) {
+      if (
+        componentNameFilter &&
+        !component.name
+          .toLowerCase()
+          .includes(componentNameFilter.toLowerCase())
+      ) {
         return false;
       }
-      if (componentTypeFilter && !component.type.toLowerCase().includes(componentTypeFilter.toLowerCase())) {
+      if (
+        componentTypeFilter &&
+        !component.type
+          .toLowerCase()
+          .includes(componentTypeFilter.toLowerCase())
+      ) {
         return false;
       }
-      if (componentLicenseFilter && !component.licenses?.some(license => 
-        license.toLowerCase().includes(componentLicenseFilter.toLowerCase()))) {
+      if (
+        componentLicenseFilter &&
+        !component.licenses?.some((license) =>
+          license.toLowerCase().includes(componentLicenseFilter.toLowerCase()),
+        )
+      ) {
         return false;
       }
       return true;
     });
-  }, [currentVersionSbom?.components, componentNameFilter, componentTypeFilter, componentLicenseFilter]);
+  }, [
+    currentVersionSbom?.components,
+    componentNameFilter,
+    componentTypeFilter,
+    componentLicenseFilter,
+  ]);
 
   const clearAllFilters = () => {
     setCveIdFilter("");
@@ -186,7 +212,12 @@ export const SecurityTabModal: React.FC = () => {
             <DescriptionListGroup>
               <DescriptionListTerm>Trust Score</DescriptionListTerm>
               <DescriptionListDescription>
-                <span style={{ fontSize: "1.2rem", fontWeight: "var(--pf-v6-global--FontWeight--semi-bold)" }}>
+                <span
+                  style={{
+                    fontSize: "1.2rem",
+                    fontWeight: "var(--pf-v6-global--FontWeight--semi-bold)",
+                  }}
+                >
                   99/100
                 </span>
               </DescriptionListDescription>
@@ -200,7 +231,10 @@ export const SecurityTabModal: React.FC = () => {
             <DescriptionListGroup>
               <DescriptionListTerm>Has SBOM</DescriptionListTerm>
               <DescriptionListDescription>
-                <Badge variant="outline" style={{ color: "var(--pf-v6-global--success-color--100)" }}>
+                <Badge
+                  variant="outline"
+                  style={{ color: "var(--pf-v6-global--success-color--100)" }}
+                >
                   ✅ Yes
                 </Badge>
               </DescriptionListDescription>
@@ -208,7 +242,10 @@ export const SecurityTabModal: React.FC = () => {
             <DescriptionListGroup>
               <DescriptionListTerm>Has Attestations</DescriptionListTerm>
               <DescriptionListDescription>
-                <Badge variant="outline" style={{ color: "var(--pf-v6-global--success-color--100)" }}>
+                <Badge
+                  variant="outline"
+                  style={{ color: "var(--pf-v6-global--success-color--100)" }}
+                >
                   ✅ Yes
                 </Badge>
               </DescriptionListDescription>
@@ -222,7 +259,9 @@ export const SecurityTabModal: React.FC = () => {
             <DescriptionListGroup>
               <DescriptionListTerm>SBOM Components</DescriptionListTerm>
               <DescriptionListDescription>
-                {currentVersionSbom?.components?.length || currentVersionSbom?.summary?.totalComponents || 0}
+                {currentVersionSbom?.components?.length ||
+                  currentVersionSbom?.summary?.totalComponents ||
+                  0}
               </DescriptionListDescription>
             </DescriptionListGroup>
             <DescriptionListGroup>
@@ -239,7 +278,11 @@ export const SecurityTabModal: React.FC = () => {
       {currentVersionAttestations && (
         <Card style={{ marginTop: "1.5rem" }}>
           <CardBody>
-            <Flex direction={{ default: "row" }} justifyContent={{ default: "justifyContentSpaceBetween" }} alignItems={{ default: "alignItemsCenter" }}>
+            <Flex
+              direction={{ default: "row" }}
+              justifyContent={{ default: "justifyContentSpaceBetween" }}
+              alignItems={{ default: "alignItemsCenter" }}
+            >
               <FlexItem>
                 <Title headingLevel="h3" size="lg">
                   Attestation Details
@@ -249,10 +292,14 @@ export const SecurityTabModal: React.FC = () => {
                 <Button
                   variant="plain"
                   aria-expanded={expandedSections.attestations}
-                  onClick={() => toggleSection('attestations')}
+                  onClick={() => toggleSection("attestations")}
                   aria-label="Toggle attestation details"
                 >
-                  {expandedSections.attestations ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                  {expandedSections.attestations ? (
+                    <ChevronDownIcon />
+                  ) : (
+                    <ChevronRightIcon />
+                  )}
                 </Button>
               </FlexItem>
             </Flex>
@@ -263,34 +310,58 @@ export const SecurityTabModal: React.FC = () => {
                   <DescriptionListGroup>
                     <DescriptionListTerm>Attestation Type</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionAttestations.attestationType || 'Provenance Attestation'}
+                      {currentVersionAttestations.attestationType ||
+                        "Provenance Attestation"}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Verification Status</DescriptionListTerm>
+                    <DescriptionListTerm>
+                      Verification Status
+                    </DescriptionListTerm>
                     <DescriptionListDescription>
-                      <AttestationStatusBadge status={currentVersionAttestations.verificationStatus} />
+                      <AttestationStatusBadge
+                        status={currentVersionAttestations.verificationStatus}
+                      />
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Platform</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionAttestations.buildPlatform || 'Red Hat Konflux CI/CD Platform'}
+                      {currentVersionAttestations.buildPlatform ||
+                        "Red Hat Konflux CI/CD Platform"}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Certificate</DescriptionListTerm>
                     <DescriptionListDescription>
-                      <Button variant="link" isInline component="a" href="#" target="_blank">
-                        View Certificate <ExternalLinkAltIcon style={{ marginLeft: "0.25rem" }} />
+                      <Button
+                        variant="link"
+                        isInline
+                        component="a"
+                        href="#"
+                        target="_blank"
+                      >
+                        View Certificate{" "}
+                        <ExternalLinkAltIcon
+                          style={{ marginLeft: "0.25rem" }}
+                        />
                       </Button>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Signature</DescriptionListTerm>
                     <DescriptionListDescription>
-                      <Button variant="link" isInline component="a" href="#" target="_blank">
-                        View Signature <ExternalLinkAltIcon style={{ marginLeft: "0.25rem" }} />
+                      <Button
+                        variant="link"
+                        isInline
+                        component="a"
+                        href="#"
+                        target="_blank"
+                      >
+                        View Signature{" "}
+                        <ExternalLinkAltIcon
+                          style={{ marginLeft: "0.25rem" }}
+                        />
                       </Button>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
@@ -305,7 +376,11 @@ export const SecurityTabModal: React.FC = () => {
       {currentVersionSbom && (
         <Card style={{ marginTop: "1.5rem" }}>
           <CardBody>
-            <Flex direction={{ default: "row" }} justifyContent={{ default: "justifyContentSpaceBetween" }} alignItems={{ default: "alignItemsCenter" }}>
+            <Flex
+              direction={{ default: "row" }}
+              justifyContent={{ default: "justifyContentSpaceBetween" }}
+              alignItems={{ default: "alignItemsCenter" }}
+            >
               <FlexItem>
                 <Title headingLevel="h3" size="lg">
                   Software Bill of Materials (SBOM)
@@ -321,17 +396,22 @@ export const SecurityTabModal: React.FC = () => {
                   </FlexItem>
                   <FlexItem>
                     <Button variant="link" isInline>
-                      View Raw <ExternalLinkAltIcon style={{ marginLeft: "0.25rem" }} />
+                      View Raw{" "}
+                      <ExternalLinkAltIcon style={{ marginLeft: "0.25rem" }} />
                     </Button>
                   </FlexItem>
                   <FlexItem>
                     <Button
                       variant="plain"
                       aria-expanded={expandedSections.sbom}
-                      onClick={() => toggleSection('sbom')}
+                      onClick={() => toggleSection("sbom")}
                       aria-label="Toggle SBOM details"
                     >
-                      {expandedSections.sbom ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                      {expandedSections.sbom ? (
+                        <ChevronDownIcon />
+                      ) : (
+                        <ChevronRightIcon />
+                      )}
                     </Button>
                   </FlexItem>
                 </Flex>
@@ -345,41 +425,54 @@ export const SecurityTabModal: React.FC = () => {
                     <DescriptionListTerm>Format</DescriptionListTerm>
                     <DescriptionListDescription>
                       <Badge isRead variant="outline">
-                        {currentVersionSbom.format} v{currentVersionSbom.version}
+                        {currentVersionSbom.format} v
+                        {currentVersionSbom.version}
                       </Badge>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Serial Number</DescriptionListTerm>
                     <DescriptionListDescription>
-                      <code style={{ fontSize: "var(--pf-v6-global--FontSize--sm)" }}>
-                        {currentVersionSbom.serialNumber || 'CycloneDXRef-DOCUMENT'}
+                      <code
+                        style={{
+                          fontSize: "var(--pf-v6-global--FontSize--sm)",
+                        }}
+                      >
+                        {currentVersionSbom.serialNumber ||
+                          "CycloneDXRef-DOCUMENT"}
                       </code>
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Generated At</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionSbom.generatedAt ? new Date(currentVersionSbom.generatedAt).toLocaleDateString() : 'January 15, 2026'}
+                      {currentVersionSbom.generatedAt
+                        ? new Date(
+                            currentVersionSbom.generatedAt,
+                          ).toLocaleDateString()
+                        : "January 15, 2026"}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Generation Tool</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionSbom.toolName || 'konflux-sbom-generator'} {currentVersionSbom.toolVersion || 'v0.2.4'}
+                      {currentVersionSbom.toolName || "konflux-sbom-generator"}{" "}
+                      {currentVersionSbom.toolVersion || "v0.2.4"}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
                     <DescriptionListTerm>Total Components</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionSbom.components && currentVersionSbom.components.length > 0 ? (
-                        <Button 
-                          variant="link" 
-                          isInline 
+                      {currentVersionSbom.components &&
+                      currentVersionSbom.components.length > 0 ? (
+                        <Button
+                          variant="link"
+                          isInline
                           onClick={() => setIsSbomComponentsModalOpen(true)}
                           style={{ padding: 0, fontSize: "inherit" }}
                         >
-                          {currentVersionSbom.components.length} (view components)
+                          {currentVersionSbom.components.length} (view
+                          components)
                         </Button>
                       ) : (
                         currentVersionSbom.summary?.totalComponents || 0
@@ -387,7 +480,9 @@ export const SecurityTabModal: React.FC = () => {
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                   <DescriptionListGroup>
-                    <DescriptionListTerm>Direct Dependencies</DescriptionListTerm>
+                    <DescriptionListTerm>
+                      Direct Dependencies
+                    </DescriptionListTerm>
                     <DescriptionListDescription>
                       {currentVersionSbom.summary?.directDependencies ?? 0}
                     </DescriptionListDescription>
@@ -395,16 +490,23 @@ export const SecurityTabModal: React.FC = () => {
                   <DescriptionListGroup>
                     <DescriptionListTerm>Licenses Found</DescriptionListTerm>
                     <DescriptionListDescription>
-                      {currentVersionSbom.summary?.licensesFound && currentVersionSbom.summary.licensesFound.length > 0 ? (
+                      {currentVersionSbom.summary?.licensesFound &&
+                      currentVersionSbom.summary.licensesFound.length > 0 ? (
                         <Flex spaceItems={{ default: "spaceItemsSm" }}>
-                          {currentVersionSbom.summary.licensesFound.map((license) => (
-                            <FlexItem key={license}>
-                              <Badge isRead variant="outline">{license}</Badge>
-                            </FlexItem>
-                          ))}
+                          {currentVersionSbom.summary.licensesFound.map(
+                            (license) => (
+                              <FlexItem key={license}>
+                                <Badge isRead variant="outline">
+                                  {license}
+                                </Badge>
+                              </FlexItem>
+                            ),
+                          )}
                         </Flex>
                       ) : (
-                        <Badge isRead variant="outline">MIT</Badge>
+                        <Badge isRead variant="outline">
+                          MIT
+                        </Badge>
                       )}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
@@ -412,11 +514,23 @@ export const SecurityTabModal: React.FC = () => {
                     <DescriptionListTerm>Vulnerabilities</DescriptionListTerm>
                     <DescriptionListDescription>
                       {currentVersionSbom.summary?.hasVulnerabilities ? (
-                        <Badge variant="outline" style={{ color: "var(--pf-v6-global--warning-color--100)" }}>
-                          {currentVersionSbom.summary.vulnerabilities?.length || 0} found
+                        <Badge
+                          variant="outline"
+                          style={{
+                            color: "var(--pf-v6-global--warning-color--100)",
+                          }}
+                        >
+                          {currentVersionSbom.summary.vulnerabilities?.length ||
+                            0}{" "}
+                          found
                         </Badge>
                       ) : (
-                        <Badge variant="outline" style={{ color: "var(--pf-v6-global--info-color--100)" }}>
+                        <Badge
+                          variant="outline"
+                          style={{
+                            color: "var(--pf-v6-global--info-color--100)",
+                          }}
+                        >
                           None
                         </Badge>
                       )}
@@ -432,8 +546,9 @@ export const SecurityTabModal: React.FC = () => {
                     style={{ marginTop: "1rem" }}
                   >
                     <p>
-                      This SBOM contains components with known security vulnerabilities.
-                      Review the vulnerabilities section below for details.
+                      This SBOM contains components with known security
+                      vulnerabilities. Review the vulnerabilities section below
+                      for details.
                     </p>
                   </Alert>
                 )}
@@ -444,194 +559,264 @@ export const SecurityTabModal: React.FC = () => {
       )}
 
       {/* Vulnerabilities */}
-      {currentVersionSbom?.summary?.vulnerabilities && currentVersionSbom.summary.vulnerabilities.length > 0 && (
-        <Card style={{ marginTop: "1.5rem" }}>
-          <CardBody>
-            <Flex direction={{ default: "row" }} justifyContent={{ default: "justifyContentSpaceBetween" }} alignItems={{ default: "alignItemsCenter" }}>
-              <FlexItem>
-                <Title headingLevel="h3" size="lg">
-                  Vulnerabilities
-                </Title>
-              </FlexItem>
-              <FlexItem>
-                <Button
-                  variant="plain"
-                  aria-expanded={expandedSections.vulnerabilities}
-                  onClick={() => toggleSection('vulnerabilities')}
-                  aria-label="Toggle vulnerabilities"
-                >
-                  {expandedSections.vulnerabilities ? <ChevronDownIcon /> : <ChevronRightIcon />}
-                </Button>
-              </FlexItem>
-            </Flex>
+      {currentVersionSbom?.summary?.vulnerabilities &&
+        currentVersionSbom.summary.vulnerabilities.length > 0 && (
+          <Card style={{ marginTop: "1.5rem" }}>
+            <CardBody>
+              <Flex
+                direction={{ default: "row" }}
+                justifyContent={{ default: "justifyContentSpaceBetween" }}
+                alignItems={{ default: "alignItemsCenter" }}
+              >
+                <FlexItem>
+                  <Title headingLevel="h3" size="lg">
+                    Vulnerabilities
+                  </Title>
+                </FlexItem>
+                <FlexItem>
+                  <Button
+                    variant="plain"
+                    aria-expanded={expandedSections.vulnerabilities}
+                    onClick={() => toggleSection("vulnerabilities")}
+                    aria-label="Toggle vulnerabilities"
+                  >
+                    {expandedSections.vulnerabilities ? (
+                      <ChevronDownIcon />
+                    ) : (
+                      <ChevronRightIcon />
+                    )}
+                  </Button>
+                </FlexItem>
+              </Flex>
 
-            {expandedSections.vulnerabilities && (
-              <div style={{ marginTop: "1rem" }}>
-                {/* Vulnerabilities Filter Toolbar */}
-                <Toolbar id="vulnerabilities-toolbar" clearAllFilters={clearAllFilters} style={{ marginBottom: "1rem" }}>
-                  <ToolbarContent>
-                    <ToolbarItem>
-                      <SearchInput
-                        placeholder="Filter by CVE ID..."
-                        value={cveIdFilter}
-                        onChange={(_, value) => setCveIdFilter(value)}
-                        onClear={() => setCveIdFilter("")}
-                      />
-                    </ToolbarItem>
-                    <ToolbarFilter
-                      chips={severityFilters}
-                      deleteChip={(_, chip) => setSeverityFilters(prev => prev.filter(s => s !== chip))}
-                      deleteChipGroup={() => setSeverityFilters([])}
-                      categoryName="Severity"
-                    >
-                      <Select
-                        role="menu"
-                        aria-label="Severity filter"
-                        isOpen={isSeverityFilterOpen}
-                        selected={severityFilters}
-                        onSelect={(_, selection) => {
-                          const value = selection as string;
-                          setSeverityFilters(prev =>
-                            prev.includes(value)
-                              ? prev.filter(item => item !== value)
-                              : [...prev, value]
-                          );
-                        }}
-                        onOpenChange={(nextOpen: boolean) => setIsSeverityFilterOpen(nextOpen)}
-                        toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
-                          <MenuToggle
-                            ref={toggleRef}
-                            onClick={() => setIsSeverityFilterOpen(!isSeverityFilterOpen)}
-                            isExpanded={isSeverityFilterOpen}
-                          >
-                            Severity
-                          </MenuToggle>
-                        )}
+              {expandedSections.vulnerabilities && (
+                <div style={{ marginTop: "1rem" }}>
+                  {/* Vulnerabilities Filter Toolbar */}
+                  <Toolbar
+                    id="vulnerabilities-toolbar"
+                    clearAllFilters={clearAllFilters}
+                    style={{ marginBottom: "1rem" }}
+                  >
+                    <ToolbarContent>
+                      <ToolbarItem>
+                        <SearchInput
+                          placeholder="Filter by CVE ID..."
+                          value={cveIdFilter}
+                          onChange={(_, value) => setCveIdFilter(value)}
+                          onClear={() => setCveIdFilter("")}
+                        />
+                      </ToolbarItem>
+                      <ToolbarFilter
+                        chips={severityFilters}
+                        deleteChip={(_, chip) =>
+                          setSeverityFilters((prev) =>
+                            prev.filter((s) => s !== chip),
+                          )
+                        }
+                        deleteChipGroup={() => setSeverityFilters([])}
+                        categoryName="Severity"
                       >
-                        <SelectList>
-                          {severityOptions.map((option) => (
-                            <SelectOption
-                              key={option.value}
-                              value={option.value}
-                              isSelected={severityFilters.includes(option.value)}
-                            >
-                              {option.label}
-                            </SelectOption>
-                          ))}
-                        </SelectList>
-                      </Select>
-                    </ToolbarFilter>
-                    <ToolbarFilter
-                      chips={fixableFilter ? [fixableFilter] : []}
-                      deleteChip={() => setFixableFilter("")}
-                      categoryName="Fixable"
-                    >
-                      <Select
-                        role="menu"
-                        aria-label="Fixable filter"
-                        isOpen={isFixableFilterOpen}
-                        selected={fixableFilter}
-                        onSelect={(_, selection) => {
-                          const value = selection as string;
-                          setFixableFilter(value === fixableFilter ? "" : value);
-                          setIsFixableFilterOpen(false);
-                        }}
-                        onOpenChange={(nextOpen: boolean) => setIsFixableFilterOpen(nextOpen)}
-                        toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
-                          <MenuToggle
-                            ref={toggleRef}
-                            onClick={() => setIsFixableFilterOpen(!isFixableFilterOpen)}
-                            isExpanded={isFixableFilterOpen}
-                          >
-                            Fixable
-                          </MenuToggle>
-                        )}
-                      >
-                        <SelectList>
-                          {fixableOptions.map((option) => (
-                            <SelectOption
-                              key={option.value}
-                              value={option.value}
-                              isSelected={fixableFilter === option.value}
-                            >
-                              {option.label}
-                            </SelectOption>
-                          ))}
-                        </SelectList>
-                      </Select>
-                    </ToolbarFilter>
-                  </ToolbarContent>
-                </Toolbar>
-
-                {filteredVulnerabilities.length > 0 ? (
-                  <Table aria-label="Vulnerabilities table" variant="compact">
-                    <Thead>
-                      <Tr>
-                        <Th>CVE ID</Th>
-                        <Th>Severity</Th>
-                        <Th>Component</Th>
-                        <Th>Current Version</Th>
-                        <Th>Fixed Version</Th>
-                        <Th>CVSS Score</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {filteredVulnerabilities.map((vuln, index) => (
-                        <Tr key={vuln.cve || index}>
-                          <Td dataLabel="CVE ID">
-                            <Button variant="link" isInline component="a" href={`https://nvd.nist.gov/vuln/detail/${vuln.cve}`} target="_blank">
-                              {vuln.cve} <ExternalLinkAltIcon style={{ marginLeft: "0.25rem" }} />
-                            </Button>
-                          </Td>
-                          <Td dataLabel="Severity">
-                            <Badge 
-                              variant={
-                                vuln.severity === 'Critical' ? 'red' :
-                                vuln.severity === 'Important' ? 'orange' :
-                                vuln.severity === 'Medium' ? 'gold' : 'blue'
+                        <Select
+                          role="menu"
+                          aria-label="Severity filter"
+                          isOpen={isSeverityFilterOpen}
+                          selected={severityFilters}
+                          onSelect={(_, selection) => {
+                            const value = selection as string;
+                            setSeverityFilters((prev) =>
+                              prev.includes(value)
+                                ? prev.filter((item) => item !== value)
+                                : [...prev, value],
+                            );
+                          }}
+                          onOpenChange={(nextOpen: boolean) =>
+                            setIsSeverityFilterOpen(nextOpen)
+                          }
+                          toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                            <MenuToggle
+                              ref={toggleRef}
+                              onClick={() =>
+                                setIsSeverityFilterOpen(!isSeverityFilterOpen)
                               }
+                              isExpanded={isSeverityFilterOpen}
                             >
-                              {vuln.severity}
-                            </Badge>
-                          </Td>
-                          <Td dataLabel="Component">{vuln.component}</Td>
-                          <Td dataLabel="Current Version">
-                            <code style={{ fontSize: "var(--pf-v6-global--FontSize--sm)" }}>
-                              {vuln.currentVersion}
-                            </code>
-                          </Td>
-                          <Td dataLabel="Fixed Version">
-                            {vuln.fixedVersion ? (
-                              <code style={{ fontSize: "var(--pf-v6-global--FontSize--sm)" }}>
-                                {vuln.fixedVersion}
-                              </code>
-                            ) : (
-                              <span style={{ color: "var(--pf-v6-global--Color--200)" }}>—</span>
-                            )}
-                          </Td>
-                          <Td dataLabel="CVSS Score">
-                            {vuln.cvssScore ? (
-                              <Badge variant="outline">
-                                {vuln.cvssScore}
-                              </Badge>
-                            ) : (
-                              <span style={{ color: "var(--pf-v6-global--Color--200)" }}>—</span>
-                            )}
-                          </Td>
+                              Severity
+                            </MenuToggle>
+                          )}
+                        >
+                          <SelectList>
+                            {severityOptions.map((option) => (
+                              <SelectOption
+                                key={option.value}
+                                value={option.value}
+                                isSelected={severityFilters.includes(
+                                  option.value,
+                                )}
+                              >
+                                {option.label}
+                              </SelectOption>
+                            ))}
+                          </SelectList>
+                        </Select>
+                      </ToolbarFilter>
+                      <ToolbarFilter
+                        chips={fixableFilter ? [fixableFilter] : []}
+                        deleteChip={() => setFixableFilter("")}
+                        categoryName="Fixable"
+                      >
+                        <Select
+                          role="menu"
+                          aria-label="Fixable filter"
+                          isOpen={isFixableFilterOpen}
+                          selected={fixableFilter}
+                          onSelect={(_, selection) => {
+                            const value = selection as string;
+                            setFixableFilter(
+                              value === fixableFilter ? "" : value,
+                            );
+                            setIsFixableFilterOpen(false);
+                          }}
+                          onOpenChange={(nextOpen: boolean) =>
+                            setIsFixableFilterOpen(nextOpen)
+                          }
+                          toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                            <MenuToggle
+                              ref={toggleRef}
+                              onClick={() =>
+                                setIsFixableFilterOpen(!isFixableFilterOpen)
+                              }
+                              isExpanded={isFixableFilterOpen}
+                            >
+                              Fixable
+                            </MenuToggle>
+                          )}
+                        >
+                          <SelectList>
+                            {fixableOptions.map((option) => (
+                              <SelectOption
+                                key={option.value}
+                                value={option.value}
+                                isSelected={fixableFilter === option.value}
+                              >
+                                {option.label}
+                              </SelectOption>
+                            ))}
+                          </SelectList>
+                        </Select>
+                      </ToolbarFilter>
+                    </ToolbarContent>
+                  </Toolbar>
+
+                  {filteredVulnerabilities.length > 0 ? (
+                    <Table aria-label="Vulnerabilities table" variant="compact">
+                      <Thead>
+                        <Tr>
+                          <Th>CVE ID</Th>
+                          <Th>Severity</Th>
+                          <Th>Component</Th>
+                          <Th>Current Version</Th>
+                          <Th>Fixed Version</Th>
+                          <Th>CVSS Score</Th>
                         </Tr>
-                      ))}
-                    </Tbody>
-                  </Table>
-                ) : (
-                  <Alert variant="info" isInline title="No vulnerabilities found" style={{ marginTop: "1rem" }}>
-                    <p>No vulnerabilities match the current filter criteria.</p>
-                  </Alert>
-                )}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      )}
+                      </Thead>
+                      <Tbody>
+                        {filteredVulnerabilities.map((vuln, index) => (
+                          <Tr key={vuln.cve || index}>
+                            <Td dataLabel="CVE ID">
+                              <Button
+                                variant="link"
+                                isInline
+                                component="a"
+                                href={`https://nvd.nist.gov/vuln/detail/${vuln.cve}`}
+                                target="_blank"
+                              >
+                                {vuln.cve}{" "}
+                                <ExternalLinkAltIcon
+                                  style={{ marginLeft: "0.25rem" }}
+                                />
+                              </Button>
+                            </Td>
+                            <Td dataLabel="Severity">
+                              <Badge
+                                variant={
+                                  vuln.severity === "Critical"
+                                    ? "red"
+                                    : vuln.severity === "Important"
+                                      ? "orange"
+                                      : vuln.severity === "Medium"
+                                        ? "gold"
+                                        : "blue"
+                                }
+                              >
+                                {vuln.severity}
+                              </Badge>
+                            </Td>
+                            <Td dataLabel="Component">{vuln.component}</Td>
+                            <Td dataLabel="Current Version">
+                              <code
+                                style={{
+                                  fontSize: "var(--pf-v6-global--FontSize--sm)",
+                                }}
+                              >
+                                {vuln.currentVersion}
+                              </code>
+                            </Td>
+                            <Td dataLabel="Fixed Version">
+                              {vuln.fixedVersion ? (
+                                <code
+                                  style={{
+                                    fontSize:
+                                      "var(--pf-v6-global--FontSize--sm)",
+                                  }}
+                                >
+                                  {vuln.fixedVersion}
+                                </code>
+                              ) : (
+                                <span
+                                  style={{
+                                    color: "var(--pf-v6-global--Color--200)",
+                                  }}
+                                >
+                                  —
+                                </span>
+                              )}
+                            </Td>
+                            <Td dataLabel="CVSS Score">
+                              {vuln.cvssScore ? (
+                                <Badge variant="outline">
+                                  {vuln.cvssScore}
+                                </Badge>
+                              ) : (
+                                <span
+                                  style={{
+                                    color: "var(--pf-v6-global--Color--200)",
+                                  }}
+                                >
+                                  —
+                                </span>
+                              )}
+                            </Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  ) : (
+                    <Alert
+                      variant="info"
+                      isInline
+                      title="No vulnerabilities found"
+                      style={{ marginTop: "1rem" }}
+                    >
+                      <p>
+                        No vulnerabilities match the current filter criteria.
+                      </p>
+                    </Alert>
+                  )}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
 
       {/* No Vulnerabilities Message */}
       {currentVersionSbom?.summary?.hasVulnerabilities === false && (
@@ -640,10 +825,15 @@ export const SecurityTabModal: React.FC = () => {
             <Title headingLevel="h3" size="lg" style={{ marginBottom: "1rem" }}>
               Vulnerabilities
             </Title>
-            <Alert variant="success" isInline title="No vulnerabilities detected">
+            <Alert
+              variant="success"
+              isInline
+              title="No vulnerabilities detected"
+            >
               <p>
-                This package and its dependencies have no known security vulnerabilities.
-                The SBOM was scanned against current vulnerability databases.
+                This package and its dependencies have no known security
+                vulnerabilities. The SBOM was scanned against current
+                vulnerability databases.
               </p>
             </Alert>
           </CardBody>
@@ -661,8 +851,14 @@ export const SecurityTabModal: React.FC = () => {
           <Title headingLevel="h1" size="2xl">
             SBOM Components ({currentVersionSbom?.components?.length || 0})
           </Title>
-          <p style={{ color: "var(--pf-v6-global--Color--200)", marginTop: "0.5rem" }}>
-            Detailed breakdown of all software components included in this package.
+          <p
+            style={{
+              color: "var(--pf-v6-global--Color--200)",
+              marginTop: "0.5rem",
+            }}
+          >
+            Detailed breakdown of all software components included in this
+            package.
           </p>
         </ModalHeader>
         <ModalBody style={{ maxHeight: "500px", overflowY: "auto" }}>
@@ -711,22 +907,33 @@ export const SecurityTabModal: React.FC = () => {
                     <Tr key={component.bomRef || index}>
                       <Td dataLabel="Component">
                         <div>
-                          <div style={{ fontWeight: "var(--pf-v6-global--FontWeight--semi-bold)" }}>
+                          <div
+                            style={{
+                              fontWeight:
+                                "var(--pf-v6-global--FontWeight--semi-bold)",
+                            }}
+                          >
                             {component.name}
                           </div>
                           {component.description && (
-                            <div style={{ 
-                              fontSize: "var(--pf-v6-global--FontSize--sm)",
-                              color: "var(--pf-v6-global--Color--200)",
-                              marginTop: "0.25rem"
-                            }}>
+                            <div
+                              style={{
+                                fontSize: "var(--pf-v6-global--FontSize--sm)",
+                                color: "var(--pf-v6-global--Color--200)",
+                                marginTop: "0.25rem",
+                              }}
+                            >
                               {component.description}
                             </div>
                           )}
                         </div>
                       </Td>
                       <Td dataLabel="Version">
-                        <code style={{ fontSize: "var(--pf-v6-global--FontSize--sm)" }}>
+                        <code
+                          style={{
+                            fontSize: "var(--pf-v6-global--FontSize--sm)",
+                          }}
+                        >
                           {component.version}
                         </code>
                       </Td>
@@ -745,7 +952,11 @@ export const SecurityTabModal: React.FC = () => {
                             ))}
                           </Flex>
                         ) : (
-                          <span style={{ color: "var(--pf-v6-global--Color--200)" }}>—</span>
+                          <span
+                            style={{ color: "var(--pf-v6-global--Color--200)" }}
+                          >
+                            —
+                          </span>
                         )}
                       </Td>
                     </Tr>
@@ -754,7 +965,12 @@ export const SecurityTabModal: React.FC = () => {
               </Table>
 
               {filteredComponents.length === 0 && (
-                <Alert variant="info" isInline title="No components found" style={{ marginTop: "1rem" }}>
+                <Alert
+                  variant="info"
+                  isInline
+                  title="No components found"
+                  style={{ marginTop: "1rem" }}
+                >
                   <p>No components match the current filter criteria.</p>
                 </Alert>
               )}

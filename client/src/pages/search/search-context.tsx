@@ -1,7 +1,20 @@
 import type React from "react";
-import { createContext, useState, useMemo, useCallback } from "react";
+import {
+  createContext,
+  useState,
+  useCallback,
+  useMemo,
+  useDeferredValue,
+} from "react";
 import { useSearchParams } from "react-router-dom";
-import dummyData from "./dummy-data.json";
+import { useQuery } from "@tanstack/react-query";
+import type {
+  HubRequestParams,
+  PulpPythonPackageContent,
+} from "@app/api/models";
+import { getPulpPaginatedResult, PULP_ENDPOINTS } from "@app/api/rest";
+import { transformPulpContentToPackage } from "@app/utils/pulp-transformers";
+import { deduplicateByLatestVersion } from "@app/utils/version-compare";
 
 export interface SBOMSummary {
   totalComponents: number;
@@ -119,20 +132,122 @@ interface ISearchContext {
   setFilter: (category: keyof FilterValues, values: string[]) => void;
   clearAllFilters: () => void;
   deleteFilter: (category: keyof FilterValues, value: string) => void;
+  // Loading state
+  isLoading: boolean;
+  isPending: boolean;
 }
 
 const contextDefaultValue = {} as ISearchContext;
 
 export const SearchContext = createContext<ISearchContext>(contextDefaultValue);
 
+/**
+ * Applies client-side sorting to packages after deduplication.
+ * Server-side sorting happens before deduplication, so we need to re-sort.
+ *
+ * Sorting strategies:
+ * - date: Sort by updated field (descending, newest first)
+ * - downloads: Sort by downloads field (descending, most downloads first)
+ * - relevance: Score by search query match in name + updated date (best match first)
+ */
+const applySorting = (
+  packages: Package[],
+  sortBy: SortOption,
+  searchQuery: string,
+): Package[] => {
+  const sorted = [...packages];
+
+  switch (sortBy) {
+    case "date":
+      // Sort by updated date (newest first)
+      sorted.sort((a, b) => {
+        const dateA = new Date(a.updated).getTime();
+        const dateB = new Date(b.updated).getTime();
+        return dateB - dateA; // Descending
+      });
+      break;
+
+    case "downloads":
+      // Sort by downloads (most first), fallback to date
+      sorted.sort((a, b) => {
+        if (a.downloads !== b.downloads) {
+          return b.downloads - a.downloads; // Descending
+        }
+        // Fallback to date if downloads are equal
+        const dateA = new Date(a.updated).getTime();
+        const dateB = new Date(b.updated).getTime();
+        return dateB - dateA;
+      });
+      break;
+
+    case "relevance":
+    default:
+      // Score by search query match + recency
+      // If no search query, sort by name alphabetically
+      if (!searchQuery) {
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
+      } else {
+        const lowerQuery = searchQuery.toLowerCase();
+
+        // Calculate relevance score for each package
+        const scored = sorted.map((pkg) => {
+          let score = 0;
+          const lowerName = pkg.name.toLowerCase();
+
+          // Exact match: highest score
+          if (lowerName === lowerQuery) {
+            score += 1000;
+          }
+          // Starts with query: high score
+          else if (lowerName.startsWith(lowerQuery)) {
+            score += 500;
+          }
+          // Contains query: medium score
+          else if (lowerName.includes(lowerQuery)) {
+            score += 100;
+          }
+
+          // Boost score for shorter names (more precise match)
+          score += Math.max(0, 50 - lowerName.length);
+
+          // Small boost for newer packages (recency)
+          const ageInDays = (Date.now() - new Date(pkg.updated).getTime()) / (1000 * 60 * 60 * 24);
+          score += Math.max(0, 10 - ageInDays / 365); // Newer = slightly higher score
+
+          return { pkg, score };
+        });
+
+        // Sort by score (highest first), then by name
+        scored.sort((a, b) => {
+          if (a.score !== b.score) {
+            return b.score - a.score; // Descending score
+          }
+          return a.pkg.name.localeCompare(b.pkg.name); // Alphabetical for ties
+        });
+
+        return scored.map((item) => item.pkg);
+      }
+      break;
+  }
+
+  return sorted;
+};
+
 interface ISearchProvider {
   children: React.ReactNode;
-  selectedIndex?: string;
+  selectedIndex: string;
+  availableDistributions: {
+    name: string;
+    base_path: string;
+    base_url: string;
+    repository_version: string | null;
+  }[];
 }
 
 export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
   children,
-  selectedIndex = "trusted-libraries",
+  selectedIndex,
+  availableDistributions,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -282,185 +397,250 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     setSearchParams(newParams);
   }, [searchParams, setSearchParams]);
 
-  // Load mock data
-  const allPackages: Package[] = dummyData;
+  // Build Pulp filter parameters for server-side filtering
+  // IMPORTANT: Per PULP_DATA_MAPPING_PLAN.md lines 10-19, server-side filtering
+  // is LIMITED to specific fields. The fields name (substring), classifiers,
+  // and license are NOT supported for server-side filtering and require
+  // client-side filtering instead.
+  const buildPulpFilters = useCallback(
+    (
+      searchQuery: string,
+      filters: FilterValues,
+    ): HubRequestParams["filters"] => {
+      const hubFilters: HubRequestParams["filters"] = [];
 
-  // Filter packages based on selected index and show only latest versions
-  const packages = useMemo(() => {
-    let selectedPackages: Package[];
-    
-    if (selectedIndex === "aipcc") {
-      // Show 6 packages from "page 3" (packages 20-25)
-      selectedPackages = allPackages.slice(20, 26);
-    } else {
-      // For "trusted-libraries" show all packages
-      selectedPackages = allPackages;
-    }
-    
-    // Group packages by name and keep only the latest version
-    const packagesByName = new Map<string, Package>();
-    
-    selectedPackages.forEach((pkg) => {
-      const existingPkg = packagesByName.get(pkg.name);
-      
-      if (!existingPkg) {
-        // First package with this name
-        packagesByName.set(pkg.name, pkg);
-      } else {
-        // Compare versions to keep the latest
-        // Simple version comparison - for more complex versioning, would need semver
-        const currentVersion = pkg.version;
-        const existingVersion = existingPkg.version;
-        
-        // Remove any pre-release suffixes for comparison
-        const normalizeVersion = (version: string) => {
-          return version.replace(/[a-zA-Z].*$/, ''); // Remove rc, alpha, beta, etc.
-        };
-        
-        const currentNormalized = normalizeVersion(currentVersion);
-        const existingNormalized = normalizeVersion(existingVersion);
-        
-        // Split version numbers and compare
-        const currentParts = currentNormalized.split('.').map(Number);
-        const existingParts = existingNormalized.split('.').map(Number);
-        
-        let isNewer = false;
-        for (let i = 0; i < Math.max(currentParts.length, existingParts.length); i++) {
-          const currentPart = currentParts[i] || 0;
-          const existingPart = existingParts[i] || 0;
-          
-          if (currentPart > existingPart) {
-            isNewer = true;
-            break;
-          } else if (currentPart < existingPart) {
-            break;
-          }
-        }
-        
-        // If versions are equal, prefer non-pre-release versions
-        if (!isNewer && currentNormalized === existingNormalized) {
-          const currentHasPreRelease = currentVersion !== currentNormalized;
-          const existingHasPreRelease = existingVersion !== existingNormalized;
-          
-          if (!currentHasPreRelease && existingHasPreRelease) {
-            isNewer = true;
-          }
-        }
-        
-        if (isNewer) {
-          packagesByName.set(pkg.name, pkg);
-        }
+      // Search query → NO server-side filter
+      // Verified: pulp_python/app/viewsets.py line 340 shows name only supports exact/in
+      // Client-side filtering required (see PULP_DATA_MAPPING_PLAN.md lines 127-130)
+
+      // Classification filter → NO server-side filter
+      // Verified: pulp_python/app/viewsets.py lines 339-348 do NOT include classifiers
+      // Client-side filtering required (see PULP_DATA_MAPPING_PLAN.md lines 119-125)
+
+      // License filter → NO server-side filter
+      // Verified: license field NOT in PythonPackageContentFilter.Meta.fields
+      // Client-side filtering required (see PULP_DATA_MAPPING_PLAN.md lines 124-127)
+
+      // NO server-side filters available for UI requirements
+      return hubFilters;
+    },
+    [],
+  );
+
+  // Map sort option to Pulp sort parameters
+  const mapSortToPulp = useCallback(
+    (sortOption: SortOption): HubRequestParams["sort"] => {
+      switch (sortOption) {
+        case "date":
+          return { field: "pulp_created", direction: "desc" };
+        case "downloads":
+          // Not available in Pulp - fallback to date
+          return { field: "pulp_created", direction: "desc" };
+        default:
+          // Relevance requires client-side scoring
+          // For server-side, sort by name
+          return { field: "name", direction: "asc" };
       }
-    });
-    
-    return Array.from(packagesByName.values());
-  }, [selectedIndex]);
+    },
+    [],
+  );
 
-  // Filter packages based on search query and filters
-  const filteredPackages = useMemo(() => {
-    let filtered = packages;
+  // Debounce search query to prevent excessive API calls
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const deferredFilters = useDeferredValue(filters);
 
-    // Apply search query filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (pkg) =>
-          pkg.name.toLowerCase().includes(query) ||
-          pkg.description.toLowerCase().includes(query) ||
-          pkg.author.toLowerCase().includes(query),
-      );
-    }
+  // Determine if filtering is pending (deferred values don't match current)
+  const isPending =
+    deferredSearchQuery !== searchQuery ||
+    JSON.stringify(deferredFilters) !== JSON.stringify(filters);
 
-    // Apply index filter
-    if (filters.index.length > 0) {
-      filtered = filtered.filter((pkg) =>
-        pkg.index ? filters.index.includes(pkg.index) : false,
-      );
-    }
+  // Fetch the selected distribution to get repository_version for filtering
+  const selectedDistribution = availableDistributions.find(
+    (dist) => dist.name === selectedIndex,
+  );
 
-    // Apply classification filter
-    if (filters.classification.length > 0) {
-      filtered = filtered.filter((pkg) => {
-        if (!pkg.tags) return false;
-        // Check if package has any of the selected classifications/tags
-        return filters.classification.some((classification) =>
-          pkg.tags?.some(tag => 
-            tag.toLowerCase().includes(classification.toLowerCase()) ||
-            classification.toLowerCase().includes(tag.toLowerCase())
-          )
+  // Fetch ALL packages from Pulp API using pagination
+  // Per PULP_DATA_MAPPING_PLAN.md lines 542-680: client-side filtering required
+  // because name substring, classifiers, and license are NOT supported server-side
+  const {
+    data: rawData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["packages", selectedIndex, sortBy],
+    queryFn: async () => {
+      const allPackages: PulpPythonPackageContent[] = [];
+      let currentOffset = 0;
+      const limit = 100; // Pulp default page size
+      let hasMore = true;
+
+      // Filter by repository_version to get packages ONLY from the selected distribution
+      const extraParams: Record<string, string | number> = {};
+      if (selectedDistribution?.repository_version) {
+        extraParams.repository_version = selectedDistribution.repository_version;
+      }
+
+      // Fetch all pages to ensure ALL packages are rendered
+      while (hasMore) {
+        const hubParams: HubRequestParams = {
+          filters: [], // NO server-side filters (not supported for required fields)
+          sort: mapSortToPulp(sortBy),
+          page: {
+            pageNumber: Math.floor(currentOffset / limit) + 1,
+            itemsPerPage: limit,
+          },
+        };
+
+        const result = await getPulpPaginatedResult<PulpPythonPackageContent>(
+          PULP_ENDPOINTS.PYTHON_CONTENT,
+          hubParams,
+          extraParams,
         );
-      });
-    }
 
-    // Apply license filter
-    if (filters.license.length > 0) {
-      filtered = filtered.filter((pkg) =>
-        pkg.license
-          ? filters.license.includes(pkg.license)
-          : false,
+        allPackages.push(...result.data);
+        currentOffset += result.data.length;
+
+        // Check if there are more pages
+        hasMore = result.data.length === limit && currentOffset < result.total;
+      }
+
+      return allPackages; // Return ALL raw Pulp content
+    },
+    enabled: !!selectedIndex, // Only run when we have a selected index
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes to reduce refetches
+  });
+
+  // Memoize deduplication and transformation
+  const transformedPackages = useMemo(() => {
+    if (!rawData) return [];
+
+    // Deduplicate BEFORE transformation to reduce work
+    const deduplicatedContent = deduplicateByLatestVersion(rawData);
+
+    // Transform to UI Package model
+    return deduplicatedContent.map((content) =>
+      transformPulpContentToPackage(content, undefined, undefined, null),
+    );
+  }, [rawData]);
+
+  // CLIENT-SIDE filtering (separate memo for better performance)
+  // Per PULP_DATA_MAPPING_PLAN.md: name substring, classifiers, license
+  // are NOT supported server-side and require client-side filtering
+  const filteredPackages = useMemo(() => {
+    let packages = transformedPackages;
+
+    // Search filter (name or description)
+    if (deferredSearchQuery) {
+      const lowerQuery = deferredSearchQuery.toLowerCase();
+      packages = packages.filter(
+        (pkg) =>
+          pkg.name.toLowerCase().includes(lowerQuery) ||
+          pkg.description?.toLowerCase().includes(lowerQuery),
       );
     }
 
-    return filtered;
-  }, [searchQuery, filters, packages, selectedIndex]);
-
-  // Sort packages based on sortBy
-  const sortedPackages = useMemo(() => {
-    const sorted = [...filteredPackages];
-    switch (sortBy) {
-      case "date":
-        // Sort by most recently updated
-        // For demo purposes, using a simple heuristic based on the "updated" text
-        sorted.sort((a, b) => {
-          const getUpdateValue = (updated: string) => {
-            if (updated.includes("day")) {
-              const days = parseInt(updated, 10);
-              return days || 1;
-            }
-            if (updated.includes("week")) {
-              const weeks = parseInt(updated, 10);
-              return (weeks || 1) * 7;
-            }
-            if (updated.includes("month")) {
-              const months = parseInt(updated, 10);
-              return (months || 1) * 30;
-            }
-            return 999;
-          };
-          return getUpdateValue(a.updated) - getUpdateValue(b.updated);
-        });
-        break;
-      case "downloads":
-        sorted.sort((a, b) => b.downloads - a.downloads);
-        break;
-      default:
-        // If there's a search query, sort by name match first, then by downloads
-        if (searchQuery) {
-          sorted.sort((a, b) => {
-            const aNameMatch = a.name
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase());
-            const bNameMatch = b.name
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase());
-            if (aNameMatch && !bNameMatch) return -1;
-            if (!aNameMatch && bNameMatch) return 1;
-            return b.downloads - a.downloads;
-          });
-        } else {
-          // No search query, sort by downloads
-          sorted.sort((a, b) => b.downloads - a.downloads);
-        }
-        break;
+    // Classification filter
+    if (deferredFilters.classification.length > 0) {
+      packages = packages.filter((pkg) =>
+        deferredFilters.classification.some((classifier) =>
+          pkg.tags?.some((tag) =>
+            tag.toLowerCase().includes(classifier.toLowerCase()),
+          ),
+        ),
+      );
     }
-    return sorted;
-  }, [filteredPackages, sortBy, searchQuery]);
 
-  // Paginate packages
-  const currentPageItems = useMemo(() => {
-    const start = (page - 1) * perPage;
-    return sortedPackages.slice(start, start + perPage);
-  }, [sortedPackages, page, perPage]);
+    // License filter
+    if (deferredFilters.license.length > 0) {
+      packages = packages.filter((pkg) =>
+        deferredFilters.license.some((license) =>
+          pkg.license?.toLowerCase().includes(license.toLowerCase()),
+        ),
+      );
+    }
+
+    // Apply client-side sorting after filtering
+    // Per PULP_DATA_MAPPING_PLAN.md lines 133-138:
+    // - "date" uses server-side sorting (already applied via queryKey)
+    // - "relevance" and "downloads" require client-side sorting
+    packages = applySorting(packages, sortBy, deferredSearchQuery);
+
+    return packages;
+  }, [transformedPackages, deferredSearchQuery, deferredFilters, sortBy]);
+
+  // CLIENT-SIDE pagination
+  const { currentPageItems, totalItemCount, filteredItemCount } = useMemo(() => {
+    const total = filteredPackages.length;
+    const startIndex = (page - 1) * perPage;
+    const endIndex = startIndex + perPage;
+    const pageItems = filteredPackages.slice(startIndex, endIndex);
+
+    return {
+      currentPageItems: pageItems,
+      totalItemCount: total,
+      filteredItemCount: total,
+    };
+  }, [filteredPackages, page, perPage]);
+
+  // Handle loading and error states
+  if (isLoading) {
+    // Return context with empty data during loading
+    return (
+      <SearchContext.Provider
+        value={{
+          searchQuery,
+          setSearchQuery,
+          sortBy,
+          setSortBy,
+          page,
+          setPage,
+          perPage,
+          setPerPage,
+          currentPageItems: [],
+          totalItemCount: 0,
+          filteredItemCount: 0,
+          filters,
+          setFilter,
+          clearAllFilters,
+          deleteFilter,
+          isLoading: true,
+          isPending: false,
+        }}
+      >
+        {children}
+      </SearchContext.Provider>
+    );
+  }
+
+  if (error) {
+    console.error("Failed to fetch packages:", error);
+    // Return context with empty data on error
+    return (
+      <SearchContext.Provider
+        value={{
+          searchQuery,
+          setSearchQuery,
+          sortBy,
+          setSortBy,
+          page,
+          setPage,
+          perPage,
+          setPerPage,
+          currentPageItems: [],
+          totalItemCount: 0,
+          filteredItemCount: 0,
+          filters,
+          setFilter,
+          clearAllFilters,
+          deleteFilter,
+          isLoading: false,
+          isPending: false,
+        }}
+      >
+        {children}
+      </SearchContext.Provider>
+    );
+  }
 
   return (
     <SearchContext.Provider
@@ -474,12 +654,14 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
         perPage,
         setPerPage,
         currentPageItems,
-        totalItemCount: packages.length,
-        filteredItemCount: sortedPackages.length,
+        totalItemCount,
+        filteredItemCount,
         filters,
         setFilter,
         clearAllFilters,
         deleteFilter,
+        isLoading: false,
+        isPending,
       }}
     >
       {children}

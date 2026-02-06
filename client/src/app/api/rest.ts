@@ -4,7 +4,13 @@ import { FORM_DATA_FILE_KEY } from "@app/Constants";
 import type { AdvisoryDetails, ExtractResult, IngestResult } from "@app/client";
 import { serializeRequestParamsForHub } from "@app/hooks/table-controls/getHubRequestParams";
 
-import type { HubPaginatedResult, HubRequestParams } from "./models";
+import type {
+  HubFilter,
+  HubPaginatedResult,
+  HubRequestParams,
+  PulpDistribution,
+  PulpPaginatedResponse,
+} from "./models";
 
 const API = "/api";
 
@@ -83,4 +89,197 @@ export const downloadSbomLicense = (sbomId: string) => {
     responseType: "arraybuffer",
     headers: { Accept: "text/plain", responseType: "blob" },
   });
+};
+
+// Pulp API Integration
+
+const PULP_API = "/pulp/api/v3";
+
+export const PULP_ENDPOINTS = {
+  PYTHON_CONTENT: `${PULP_API}/content/python/packages/`,
+  PYTHON_PROVENANCES: `${PULP_API}/content/python/provenance/`,
+  PYTHON_DISTRIBUTIONS: `${PULP_API}/distributions/python/pypi/`,
+  PYTHON_REPOSITORIES: `${PULP_API}/repositories/python/python/`,
+} as const;
+
+/**
+ * Maps Hub filter operators to Pulp/Django field lookup operators.
+ * Verified against pulpcore source code that all Django field lookups are supported.
+ * See: pulpcore/app/viewsets/base.py (NAME_FILTER_OPTIONS, lines 34-52)
+ */
+const mapHubOperatorToPulpOperator = (operator: string): string => {
+  const mapping: Record<string, string> = {
+    "=": "__exact",
+    "!=": "__exclude",
+    "~": "__icontains",    // Case-insensitive contains (verified supported)
+    "~~": "__contains",    // Case-sensitive contains (verified supported for classifiers)
+    ">": "__gt",           // Greater than (verified supported)
+    ">=": "__gte",         // Greater than or equal (verified supported)
+    "<": "__lt",           // Less than (verified supported)
+    "<=": "__lte",         // Less than or equal (verified supported)
+  };
+  return mapping[operator] || "__exact";
+};
+
+/**
+ * Converts HubRequestParams to Pulp query parameters.
+ * Key differences from Hub:
+ * - Filters use Django field lookups (name__icontains)
+ * - Sort uses 'ordering' param with '-' prefix for desc
+ * - Pagination already uses limit/offset internally
+ * - pulp_domain is added automatically by the server proxy
+ */
+export const serializeRequestParamsForPulp = (
+  params: HubRequestParams,
+  extraParams: Record<string, string | number> = {},
+): Record<string, string | number> => {
+  const pulpParams: Record<string, string | number> = { ...extraParams };
+
+  // Pagination: Convert page-based to offset-based
+  if (params.page) {
+    const offset = (params.page.pageNumber - 1) * params.page.itemsPerPage;
+    pulpParams.limit = params.page.itemsPerPage;
+    pulpParams.offset = offset;
+  }
+
+  // Sorting: Convert to Pulp ordering format
+  if (params.sort) {
+    const direction = params.sort.direction === "desc" ? "-" : "";
+    pulpParams.ordering = `${direction}${params.sort.field}`;
+  }
+
+  // Filters: Convert to Django field lookups
+  if (params.filters) {
+    params.filters.forEach((filter: HubFilter) => {
+      const operator = mapHubOperatorToPulpOperator(filter.operator || "=");
+      const fieldName = `${filter.field}${operator}`;
+
+      if (typeof filter.value === "object" && "list" in filter.value) {
+        // Multi-value filter: join with comma
+        pulpParams[fieldName] = filter.value.list.join(",");
+      } else {
+        pulpParams[fieldName] = filter.value as string | number;
+      }
+    });
+  }
+
+  return pulpParams;
+};
+
+/**
+ * Fetches paginated data from Pulp API and adapts to HubPaginatedResult format.
+ * Converts HubRequestParams to Pulp's Django-style query parameters.
+ *
+ * IMPORTANT: This function fetches ALL pages recursively when a high limit is requested.
+ * If params.page.itemsPerPage is large (e.g., 10000), it will follow the "next" URL
+ * until all pages are fetched, ensuring complete results even when the server has
+ * a maximum page size limit.
+ */
+export const getPulpPaginatedResult = <T>(
+  url: string,
+  params: HubRequestParams = {},
+  extraParams: Record<string, string | number> = {},
+): Promise<HubPaginatedResult<T>> => {
+  const pulpParams = serializeRequestParamsForPulp(params, extraParams);
+
+  // Helper function to recursively fetch all pages
+  const fetchAllPages = async (
+    currentUrl: string,
+    currentParams: Record<string, string | number>,
+    accumulatedResults: T[] = [],
+  ): Promise<{ results: T[]; count: number }> => {
+    const { data } = await axios.get<PulpPaginatedResponse<T>>(currentUrl, {
+      params: currentParams,
+    });
+
+    const allResults = [...accumulatedResults, ...data.results];
+
+    // If there's a next page and we haven't reached the requested limit, fetch it
+    if (data.next && allResults.length < (pulpParams.limit as number)) {
+      // For the next request, use the next URL without params (they're embedded in the URL)
+      return fetchAllPages(data.next, {}, allResults);
+    }
+
+    return {
+      results: allResults,
+      count: data.count,
+    };
+  };
+
+  return fetchAllPages(url, pulpParams).then(({ results, count }) => ({
+    data: results,
+    total: count,
+    params,
+  }));
+};
+
+/**
+ * Fetches distribution for a given content href.
+ * Used to map content to its source index.
+ */
+export const getDistributionForContent = async (
+  contentHref: string,
+): Promise<PulpDistribution | null> => {
+  try {
+    const params: Record<string, string> = { with_content: contentHref };
+
+    const response = await axios.get<PulpPaginatedResponse<PulpDistribution>>(
+      PULP_ENDPOINTS.PYTHON_DISTRIBUTIONS,
+      { params },
+    );
+    return response.data.results[0] || null;
+  } catch (error) {
+    console.error("Failed to fetch distribution:", error);
+    return null;
+  }
+};
+
+/**
+ * Fetches all available distributions for filter options.
+ * The server proxy automatically adds pulp_domain parameter.
+ */
+export const getAllDistributions = async (): Promise<PulpDistribution[]> => {
+  try {
+    const params: Record<string, string | number> = { limit: 100 };
+
+    console.log("Fetching distributions with params:", params);
+    console.log("Request URL:", PULP_ENDPOINTS.PYTHON_DISTRIBUTIONS);
+
+    const response = await axios.get<PulpPaginatedResponse<PulpDistribution>>(
+      PULP_ENDPOINTS.PYTHON_DISTRIBUTIONS,
+      { params },
+    );
+
+    console.log("Distributions response:", response.data);
+    return response.data.results || [];
+  } catch (error) {
+    console.error("Failed to fetch distributions:", error);
+    if (axios.isAxiosError(error)) {
+      console.error("Response data:", error.response?.data);
+      console.error("Response status:", error.response?.status);
+    }
+    return [];
+  }
+};
+
+/**
+ * Fetches a distribution by its base_path.
+ * Used to map index selection to a specific distribution.
+ * The server proxy automatically adds pulp_domain parameter.
+ */
+export const getDistributionByBasePath = async (
+  basePath: string,
+): Promise<PulpDistribution | null> => {
+  try {
+    const params: Record<string, string> = { base_path: basePath };
+
+    const response = await axios.get<PulpPaginatedResponse<PulpDistribution>>(
+      PULP_ENDPOINTS.PYTHON_DISTRIBUTIONS,
+      { params },
+    );
+    return response.data.results[0] || null;
+  } catch (error) {
+    console.error("Failed to fetch distribution by base_path:", error);
+    return null;
+  }
 };

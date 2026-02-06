@@ -43,6 +43,21 @@ export type CalungaEnvType = {
   /** Target URL for the UI server's `/api` proxy */
   CALUNGA_API_URL?: string;
 
+  /** Target URL for the UI server's `/pulp` proxy */
+  PULP_API_URL?: string;
+
+  /** Pulp service account username for authentication */
+  PULP_USERNAME?: string;
+
+  /** Pulp service account password for authentication */
+  PULP_PASSWORD?: string;
+
+  /** Pulp domain for multi-tenancy support */
+  PULP_DOMAIN?: string;
+
+  /** Whether to verify SSL certificates when connecting to Pulp (server-side only) */
+  PULP_VERIFY_SSL?: string;
+
   /** Location of branding files (relative paths computed from the project source root) */
   BRANDING?: string;
 };
@@ -51,7 +66,15 @@ export type CalungaEnvType = {
  * Keys in `CalungaEnv` that are only used on the server and therefore do not
  * need to be sent to the client.
  */
-export const SERVER_ENV_KEYS = ["PORT", "CALUNGA_API_URL", "BRANDING"];
+export const SERVER_ENV_KEYS = [
+  "PORT",
+  "CALUNGA_API_URL",
+  "PULP_API_URL",
+  "PULP_USERNAME",
+  "PULP_PASSWORD",
+  "PULP_VERIFY_SSL",
+  "BRANDING",
+];
 
 /**
  * Create a `CalungaEnv` from a partial `CalungaEnv` with a set of default values.
@@ -71,6 +94,11 @@ export const buildCalungaEnv = ({
 
   UI_INGRESS_PROXY_BODY_SIZE = "500m",
   CALUNGA_API_URL,
+  PULP_API_URL,
+  PULP_USERNAME,
+  PULP_PASSWORD,
+  PULP_DOMAIN,
+  PULP_VERIFY_SSL,
   BRANDING,
 }: Partial<CalungaEnvType> = {}): CalungaEnvType => ({
   NODE_ENV,
@@ -87,6 +115,11 @@ export const buildCalungaEnv = ({
 
   UI_INGRESS_PROXY_BODY_SIZE,
   CALUNGA_API_URL,
+  PULP_API_URL,
+  PULP_USERNAME,
+  PULP_PASSWORD,
+  PULP_DOMAIN,
+  PULP_VERIFY_SSL,
   BRANDING,
 });
 
