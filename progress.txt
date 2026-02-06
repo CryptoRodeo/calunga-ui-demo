@@ -957,3 +957,40 @@ response to only the 12 fields needed for search card rendering. This eliminates
 fields like `description` (55KB+ for scipy), `requires_dist`, `sha256`, `size`, etc.
 Expected payload reduction of 60-80% per item (from ~2-5KB to ~300-500 bytes) with zero
 functional impact on search card display.
+
+Feature: Replace N parallel metadata requests with single `name__in` batch query on search page
+
+Files Changed:
+- client/src/pages/search/search-context.tsx
+
+Actions Taken:
+1. Replaced Promise.all of N parallel requests with single batch request (search-context.tsx:410-439)
+   - Previously: N separate requests via Promise.all, each calling getPulpPaginatedResult
+     with name={exact}&ordering=-pulp_created&limit=1 (one per package on the current page)
+   - Now: single request using name__in=pkg1,pkg2,...,pkgN&ordering=-pulp_created&limit=2000
+   - Reduces HTTP round-trips from 20 to 1 and DB queries from 20 to 1
+   - The name__in filter uses PostgreSQL's efficient index-based IN lookup
+
+2. Implemented client-side deduplication after batch fetch
+   - Results ordered by -pulp_created, so first occurrence of each name is the latest version
+   - Iterates through results using a Set to track seen names, keeps only first per name
+   - Handles edge case where a package name has no content items (filtered out naturally)
+
+3. No changes needed to mock API (mock-api.ts)
+   - The matchesFilter function at line 102-105 already handles __in filters correctly
+   - Splits comma-separated value and checks if field value is in the list
+
+4. Preserved existing fields parameter for payload optimization
+   - The fields parameter from the previous optimization is retained in the batch request
+   - Combined effect: 1 request instead of 20, each item ~300-500 bytes instead of 2-5KB
+
+5. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Query 2 now makes a single batch HTTP request instead of N parallel requests (typically 20).
+The name__in filter combines all current page package names into one comma-separated query
+parameter. Client-side deduplication keeps the latest version per package name (leveraging
+-pulp_created ordering). This reduces HTTP round-trips from 20 to 1 and database queries
+from 20 to 1, with no functional change to the UI.

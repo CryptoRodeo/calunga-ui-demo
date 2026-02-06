@@ -396,10 +396,10 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
   );
 
   // ── QUERY 2: Fetch metadata for the current page's packages ──
-  // For each package name on the current page, fetch the latest content item
-  // via the content API with name={exact}&ordering=-pulp_created&limit=1.
-  // This is N parallel requests (one per package on the page, typically 20),
-  // each returning a single content item — fast and lightweight.
+  // Uses a single batch request with name__in=pkg1,pkg2,...,pkgN instead of
+  // N parallel requests. Results are ordered by -pulp_created so the first
+  // occurrence of each name is the latest version. Client-side deduplication
+  // keeps only the latest content item per package name.
   const { data: currentPageItems = [], isLoading: isLoadingDetails } = useQuery(
     {
       queryKey: [
@@ -408,30 +408,33 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
         currentPageNames,
       ],
       queryFn: async () => {
-        const results = await Promise.all(
-          currentPageNames.map(async (name) => {
-            const result =
-              await getPulpPaginatedResult<PulpPythonPackageContent>(
-                PULP_ENDPOINTS.PYTHON_CONTENT,
-                { filters: [] },
-                {
-                  ...extraParams,
-                  name,
-                  ordering: "-pulp_created",
-                  limit: 1,
-                  fields:
-                    "pulp_href,name,version,summary,author,maintainer,license,license_expression,pulp_created,filename,python_version,classifiers",
-                },
-              );
-            return result.data[0] || null;
-          }),
-        );
-
-        return results
-          .filter((item): item is PulpPythonPackageContent => item !== null)
-          .map((content) =>
-            transformPulpContentToPackage(content, undefined, undefined, null),
+        const result =
+          await getPulpPaginatedResult<PulpPythonPackageContent>(
+            PULP_ENDPOINTS.PYTHON_CONTENT,
+            { filters: [] },
+            {
+              ...extraParams,
+              name__in: currentPageNames.join(","),
+              ordering: "-pulp_created",
+              limit: 2000,
+              fields:
+                "pulp_href,name,version,summary,author,maintainer,license,license_expression,pulp_created,filename,python_version,classifiers",
+            },
           );
+
+        // Deduplicate: keep only the first (latest) content item per name
+        const seen = new Set<string>();
+        const deduplicated: PulpPythonPackageContent[] = [];
+        for (const item of result.data) {
+          if (!seen.has(item.name)) {
+            seen.add(item.name);
+            deduplicated.push(item);
+          }
+        }
+
+        return deduplicated.map((content) =>
+          transformPulpContentToPackage(content, undefined, undefined, null),
+        );
       },
       enabled: currentPageNames.length > 0 && !!selectedDistribution,
       staleTime: 1000 * 60 * 5,

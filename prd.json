@@ -433,7 +433,7 @@
       "Update the mock API to support the `name__in` filter parameter — split the comma-separated value and filter fixtures where `item.name` is in the list.",
       "Test with distributions that have uneven version counts (e.g., calunga-dev where scipy has 2422 items). Verify all 20 package names appear in the results even when one package dominates the content item count."
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "Performance",
