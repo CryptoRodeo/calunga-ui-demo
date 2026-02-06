@@ -419,6 +419,8 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
                   name,
                   ordering: "-pulp_created",
                   limit: 1,
+                  fields:
+                    "pulp_href,name,version,summary,author,maintainer,license,license_expression,pulp_created,filename,python_version,classifiers",
                 },
               );
             return result.data[0] || null;
@@ -435,6 +437,27 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
       staleTime: 1000 * 60 * 5,
     },
   );
+
+  // Re-sort current page items when sortBy is "date" or "downloads".
+  // For "relevance" and alphabetical (default), the name-based order from
+  // Query 1 is preserved. Cross-page ordering remains alphabetical by name
+  // since global date/downloads sorting would require fetching all metadata.
+  const sortedPageItems = useMemo(() => {
+    if (currentPageItems.length === 0) return currentPageItems;
+
+    if (sortBy === "date") {
+      return [...currentPageItems].sort(
+        (a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime(),
+      );
+    }
+
+    if (sortBy === "downloads") {
+      return [...currentPageItems].sort((a, b) => b.downloads - a.downloads);
+    }
+
+    // "relevance" or default: preserve Query 1 name-based order
+    return currentPageItems;
+  }, [currentPageItems, sortBy]);
 
   // Loading = true until both queries have completed at least once.
   // This prevents a "No Packages Found" flash between Query 1 (names) and
@@ -519,7 +542,7 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
         setPage,
         perPage,
         setPerPage,
-        currentPageItems,
+        currentPageItems: sortedPageItems,
         totalItemCount,
         filteredItemCount,
         serverTotal,

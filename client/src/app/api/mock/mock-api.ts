@@ -261,6 +261,7 @@ async function handlePackagesPaginated<T>(
     "offset",
     "ordering",
     "repository_version",
+    "fields",
   ]);
 
   for (const [key, value] of Object.entries(pulpParams)) {
@@ -300,8 +301,23 @@ async function handlePackagesPaginated<T>(
   const offset = typeof pulpParams.offset === "number" ? pulpParams.offset : 0;
   const paged = results.slice(offset, offset + limit);
 
+  // Apply field selection if `fields` parameter is present
+  let finalResults = paged;
+  if (pulpParams.fields) {
+    const requestedFields = new Set(String(pulpParams.fields).split(","));
+    finalResults = paged.map((item) => {
+      const filtered: Record<string, unknown> = {};
+      for (const field of requestedFields) {
+        if (field in (item as Record<string, unknown>)) {
+          filtered[field] = (item as Record<string, unknown>)[field];
+        }
+      }
+      return filtered as PulpPythonPackageContent;
+    });
+  }
+
   return {
-    data: paged as unknown as T[],
+    data: finalResults as unknown as T[],
     total,
     params,
   };
