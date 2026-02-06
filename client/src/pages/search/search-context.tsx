@@ -9,17 +9,13 @@ import {
 } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type {
-  DistributionStats,
-  PulpPythonPackageContent,
-} from "@app/api/models";
+import type { DistributionStats } from "@app/api/models";
 import {
-  getPulpPaginatedResult,
   getSimplePackageNames,
   getDistributionStats,
-  PULP_ENDPOINTS,
+  getPackageMetadata,
 } from "@app/api/pulp";
-import { transformPulpContentToPackage } from "@app/utils/pulp-transformers";
+import { transformPyPIMetadataToPackage } from "@app/utils/pulp-transformers";
 
 export interface SBOMSummary {
   totalComponents: number;
@@ -416,10 +412,9 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
   );
 
   // ── QUERY 2: Fetch metadata for the current page's packages ──
-  // Uses a single batch request with name__in=pkg1,pkg2,...,pkgN instead of
-  // N parallel requests. Results are ordered by -pulp_created so the first
-  // occurrence of each name is the latest version. Client-side deduplication
-  // keeps only the latest content item per package name.
+  // Uses parallel PyPI JSON Metadata API requests — one per package name.
+  // Each request returns the latest version info directly, avoiding the
+  // content API's limit-based truncation when packages have many versions.
   const { data: currentPageItems = [], isLoading: isLoadingDetails } = useQuery(
     {
       queryKey: [
@@ -428,33 +423,11 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
         currentPageNames,
       ],
       queryFn: async () => {
-        const result =
-          await getPulpPaginatedResult<PulpPythonPackageContent>(
-            PULP_ENDPOINTS.PYTHON_CONTENT,
-            { filters: [] },
-            {
-              ...extraParams,
-              name__in: currentPageNames.join(","),
-              ordering: "-pulp_created",
-              limit: 2000,
-              fields:
-                "pulp_href,name,version,summary,author,maintainer,license,license_expression,pulp_created,filename,python_version,classifiers",
-            },
-          );
-
-        // Deduplicate: keep only the first (latest) content item per name
-        const seen = new Set<string>();
-        const deduplicated: PulpPythonPackageContent[] = [];
-        for (const item of result.data) {
-          if (!seen.has(item.name)) {
-            seen.add(item.name);
-            deduplicated.push(item);
-          }
-        }
-
-        return deduplicated.map((content) =>
-          transformPulpContentToPackage(content, undefined, undefined, null),
+        const basePath = selectedDistribution!.base_path;
+        const results = await Promise.all(
+          currentPageNames.map((name) => getPackageMetadata(basePath, name)),
         );
+        return results.map(transformPyPIMetadataToPackage);
       },
       enabled: currentPageNames.length > 0 && !!selectedDistribution,
       staleTime: 1000 * 60 * 5,
@@ -503,6 +476,7 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
       return;
     }
 
+    const basePath = selectedDistribution.base_path;
     queryClient.prefetchQuery({
       queryKey: [
         "packageDetails",
@@ -510,32 +484,10 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
         nextPageNames,
       ],
       queryFn: async () => {
-        const result =
-          await getPulpPaginatedResult<PulpPythonPackageContent>(
-            PULP_ENDPOINTS.PYTHON_CONTENT,
-            { filters: [] },
-            {
-              ...extraParams,
-              name__in: nextPageNames.join(","),
-              ordering: "-pulp_created",
-              limit: 2000,
-              fields:
-                "pulp_href,name,version,summary,author,maintainer,license,license_expression,pulp_created,filename,python_version,classifiers",
-            },
-          );
-
-        const seen = new Set<string>();
-        const deduplicated: PulpPythonPackageContent[] = [];
-        for (const item of result.data) {
-          if (!seen.has(item.name)) {
-            seen.add(item.name);
-            deduplicated.push(item);
-          }
-        }
-
-        return deduplicated.map((content) =>
-          transformPulpContentToPackage(content, undefined, undefined, null),
+        const results = await Promise.all(
+          nextPageNames.map((name) => getPackageMetadata(basePath, name)),
         );
+        return results.map(transformPyPIMetadataToPackage);
       },
       staleTime: 1000 * 60 * 5,
     });
@@ -543,7 +495,6 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     nextPageNames,
     selectedDistribution,
     currentPageItems,
-    extraParams,
     queryClient,
   ]);
 
