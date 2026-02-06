@@ -12,7 +12,7 @@ import {
   getPulpPaginatedResult,
   PULP_ENDPOINTS,
   getDistributionForContent,
-} from "@app/api/rest";
+} from "@app/api/pulp";
 import { transformPulpContentToPackage } from "@app/utils/pulp-transformers";
 
 export type TabKey = "overview" | "versions" | "files" | "security";

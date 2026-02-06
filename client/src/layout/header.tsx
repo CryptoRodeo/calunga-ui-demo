@@ -1,8 +1,10 @@
 import type React from "react";
 import {
   Brand,
+  Label,
   Masthead,
   MastheadBrand,
+  MastheadContent,
   MastheadLogo,
   MastheadMain,
   MastheadToggle,
@@ -10,11 +12,13 @@ import {
   Split,
   SplitItem,
   Title,
+  Tooltip,
 } from "@patternfly/react-core";
 
 import BarsIcon from "@patternfly/react-icons/dist/js/icons/bars-icon";
 
 import useBranding from "@app/hooks/useBranding";
+import ENV from "@app/env";
 import "./header.css";
 
 export const HeaderApp: React.FC = () => {
@@ -48,6 +52,17 @@ export const HeaderApp: React.FC = () => {
           </MastheadLogo>
         </MastheadBrand>
       </MastheadMain>
+      {ENV.MOCK === "on" && (
+        <MastheadContent>
+          <Tooltip
+            content="This is a demo running with sample data. No live Pulp server is connected."
+          >
+            <Label color="yellow" isCompact>
+              Demo Mode
+            </Label>
+          </Tooltip>
+        </MastheadContent>
+      )}
     </Masthead>
   );
 };

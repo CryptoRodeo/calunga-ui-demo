@@ -10,7 +10,7 @@ import {
 import { getHubRequestParams } from "@app/hooks/table-controls/getHubRequestParams";
 import { FILTER_TEXT_CATEGORY_KEY } from "@app/Constants";
 import type { PulpPythonPackageContent } from "@app/api/models";
-import { getPulpPaginatedResult, PULP_ENDPOINTS } from "@app/api/rest";
+import { getPulpPaginatedResult, PULP_ENDPOINTS } from "@app/api/pulp";
 import { formatDate } from "@app/utils/utils";
 
 export interface PythonWheel {

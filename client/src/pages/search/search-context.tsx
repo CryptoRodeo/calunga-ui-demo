@@ -12,7 +12,7 @@ import type {
   HubRequestParams,
   PulpPythonPackageContent,
 } from "@app/api/models";
-import { getPulpPaginatedResult, PULP_ENDPOINTS } from "@app/api/rest";
+import { getPulpPaginatedResult, PULP_ENDPOINTS } from "@app/api/pulp";
 import { transformPulpContentToPackage } from "@app/utils/pulp-transformers";
 import { deduplicateByLatestVersion } from "@app/utils/version-compare";
 

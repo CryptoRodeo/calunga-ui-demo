@@ -34,7 +34,7 @@ import {
 import { SearchContext, SearchProvider } from "./search-context";
 import { SearchToolbar } from "./search-toolbar";
 import { IndexContextSelector } from "./components/index-context-selector";
-import { getAllDistributions } from "@app/api/rest";
+import { getAllDistributions } from "@app/api/pulp";
 
 interface SearchContentProps {
   selectedIndex: string;

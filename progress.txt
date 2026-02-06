@@ -611,3 +611,219 @@ Mock data recording script successfully captures live Pulp API responses as JSON
 Generated fixtures are in PulpPaginatedResponse format matching the real API, ready for
 consumption by the mock API layer (future prd.json task). Script only needs to be run
 when mock data needs refreshing.
+
+Feature: Fix single giant card per page: server paginates on content items (versions) but UI displays deduplicated packages
+
+Files Changed:
+- client/src/app/api/rest.ts
+- client/src/pages/search/search-context.tsx
+- client/src/pages/search/search.tsx
+- client/vite.config.ts
+- server/src/proxies.js
+
+Actions Taken:
+1. Added getPackageNames() helper in rest.ts
+   - Fetches GET /pulp/pypi/<basePath>/simple/ with Accept: application/vnd.pypi.simple.v1+json
+   - Uses PyPI Simple API (PEP 503/691) which returns unique package names via DB-level DISTINCT
+   - Eliminates client-side deduplication entirely for the name list
+
+2. Added getDistributionStats() helper in rest.ts
+   - Fetches GET /pulp/pypi/<basePath>/ to get project/release/file counts
+   - Uses DB-level DISTINCT for accurate unique project counts
+   - Used by the Inventory card for accurate package count display
+
+3. Replaced single useQuery with two-phase approach in search-context.tsx
+   - Phase 1: useQuery ['packageNames', base_path] calls getPackageNames()
+     - Returns all unique package names for the distribution
+     - Cached for 30 minutes (names rarely change)
+     - Client-side filter names by search query (substring match)
+     - Client-side paginate: pageNames = filteredNames.slice((page-1)*perPage, page*perPage)
+     - totalItemCount = allNames.length, filteredItemCount = filteredNames.length
+   - Phase 2: useQuery ['packageMetadata', base_path, ...pageNames]
+     - Fetches content for current page's packages via name__in filter
+     - Only fetches metadata for packages the user is actually viewing
+     - Deduplicate to latest version per name (bounded to perPage names)
+     - Transform, filter (classification/license), and sort client-side
+   - Separate useQuery for distribution stats (Inventory card)
+
+4. Updated proxy configs in both vite.config.ts and server/src/proxies.js
+   - For /pypi/ paths, the proxy no longer overrides the Accept header
+   - This allows the PyPI Simple API to receive application/vnd.pypi.simple.v1+json
+   - REST API paths (/api/v3/) still get Accept: application/json as before
+
+5. Added CSS text truncation to description in search.tsx CardBody
+   - Caps description at 3 lines with text-overflow: ellipsis
+   - Prevents any card from growing excessively tall regardless of description length
+   - Uses -webkit-box with WebkitLineClamp for cross-browser support
+
+6. Updated Inventory card in search.tsx
+   - Now uses serverTotal (from getDistributionStats) for accurate project count
+   - Previously used totalItemCount which was the content item count
+
+7. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Each page now shows exactly perPage unique packages. The two-phase approach:
+(1) fetches unique package names via PyPI Simple API (DB-level DISTINCT, no dedup needed),
+(2) paginates the name list client-side (every page has exactly perPage entries),
+(3) fetches metadata only for visible packages via REST API name__in filter.
+This eliminates the fundamental pagination-deduplication mismatch where pages of content
+items (versions) collapsed to 1-2 visible cards after deduplication.
+
+Feature: Create mock API layer that intercepts Pulp API calls when MOCK=on
+
+Files Changed:
+- client/src/app/api/mock/mock-api.ts (new file)
+- client/src/app/api/mock/index.ts (new file)
+
+Actions Taken:
+1. Created mock-api.ts with mock implementations of all 4 Pulp API functions
+   - getAllDistributions(): reads from distributions.json fixture via dynamic import()
+   - getPulpPaginatedResult<T>(): routes to correct fixture based on URL (distributions vs packages),
+     applies client-side filtering using the same operator logic as serializeRequestParamsForPulp
+     (exact, __icontains, __contains, __exclude, __gt, __gte, __lt, __lte, __in),
+     sorts using the ordering parameter, paginates using limit/offset, returns HubPaginatedResult<T>
+   - getDistributionForContent(): scans distributions fixture for matching repository
+   - getDistributionByBasePath(): finds distribution by base_path in fixture
+
+2. URL-based routing in mock getPulpPaginatedResult
+   - Checks url parameter against PULP_ENDPOINTS.PYTHON_CONTENT and PYTHON_DISTRIBUTIONS
+   - PYTHON_CONTENT routes to packages fixture, PYTHON_DISTRIBUTIONS routes to distributions fixture
+   - Resolves which distribution's package fixture to load via repository_version matching
+
+3. Fixture data loaded lazily via dynamic import()
+   - Uses `await import('./data/distributions.json')` and `await import('./data/packages-<name>.json')`
+   - Ensures ~32MB of mock JSON is not bundled when MOCK=off (confirmed: production build unchanged at 1,334.70 kB)
+   - Loaded data is cached in module-level variables to avoid repeated file parsing
+
+4. Added simulated delay (100ms) to mock functions
+   - Loading states and spinners render naturally, matching real API experience
+
+5. Created barrel export (index.ts)
+   - Re-exports all 4 functions from mock-api.ts for clean imports
+
+6. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors in mock files (verified via npx tsc --noEmit)
+   - Production bundle size unchanged (mock data not bundled)
+
+Status: COMPLETED
+Mock API layer provides identical function signatures and return types as rest.ts.
+Ready for consumption by the barrel module (pulp.ts) in the next prd.json task
+("Wire up MOCK env var to conditionally swap real and mock API implementations").
+
+Feature: Wire up MOCK env var to conditionally swap real and mock API implementations
+
+Files Changed:
+- client/src/app/api/pulp.ts (new file)
+- client/src/pages/search/search-context.tsx
+- client/src/pages/search/search.tsx
+- client/src/pages/search/package-detail-context-simple.tsx
+- client/src/pages/search/package-detail.tsx
+- client/src/pages/search/package-detail-context.tsx
+- client/src/pages/search/package-detail-tabs/versions-tab.tsx
+- client/src/pages/search/components/index-context-selector.tsx
+- client/src/pages/python-wheels/python-wheels-context.tsx
+
+Actions Taken:
+1. Created client/src/app/api/pulp.ts barrel module
+   - Imports ENV from @app/env and checks ENV.MOCK === "on"
+   - When MOCK=on, exports mock implementations from ./mock/mock-api.ts
+   - When MOCK=off (default), exports real implementations from ./rest.ts
+   - Exports 4 Pulp API functions: getAllDistributions, getPulpPaginatedResult,
+     getDistributionForContent, getDistributionByBasePath
+   - PULP_ENDPOINTS always re-exported from ./rest.ts (just string constants)
+   - Explicit type annotations on each export to ensure type safety with generics
+
+2. Updated 8 consumer files to import from @app/api/pulp instead of @app/api/rest
+   - search-context.tsx: getPulpPaginatedResult, PULP_ENDPOINTS
+   - search.tsx: getAllDistributions
+   - package-detail-context-simple.tsx: getPulpPaginatedResult, PULP_ENDPOINTS
+   - package-detail.tsx: getPulpPaginatedResult, PULP_ENDPOINTS
+   - package-detail-context.tsx: getPulpPaginatedResult, PULP_ENDPOINTS, getDistributionForContent
+   - versions-tab.tsx: getPulpPaginatedResult, PULP_ENDPOINTS
+   - index-context-selector.tsx: getAllDistributions
+   - python-wheels-context.tsx: getPulpPaginatedResult, PULP_ENDPOINTS
+
+3. Non-Pulp imports from @app/api/rest left unchanged
+   - useDownload.ts still imports downloadSbomLicense from @app/api/rest (Hub API, not Pulp)
+
+4. No circular dependencies introduced
+   - mock-api.ts imports serializeRequestParamsForPulp and PULP_ENDPOINTS from ../rest directly
+   - pulp.ts imports from ./rest and ./mock (no cycle)
+
+5. Mock fixture data remains code-split
+   - Vite generates separate chunks for distributions.json (48 kB) and packages-calunga-dev.json (32.7 MB)
+   - These chunks are only loaded at runtime when MOCK=on and mock-api.ts dynamically imports them
+   - In live mode (MOCK=off), fixture data is never fetched or loaded
+
+6. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+The MOCK env var now controls which API implementation is used. In live mode (MOCK=off, default),
+all Pulp API calls go through rest.ts (real HTTP requests). In mock mode (MOCK=on), all Pulp API
+calls go through mock-api.ts (static JSON fixtures). The switch happens in one place (pulp.ts)
+and no consumer code needs to know about the mode.
+
+Feature: Update GitHub Pages build to enable mock mode and verify demo deployment
+
+Files Changed:
+- .github/workflows/deploy.yml
+
+Actions Taken:
+1. Added MOCK=on to the GitHub Actions build command (deploy.yml:37)
+   - Changed 'NODE_ENV=development BASE_URL=/calunga-ui-demo/ npm run build'
+     to 'NODE_ENV=development BASE_URL=/calunga-ui-demo/ MOCK=on npm run build'
+   - This is the only deployment change needed
+
+2. Verified locally that mock mode build works
+   - Ran 'NODE_ENV=development BASE_URL=/ MOCK=on npm run build -w common && npm run build -w client'
+   - Build succeeded with no type errors or compilation issues
+   - Verified window._env base64 in dist/index.html decodes to {"MOCK":"on",...}
+   - Mock fixture chunks created as separate code-split files:
+     distributions-BhBuV6Mi.js (48.29 kB), packages-calunga-dev-DrBxFsBF.js (32,728.52 kB)
+   - These are loaded at runtime via dynamic import() only when MOCK=on
+
+3. Verified live mode build is unaffected
+   - Ran 'NODE_ENV=development BASE_URL=/ npm run build -w client' without MOCK=on
+   - window._env decodes to {"MOCK":"off",...}
+   - Mock fixture chunks exist in dist/ but are never fetched by the browser in live mode
+     (pulp.ts routes to real rest.ts implementations when ENV.MOCK !== "on")
+
+Status: COMPLETED
+GitHub Pages deployment will now use mock data from JSON fixtures. The Vite EJS plugin
+encodes MOCK=on into window._env at build time. When the static site loads in the browser,
+pulp.ts routes all Pulp API calls to mock-api.ts which serves data from bundled JSON fixtures.
+No backend or proxy server needed for the demo deployment.
+
+Feature: Add visual indicator for demo/mock mode in the UI
+
+Files Changed:
+- client/src/layout/header.tsx
+
+Actions Taken:
+1. Added conditional "Demo Mode" label in the masthead header
+   - Checks ENV.MOCK === "on" before rendering (no empty space or hidden element in live mode)
+   - Uses PatternFly Label component with color="yellow" and isCompact for a gold/warning style
+   - Placed inside MastheadContent, which positions it to the right of the brand logo area
+   - Label is wrapped in a Tooltip explaining: "This is a demo running with sample data.
+     No live Pulp server is connected."
+
+2. PatternFly components used:
+   - Label (color="yellow", isCompact) — distinctive gold color, noticeable but not alarming
+   - Tooltip — provides explanatory text on hover/focus
+   - MastheadContent — standard PatternFly masthead slot for content after the brand area
+
+3. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+When MOCK=on (GitHub Pages demo or local mock mode), a compact yellow "Demo Mode" label
+appears in the masthead with a tooltip explanation. When MOCK=off (live mode, the default),
+no indicator renders at all. Uses standard PatternFly components that work with both light
+and dark themes and responsive layouts.

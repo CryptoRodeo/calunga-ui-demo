@@ -252,7 +252,7 @@
     "category": "Bug",
     "description": "Replace blocking while-loop with immediate first-page render and background data completion",
     "problem": "In search-context.tsx:484-505, the useQuery queryFn contains a `while (hasMore)` loop that fetches ALL packages (100 per request) sequentially before the query promise resolves. For a repository with 2000 packages across 5000+ content items (multiple versions per package), this means 50+ sequential HTTP requests chained together. During this entire multi-request sequence, React Query's isLoading remains true (line 466-467), and the UI renders a full-page Spinner with 'Loading packages...' text (search.tsx:335-353). Users see zero content until the very last page is fetched — potentially tens of seconds of blank loading screen. The while loop blocks at: `hasMore = result.data.length === limit && currentOffset < result.total` (line 504), continuing until every single page has been accumulated into the allPackages array.",
-    "rationale": "The root cause is that useQuery's queryFn is a single async function that doesn't resolve until ALL pages are fetched. React Query cannot show partial results because the promise is all-or-nothing. The fix should separate initial rendering from complete data loading. By fetching the first page (100 items) as a standalone query that resolves immediately, users see content after a single HTTP round-trip. Remaining pages should be fetched via a separate mechanism (second useQuery, useEffect, or background task) that progressively merges data into state. This changes perceived load time from O(totalPages * RTT) to O(1 * RTT) for first meaningful render.",
+    "rationale": "SUPERSEDED: This approach was implemented but introduced a critical regression. The Pulp content API returns content items (individual files/versions), not unique packages. A single package can have hundreds of content items (e.g., scipy in calunga-dev has 2422 content items across 39 versions x 62 platform files). Fetching 20 content items per page returns 20 files of the SAME package, which deduplication reduces to 1 card — despite pagination claiming '1-20 of 2422'. The per-page approach fundamentally cannot work with Pulp's content model because deduplication must happen across ALL content items, not per-page. See 'Fix content-item pagination showing only 1 package per page' for the correct fix.",
     "steps": [
       "Replace the while-loop useQuery with a single page-at-a-time useQuery whose queryKey includes the current page and perPage: `queryKey: ['packages', selectedIndex, page, perPage]`",
       "Map the Pagination component's page/perPage state directly to Pulp API offset/limit parameters: `offset = (page - 1) * perPage`, `limit = perPage`",
@@ -263,7 +263,7 @@
       "Apply deduplication and transformation only to the current page's results (not an accumulated global dataset)",
       "Leverage React Query's caching so previously visited pages are served from cache without re-fetching"
     ],
-    "passes": true
+    "passes": false
   },
   {
     "category": "Bug",
@@ -322,7 +322,7 @@
       "Add a small simulated delay (50-200ms via setTimeout/Promise) to mock functions so the loading states and spinners render naturally in the UI, matching the real experience",
       "Wrap all mock data imports with dynamic import() or top-level await to avoid bundling the JSON fixtures when MOCK=off. Use: const data = await import('./data/distributions.json') pattern. This ensures the ~500KB of mock JSON does not bloat the production (live mode) bundle"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "Architecture",
@@ -338,7 +338,7 @@
       "Verify that in live mode (MOCK=off, the default), the app behaves identically to before — all imports resolve to the real rest.ts functions",
       "Verify that in mock mode (MOCK=on), the app loads mock data from JSON fixtures with no network requests to /pulp/*"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "DevOps",
@@ -351,7 +351,7 @@
       "Verify that the live mode build is unaffected: run 'npm run build' without MOCK=on and confirm the production build does not include the mock JSON fixtures in the bundle (check bundle size or inspect the output)",
       "After pushing the workflow change to main, verify the GitHub Pages deployment at the repo's GitHub Pages URL shows a functional demo with mock package data"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "Architecture",
@@ -364,36 +364,46 @@
       "When MOCK is 'off' (live mode), the indicator should not render at all — no empty space, no hidden element",
       "Ensure the indicator works in both dark and light PatternFly themes and doesn't break the header layout on narrow screens"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "category": "Bug",
     "description": "Fix 'Search for packages...' filter returning incorrect results because search query is only applied client-side to the current page",
     "problem": "In search-context.tsx:428-451, the useQuery fetches a single page of content items from the Pulp API with queryKey ['packages', selectedIndex, page, perPage]. The search query (deferredSearchQuery) is NOT included in the queryKey and NOT sent to the API — hubParams at lines 435-438 has filters: [] (empty array). Consequently, typing in the 'Search for packages...' input never triggers a new API request. The client-side filter at lines 476-483 then runs against transformedPackages, which contains only the current page's worth of items (e.g., 20 content items that dedup to ~5-15 unique packages). Packages matching the search query that exist on other server pages are completely invisible. For example, searching for 'scipy' on a repository with 2422 packages checks only the ~15 packages on the current page — if scipy is not on page 1, the user sees 'No packages found'. Additionally, at lines 514-515, both totalItemCount and filteredItemCount are hardcoded to serverTotal (the unfiltered Pulp API count), so pagination shows '1 - 20 of 2422' even when the client-side filter has removed all items from the current page.",
-    "rationale": "The Pulp Python content API supports server-side name filtering via the name__icontains query parameter (verified in rest.ts:114 where operator '~' maps to '__icontains'). The search query should be sent to the Pulp API as a name__icontains filter so the server returns only matching packages across all pages, not just the current page. The deferredSearchQuery must also be added to the useQuery queryKey so that typing in the search box triggers a new API request with the filter applied. The pagination counts (totalItemCount and filteredItemCount) should then reflect the server's filtered count (PulpPaginatedResponse.count) rather than the unfiltered total. This approach leverages the server's indexing for efficient search and eliminates the client-side filtering mismatch.",
+    "rationale": "INCORRECT ASSUMPTION: This entry assumed the Pulp Python content API supports name__icontains filtering. Verified in pulp_python/app/viewsets.py:332-348 that PythonPackageContentFilter only supports 'name': ['exact', 'in'] — NOT 'icontains'. Sending name__icontains would return a 400 Bad Request. Since the Pulp API cannot do server-side substring search on package names, search must remain client-side. This is only fixable by fetching ALL content items first (see 'Fix content-item pagination showing only 1 package per page'), deduplicating, then applying client-side name/description filtering on the full deduplicated dataset. The per-page approach cannot support search because it only has access to one page of content items at a time.",
     "steps": [
-      "In search-context.tsx:433, add deferredSearchQuery to the useQuery queryKey: change ['packages', selectedIndex, page, perPage] to ['packages', selectedIndex, page, perPage, deferredSearchQuery]",
-      "In search-context.tsx:435-438, when deferredSearchQuery is non-empty, add a name filter to hubParams.filters: push { field: 'name', operator: '~', value: deferredSearchQuery } to apply server-side name__icontains filtering via the Pulp API",
-      "Update the totalItemCount and filteredItemCount assignments at lines 514-515 to use pageData?.serverTotal (the filtered count from the API response) instead of the raw serverTotal, so pagination reflects the filtered result count",
-      "Remove or conditionalize the redundant client-side name/description filter at lines 476-483 — with server-side name filtering active, the client-side filter is only needed for description matching (which the Pulp API does not support). If description search is desired, keep the client filter but acknowledge it only applies to the current page",
-      "Verify that clearing the search input (empty string) restores the unfiltered view by ensuring deferredSearchQuery='' produces filters: [] (no name filter sent to API)",
-      "Verify that the Pagination component's itemCount updates correctly when a search query is active, reflecting the server's filtered total rather than the unfiltered repository size"
+      "This approach is INVALID — name__icontains is not a supported Pulp Python filter. The only supported name filters are name (exact match) and name__in (multiple exact matches).",
+      "Search must remain client-side after fetching and deduplicating ALL content items for the distribution",
+      "The fix is part of 'Fix content-item pagination showing only 1 package per page' — once all content items are fetched and deduplicated, the existing client-side search filter at lines 476-483 works correctly across the full dataset"
     ],
-    "passes": true
+    "passes": false
   },
   {
     "category": "Bug",
-    "description": "Fix single giant card per page: server paginates on content items (versions) but UI displays deduplicated packages, so pages with heavily-versioned packages like scipy collapse to 1 visible card",
-    "problem": "In search-context.tsx:433-446, the useQuery fetches perPage (default 20) content items from the Pulp API with queryKey ['packages', selectedIndex, page, perPage]. Each content item is a single package version (e.g., scipy-1.0.0, scipy-1.1.0, scipy-1.2.0). After fetching, deduplicateByLatestVersion() at line 457 collapses all versions of the same package name into one entry. When a package like scipy has 20+ versions in the repository, a page of 20 content items can consist entirely of scipy versions, deduplicating to just 1 unique package. This 1 card then fills the page because: (1) Gallery at search.tsx:383 uses minWidths={{ default: '100%' }}, making the card full-width, (2) CardBody at search.tsx:419 renders pkg.description without text truncation, so the card grows very tall with long descriptions. The Pagination at search.tsx:580 shows itemCount={filteredItemCount} which equals serverTotal (line 514) — the raw content item count (e.g., 2422), not the unique package count. Users see '1 - 20 of 2422 Packages' but only 1 package renders. Navigating to the next page shows another single-card page because the next 20 content items are again dominated by another heavily-versioned package.",
-    "rationale": "The fundamental issue is paginating on content items (versions) while displaying deduplicated packages (unique names). The PULP_DATA_MAPPING_PLAN.md 'Recommended Optimization Strategy' section documents that the PyPI Simple API (GET /pypi/<base_path>/simple/) returns unique package names using PostgreSQL DISTINCT at the database level, eliminating client-side deduplication entirely. The existing /pulp proxy in server/src/proxies.js strips the /pulp prefix before forwarding, so the PyPI Simple API is already accessible at /pulp/pypi/<base_path>/simple/ without any proxy changes. Paginating on this name list ensures every page shows exactly perPage unique packages. Metadata for the current page's packages is then fetched via the REST API's name__in filter (supported per PULP_DATA_MAPPING_PLAN.md: name supports 'exact' and 'in' operators), which returns all versions of those specific packages. Deduplication on this bounded set (perPage names × N versions) is fast and predictable. The PyPI root endpoint (GET /pypi/<base_path>/) provides accurate project count using DB-level DISTINCT for the Inventory card. This approach: (1) eliminates the pagination-dedup mismatch, (2) transfers less data (name list is lightweight), (3) fetches full metadata only for visible packages, (4) provides accurate pagination counts.",
+    "description": "Fix content-item pagination showing only 1 package per page when a distribution has packages with many versions",
+    "problem": "When using the calunga-dev distribution, the search page shows only 1 package card (scipy) despite pagination reading '1 - 20 of 2422' and Inventory showing '2422 Packages'. Root cause: the Pulp content API (GET /pulp/api/v3/content/python/packages/) returns content items — each individual file (wheel, sdist) for each version of each package is a separate content item. A single package like scipy has 2422 content items (39 versions x ~62 platform-specific wheel/sdist files). The current code in search-context.tsx:428-450 fetches one page of 20 content items via `getPulpPaginatedResult` with `{ page: { pageNumber: page, itemsPerPage: perPage } }`. For calunga-dev, ALL 20 returned content items are scipy files (different versions/platforms). The deduplicateByLatestVersion() call at line 457 collapses these 20 scipy items into 1 unique package. The pagination component uses `serverTotal` (2422 — the raw content item count from the API), creating a massive mismatch: 1 card shown, but pagination says 2422 items across 122 pages. Clicking 'next page' shows the same 1 scipy card every time. Additionally, the Inventory card (search.tsx:266) shows '2422 Packages' which is misleading — it's 2422 content items, not unique packages. Verified by examining the mock data: packages-calunga-dev.json contains 500 results, ALL of which are scipy (the only unique package name).",
+    "rationale": "The Pulp content API has no concept of 'unique packages' — it only knows about content items (files). The PythonPackageContentFilter (pulp_python/app/viewsets.py:332-348) supports only 'name': ['exact', 'in'] — no distinct/grouping/dedup capability. There is no API endpoint for listing unique package names. This means the app MUST fetch ALL content items for a distribution, deduplicate by package name (keeping latest version), and then paginate the deduplicated list client-side. The previous while-loop approach (before the 'Replace blocking while-loop' change) actually handled this correctly — it fetched everything before displaying. The per-page approach broke it because deduplication on a per-page basis is fundamentally incompatible with Pulp's data model where one package can span thousands of content items across many pages.",
     "steps": [
-      "Add two helper functions in rest.ts: (a) getPackageNames(basePath: string): Promise<string[]> — fetches GET /pulp/pypi/<basePath>/simple/ with Accept: application/vnd.pypi.simple.v1+json header, parses response to return an array of unique package name strings. (b) getDistributionStats(basePath: string): Promise<{projects: number, releases: number, files: number}> — fetches GET /pulp/pypi/<basePath>/ and returns the stats object. Both use the existing /pulp proxy which strips the prefix",
-      "In search-context.tsx, replace the single useQuery (lines 428-450) with a two-phase approach. Phase 1: add a useQuery with queryKey ['packageNames', selectedDistribution?.base_path] that calls getPackageNames(selectedDistribution.base_path). Cache aggressively with staleTime: 1000 * 60 * 30 (30 minutes) since package names rarely change. This returns the full unique name list via DB-level DISTINCT — no client-side deduplication needed",
-      "Client-side filter and paginate the name list: apply deferredSearchQuery as a name.toLowerCase().includes(query) filter on the full name list, then slice the filtered list using page/perPage: pageNames = filteredNames.slice((page-1)*perPage, page*perPage). Set totalItemCount to the full name list length and filteredItemCount to filteredNames.length. This ensures pagination counts reflect unique packages, not content items",
-      "Phase 2: add a second useQuery with queryKey ['packageMetadata', selectedDistribution?.base_path, ...pageNames] that fetches content for the current page's packages via getPulpPaginatedResult with extraParams: { name__in: pageNames.join(','), ...existingExtraParams } and a limit high enough to cover all versions (e.g., limit: pageNames.length * 20). Deduplicate the results with deduplicateByLatestVersion() (bounded to at most pageNames.length unique entries), transform with transformPulpContentToPackage(), and set as currentPageItems. This fetches only metadata for visible packages",
-      "In search.tsx CardBody (line 419), add CSS text truncation to the description <p> element: style={{ overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}. This prevents any card from growing excessively tall regardless of description length, capping it at 3 lines",
-      "Update the Inventory card (search.tsx:266) to use the projects count from getDistributionStats() via a separate useQuery, replacing the serverTotal content-item count with the accurate unique-project count",
-      "Add a useQuery for getDistributionStats in search-context.tsx or search.tsx with queryKey ['distributionStats', selectedDistribution?.base_path] and staleTime: 30 minutes. Expose the projects count via the context's serverTotal field"
+      "In search-context.tsx, change the useQuery to fetch ALL content items for the distribution in a single query (not per-page). Use `getPulpPaginatedResult` with a large limit (e.g., 10000) which triggers the existing recursive `fetchAllPages` mechanism in rest.ts:186-207 to follow Pulp's 'next' pagination URLs until all items are fetched. The queryKey should be ['packages', selectedIndex] — no page/perPage since we're fetching everything.",
+      "After fetching all content items, apply deduplicateByLatestVersion() to the FULL dataset to get the correct list of unique packages. Then apply transformPulpContentToPackage() to each deduplicated item.",
+      "Implement CLIENT-SIDE pagination on the deduplicated list: calculate `currentPageItems` by slicing the sorted/filtered array using `page` and `perPage` state: `const start = (page - 1) * perPage; const currentPageItems = filteredPackages.slice(start, start + perPage)`.",
+      "Set `totalItemCount` to the deduplicated package count (not the raw content item count). Set `filteredItemCount` to the count after client-side search/classification/license filters are applied. The Inventory card should show the deduplicated count, e.g., '1 Package' for calunga-dev (not '2422 Packages').",
+      "Keep the existing client-side search, classification, and license filters (lines 471-508) — they work correctly when operating on the full deduplicated dataset instead of a single page.",
+      "Keep the existing client-side sorting via applySorting() — it works correctly on the full deduplicated dataset.",
+      "Cache the full deduplicated dataset via React Query's staleTime (currently 5 minutes at line 449). Changing page/perPage should NOT trigger a re-fetch — just re-slice the cached data. Changing the selected distribution (selectedIndex) should trigger a new fetch."
+    ],
+    "passes": false
+  },
+  {
+    "category": "Bug",
+    "description": "Fix license text overflow rendering full license agreement in package card",
+    "problem": "In the search page package cards, the license metadata renders the full license text without truncation. For packages like scipy, the `license` field from the Pulp API contains the complete BSD license agreement — 55,247 characters of legal text. In pulp-transformers.ts:41, the transformer copies this verbatim: `license: content.license || content.license_expression || 'Unknown'`. In search.tsx:501-503, the card footer renders `{pkg.license}` directly. This causes a massive wall of text in the card footer, making the card unusable and pushing other package cards far below the viewport. The same issue affects any package where the upstream setup.py/pyproject.toml embeds the full license text rather than a short identifier like 'BSD' or 'MIT'.",
+    "rationale": "The `license` field in Python package metadata is a free-text field — some packages use short identifiers (e.g., 'MIT', 'Apache-2.0') while others embed the entire license agreement. The PEP 639 `license_expression` field (SPDX format) is the newer standard for short identifiers, but many packages only populate the legacy `license` field. The fix should truncate the license text for card display and prefer `license_expression` (SPDX) when available since it's always a short identifier.",
+    "steps": [
+      "In pulp-transformers.ts:41, change the license assignment to prefer license_expression (SPDX, always short) over license (free-text, potentially very long): `license: content.license_expression || (content.license?.length > 100 ? content.license.substring(0, 100) + '...' : content.license) || 'Unknown'`",
+      "Alternatively, truncate in the card rendering at search.tsx:501-503: add CSS `overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px` to the license FlexItem, or truncate the text with JavaScript: `{pkg.license.length > 80 ? pkg.license.substring(0, 80) + '...' : pkg.license}`",
+      "For the package detail page (package-detail.tsx), show the full license text since there's room — only truncate in the search card view",
+      "Test with the scipy mock data (license field is 55,247 chars) to verify the card renders at a reasonable height"
     ],
     "passes": false
   }

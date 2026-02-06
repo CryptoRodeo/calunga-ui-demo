@@ -17,7 +17,7 @@ import {
   Spinner,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
-import { getAllDistributions } from "@app/api/rest";
+import { getAllDistributions } from "@app/api/pulp";
 
 interface IndexContextSelectorProps {
   selectedIndex?: string;
