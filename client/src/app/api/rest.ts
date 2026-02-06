@@ -111,12 +111,12 @@ const mapHubOperatorToPulpOperator = (operator: string): string => {
   const mapping: Record<string, string> = {
     "=": "",
     "!=": "__exclude",
-    "~": "__icontains",    // Case-insensitive contains (verified supported)
-    "~~": "__contains",    // Case-sensitive contains (verified supported for classifiers)
-    ">": "__gt",           // Greater than (verified supported)
-    ">=": "__gte",         // Greater than or equal (verified supported)
-    "<": "__lt",           // Less than (verified supported)
-    "<=": "__lte",         // Less than or equal (verified supported)
+    "~": "__icontains", // Case-insensitive contains (verified supported)
+    "~~": "__contains", // Case-sensitive contains (verified supported for classifiers)
+    ">": "__gt", // Greater than (verified supported)
+    ">=": "__gte", // Greater than or equal (verified supported)
+    "<": "__lt", // Less than (verified supported)
+    "<=": "__lte", // Less than or equal (verified supported)
   };
   return mapping[operator] || "";
 };
@@ -212,6 +212,89 @@ export const getPulpPaginatedResult = <T>(
     params,
   }));
 };
+
+/**
+ * Fetches unique package names for a distribution.
+ *
+ * Strategy:
+ * 1. Try Pulp's PyPI Simple API via the /pypi proxy — fast, database-level DISTINCT.
+ * 2. If unavailable (no PyPI publication), fall back to the content API:
+ *    fetch all content items in parallel with fields=name, then deduplicate.
+ */
+export const getSimplePackageNames = async (
+  basePath: string,
+  extraParams: Record<string, string | number> = {},
+): Promise<string[]> => {
+  try {
+    const response = await axios.get(`/pypi/${basePath}/simple/`, {
+      headers: { Accept: "application/vnd.pypi.simple.v1+json" },
+      maxRedirects: 0,
+    });
+
+    // PEP 691 JSON response: { projects: [{ name: "pkg1" }, ...] }
+    if (response.data?.projects) {
+      return response.data.projects.map((p: { name: string }) => p.name);
+    }
+
+    // Fallback: parse HTML response (PEP 503)
+    const html = typeof response.data === "string" ? response.data : "";
+    const regex = /<a[^>]*>([^<]+)<\/a>/g;
+    return Array.from(html.matchAll(regex), (m) => m[1].trim());
+  } catch {
+    // Simple API not available — fall back to content API
+    return getUniqueNamesViaContentApi(extraParams);
+  }
+};
+
+/**
+ * Fallback: fetch content items in parallel and extract unique package names.
+ * Used when the Simple API is not available (no PyPI publication for the distribution).
+ */
+async function getUniqueNamesViaContentApi(
+  extraParams: Record<string, string | number>,
+): Promise<string[]> {
+  const limit = 100;
+
+  // First request to get total count
+  const first = await getPulpPaginatedResult<{ name: string }>(
+    PULP_ENDPOINTS.PYTHON_CONTENT,
+    { filters: [] },
+    { ...extraParams, limit, offset: 0, fields: "name", ordering: "name" },
+  );
+
+  const allItems = [...first.data];
+
+  if (allItems.length < first.total) {
+    const totalPages = Math.ceil(first.total / limit);
+    const offsets = Array.from(
+      { length: totalPages - 1 },
+      (_, i) => (i + 1) * limit,
+    );
+
+    const pages = await Promise.all(
+      offsets.map((offset) =>
+        getPulpPaginatedResult<{ name: string }>(
+          PULP_ENDPOINTS.PYTHON_CONTENT,
+          { filters: [] },
+          {
+            ...extraParams,
+            limit,
+            offset,
+            fields: "name",
+            ordering: "name",
+          },
+        ),
+      ),
+    );
+
+    for (const page of pages) {
+      allItems.push(...page.data);
+    }
+  }
+
+  const names = new Set(allItems.map((item) => item.name));
+  return Array.from(names).sort();
+}
 
 /**
  * Fetches distribution for a given content href.

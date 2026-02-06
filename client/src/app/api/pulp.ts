@@ -9,7 +9,11 @@
  * instead of directly from rest.ts.
  */
 import ENV from "@app/env";
-import type { HubPaginatedResult, HubRequestParams, PulpDistribution } from "./models";
+import type {
+  HubPaginatedResult,
+  HubRequestParams,
+  PulpDistribution,
+} from "./models";
 
 // PULP_ENDPOINTS is always from rest.ts — just string constants
 export { PULP_ENDPOINTS } from "./rest";
@@ -20,6 +24,7 @@ import {
   getPulpPaginatedResult as realGetPulpPaginatedResult,
   getDistributionForContent as realGetDistributionForContent,
   getDistributionByBasePath as realGetDistributionByBasePath,
+  getSimplePackageNames as realGetSimplePackageNames,
 } from "./rest";
 
 import {
@@ -27,6 +32,7 @@ import {
   getPulpPaginatedResult as mockGetPulpPaginatedResult,
   getDistributionForContent as mockGetDistributionForContent,
   getDistributionByBasePath as mockGetDistributionByBasePath,
+  getSimplePackageNames as mockGetSimplePackageNames,
 } from "./mock";
 
 const useMock = ENV.MOCK === "on";
@@ -54,3 +60,10 @@ export const getDistributionByBasePath: (
 ) => Promise<PulpDistribution | null> = useMock
   ? mockGetDistributionByBasePath
   : realGetDistributionByBasePath;
+
+export const getSimplePackageNames: (
+  basePath: string,
+  extraParams?: Record<string, string | number>,
+) => Promise<string[]> = useMock
+  ? mockGetSimplePackageNames
+  : realGetSimplePackageNames;

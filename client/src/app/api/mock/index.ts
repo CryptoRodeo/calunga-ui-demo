@@ -3,4 +3,5 @@ export {
   getPulpPaginatedResult,
   getDistributionForContent,
   getDistributionByBasePath,
+  getSimplePackageNames,
 } from "./mock-api";

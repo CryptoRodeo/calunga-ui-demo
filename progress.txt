@@ -860,3 +860,48 @@ License text in package cards is now truncated. Prefers SPDX license_expression 
 identifiers like "BSD-3-Clause") over the free-text license field. When license_expression is
 unavailable and the license field exceeds 100 characters, it is truncated with "...". CSS
 truncation on the card provides additional protection against overflow.
+
+Feature: Fix content-item pagination showing only 1 package per page when a distribution has packages with many versions
+
+Files Changed:
+- client/src/pages/search/search-context.tsx
+
+Actions Taken:
+1. Replaced per-page content API fetch with full dataset fetch
+   - Changed useQuery queryKey from ["packages", selectedIndex, page, perPage, deferredSearchQuery]
+     to ["packages", selectedIndex] — page/perPage are now client-side concerns
+   - Changed queryFn to request itemsPerPage: 10000 which triggers fetchAllPages in rest.ts
+     to follow Pulp's "next" pagination URLs until ALL content items are fetched
+   - This ensures every content item (version/platform file) is retrieved
+
+2. Applied deduplication to the FULL dataset
+   - deduplicateByLatestVersion() now runs on ALL content items, not just one page
+   - Previously, 20 content items of the same package (e.g., scipy) deduplicated to 1 card
+   - Now, all content items across all packages are deduplicated correctly
+
+3. Implemented client-side pagination on the deduplicated list
+   - totalItemCount = transformedPackages.length (unique packages after dedup, before filtering)
+   - filteredItemCount = filteredPackages.length (after search/classification/license filters)
+   - currentPageItems = filteredPackages.slice((page-1)*perPage, (page-1)*perPage + perPage)
+   - Changing page/perPage does NOT trigger a re-fetch — just re-slices the cached data
+   - Changing the selected distribution (selectedIndex) triggers a new fetch
+
+4. Search now works across the full dataset
+   - Client-side search filter operates on ALL deduplicated packages, not just current page
+   - Searching for "scipy" will find it regardless of which content item page it appeared on
+
+5. Preserved existing functionality
+   - React Query caching with 5-minute staleTime still applies
+   - Client-side classification and license filters work on the full dataset
+   - Client-side sorting via applySorting() works on the full dataset
+   - Inventory card correctly shows unique package count (not content item count)
+
+6. Build verification
+   - Ran 'npm run build -w client' successfully
+   - No type errors or compilation issues
+
+Status: COMPLETED
+Each page now shows the correct number of unique packages. The fundamental pagination-deduplication
+mismatch is resolved: ALL content items are fetched once, deduplicated to unique packages, then
+paginated client-side. The Inventory card shows the true unique package count. Search works across
+the entire dataset.

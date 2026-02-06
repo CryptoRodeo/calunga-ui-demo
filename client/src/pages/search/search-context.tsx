@@ -8,13 +8,13 @@ import {
 } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import type {
-  HubRequestParams,
-  PulpPythonPackageContent,
-} from "@app/api/models";
-import { getPulpPaginatedResult, PULP_ENDPOINTS } from "@app/api/pulp";
+import type { PulpPythonPackageContent } from "@app/api/models";
+import {
+  getPulpPaginatedResult,
+  getSimplePackageNames,
+  PULP_ENDPOINTS,
+} from "@app/api/pulp";
 import { transformPulpContentToPackage } from "@app/utils/pulp-transformers";
-import { deduplicateByLatestVersion } from "@app/utils/version-compare";
 
 export interface SBOMSummary {
   totalComponents: number;
@@ -142,98 +142,6 @@ interface ISearchContext {
 const contextDefaultValue = {} as ISearchContext;
 
 export const SearchContext = createContext<ISearchContext>(contextDefaultValue);
-
-/**
- * Applies client-side sorting to packages after deduplication.
- * Server-side sorting happens before deduplication, so we need to re-sort.
- *
- * Sorting strategies:
- * - date: Sort by updated field (descending, newest first)
- * - downloads: Sort by downloads field (descending, most downloads first)
- * - relevance: Score by search query match in name + updated date (best match first)
- */
-const applySorting = (
-  packages: Package[],
-  sortBy: SortOption,
-  searchQuery: string,
-): Package[] => {
-  const sorted = [...packages];
-
-  switch (sortBy) {
-    case "date":
-      // Sort by updated date (newest first)
-      sorted.sort((a, b) => {
-        const dateA = new Date(a.updated).getTime();
-        const dateB = new Date(b.updated).getTime();
-        return dateB - dateA; // Descending
-      });
-      break;
-
-    case "downloads":
-      // Sort by downloads (most first), fallback to date
-      sorted.sort((a, b) => {
-        if (a.downloads !== b.downloads) {
-          return b.downloads - a.downloads; // Descending
-        }
-        // Fallback to date if downloads are equal
-        const dateA = new Date(a.updated).getTime();
-        const dateB = new Date(b.updated).getTime();
-        return dateB - dateA;
-      });
-      break;
-
-    case "relevance":
-    default:
-      // Score by search query match + recency
-      // If no search query, sort by name alphabetically
-      if (!searchQuery) {
-        sorted.sort((a, b) => a.name.localeCompare(b.name));
-      } else {
-        const lowerQuery = searchQuery.toLowerCase();
-
-        // Calculate relevance score for each package
-        const scored = sorted.map((pkg) => {
-          let score = 0;
-          const lowerName = pkg.name.toLowerCase();
-
-          // Exact match: highest score
-          if (lowerName === lowerQuery) {
-            score += 1000;
-          }
-          // Starts with query: high score
-          else if (lowerName.startsWith(lowerQuery)) {
-            score += 500;
-          }
-          // Contains query: medium score
-          else if (lowerName.includes(lowerQuery)) {
-            score += 100;
-          }
-
-          // Boost score for shorter names (more precise match)
-          score += Math.max(0, 50 - lowerName.length);
-
-          // Small boost for newer packages (recency)
-          const ageInDays = (Date.now() - new Date(pkg.updated).getTime()) / (1000 * 60 * 60 * 24);
-          score += Math.max(0, 10 - ageInDays / 365); // Newer = slightly higher score
-
-          return { pkg, score };
-        });
-
-        // Sort by score (highest first), then by name
-        scored.sort((a, b) => {
-          if (a.score !== b.score) {
-            return b.score - a.score; // Descending score
-          }
-          return a.pkg.name.localeCompare(b.pkg.name); // Alphabetical for ties
-        });
-
-        return scored.map((item) => item.pkg);
-      }
-      break;
-  }
-
-  return sorted;
-};
 
 interface ISearchProvider {
   children: React.ReactNode;
@@ -422,110 +330,124 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
     return params;
   }, [selectedDistribution?.repository_version]);
 
-  // Server-side pagination: fetch exactly one page per useQuery call.
-  // The queryKey includes page and perPage so React Query caches each page separately.
-  // Previously visited pages are served from React Query's cache without re-fetching.
+  // ── QUERY 1: Fetch unique package names from Pulp's Simple API ──
+  // Uses database-level DISTINCT — returns just names, no content item duplication.
+  // This is a single lightweight request regardless of how many content items exist.
   const {
-    data: pageData,
-    isLoading,
-    error,
+    data: packageNames,
+    isLoading: isLoadingNames,
+    error: namesError,
   } = useQuery({
-    queryKey: ["packages", selectedIndex, page, perPage, deferredSearchQuery],
-    queryFn: async () => {
-      const hubParams: HubRequestParams = {
-        filters: [],
-        page: { pageNumber: page, itemsPerPage: perPage },
-      };
-
-      const result = await getPulpPaginatedResult<PulpPythonPackageContent>(
-        PULP_ENDPOINTS.PYTHON_CONTENT,
-        hubParams,
-        extraParams,
-      );
-
-      return { packages: result.data, serverTotal: result.total };
-    },
-    enabled: !!selectedIndex,
+    queryKey: ["packageNames", selectedIndex, extraParams],
+    queryFn: () =>
+      getSimplePackageNames(selectedDistribution?.base_path ?? "", extraParams),
+    enabled: !!selectedDistribution,
     staleTime: 1000 * 60 * 5,
   });
 
-  // Memoize deduplication and transformation on the current page's data
-  const transformedPackages = useMemo(() => {
-    if (!pageData?.packages || pageData.packages.length === 0) return [];
+  // Client-side name search and sorting on the full name list.
+  // Name search has full coverage since we have ALL names loaded.
+  const filteredAndSortedNames = useMemo(() => {
+    if (!packageNames) return [];
+    let names = [...packageNames];
 
-    // Deduplicate BEFORE transformation to reduce work
-    const deduplicatedContent = deduplicateByLatestVersion(pageData.packages);
-
-    // Transform to UI Package model
-    return deduplicatedContent.map((content) =>
-      transformPulpContentToPackage(content, undefined, undefined, null),
-    );
-  }, [pageData?.packages]);
-
-  // SERVER total from Pulp API (total content items including all versions)
-  const serverTotal = pageData?.serverTotal ?? 0;
-
-  // CLIENT-SIDE filtering (separate memo for better performance)
-  // Per PULP_DATA_MAPPING_PLAN.md: name substring, classifiers, license
-  // are NOT supported server-side and require client-side filtering
-  const filteredPackages = useMemo(() => {
-    let packages = transformedPackages;
-
-    // Search filter (name or description)
+    // Search filter on name
     if (deferredSearchQuery) {
+      const lower = deferredSearchQuery.toLowerCase();
+      names = names.filter((n) => n.toLowerCase().includes(lower));
+    }
+
+    // Sort names
+    if (sortBy === "relevance" && deferredSearchQuery) {
       const lowerQuery = deferredSearchQuery.toLowerCase();
-      packages = packages.filter(
-        (pkg) =>
-          pkg.name.toLowerCase().includes(lowerQuery) ||
-          pkg.description?.toLowerCase().includes(lowerQuery),
-      );
+      names.sort((a, b) => {
+        const aLower = a.toLowerCase();
+        const bLower = b.toLowerCase();
+        const aScore =
+          aLower === lowerQuery
+            ? 1000
+            : aLower.startsWith(lowerQuery)
+              ? 500
+              : 100;
+        const bScore =
+          bLower === lowerQuery
+            ? 1000
+            : bLower.startsWith(lowerQuery)
+              ? 500
+              : 100;
+        if (aScore !== bScore) return bScore - aScore;
+        return a.localeCompare(b);
+      });
+    } else {
+      names.sort((a, b) => a.localeCompare(b));
     }
 
-    // Classification filter
-    if (deferredFilters.classification.length > 0) {
-      packages = packages.filter((pkg) =>
-        deferredFilters.classification.some((classifier) =>
-          pkg.tags?.some((tag) =>
-            tag.toLowerCase().includes(classifier.toLowerCase()),
-          ),
-        ),
-      );
-    }
+    return names;
+  }, [packageNames, deferredSearchQuery, sortBy]);
 
-    // License filter
-    if (deferredFilters.license.length > 0) {
-      packages = packages.filter((pkg) =>
-        deferredFilters.license.some((license) =>
-          pkg.license?.toLowerCase().includes(license.toLowerCase()),
-        ),
-      );
-    }
+  // Client-side pagination on the sorted/filtered name list
+  const totalItemCount = packageNames?.length ?? 0;
+  const filteredItemCount = filteredAndSortedNames.length;
+  const serverTotal = totalItemCount;
+  const startIndex = (page - 1) * perPage;
+  const currentPageNames = useMemo(
+    () => filteredAndSortedNames.slice(startIndex, startIndex + perPage),
+    [filteredAndSortedNames, startIndex, perPage],
+  );
 
-    // Apply client-side sorting after filtering
-    // All sorting is done client-side since we deduplicate and filter locally
-    packages = applySorting(packages, sortBy, deferredSearchQuery);
+  // ── QUERY 2: Fetch metadata for the current page's packages ──
+  // For each package name on the current page, fetch the latest content item
+  // via the content API with name={exact}&ordering=-pulp_created&limit=1.
+  // This is N parallel requests (one per package on the page, typically 20),
+  // each returning a single content item — fast and lightweight.
+  const { data: currentPageItems = [], isLoading: isLoadingDetails } = useQuery(
+    {
+      queryKey: [
+        "packageDetails",
+        selectedDistribution?.base_path,
+        currentPageNames,
+      ],
+      queryFn: async () => {
+        const results = await Promise.all(
+          currentPageNames.map(async (name) => {
+            const result =
+              await getPulpPaginatedResult<PulpPythonPackageContent>(
+                PULP_ENDPOINTS.PYTHON_CONTENT,
+                { filters: [] },
+                {
+                  ...extraParams,
+                  name,
+                  ordering: "-pulp_created",
+                  limit: 1,
+                },
+              );
+            return result.data[0] || null;
+          }),
+        );
 
-    return packages;
-  }, [transformedPackages, deferredSearchQuery, deferredFilters, sortBy]);
+        return results
+          .filter((item): item is PulpPythonPackageContent => item !== null)
+          .map((content) =>
+            transformPulpContentToPackage(content, undefined, undefined, null),
+          );
+      },
+      enabled: currentPageNames.length > 0 && !!selectedDistribution,
+      staleTime: 1000 * 60 * 5,
+    },
+  );
 
-  // Pagination: when no client-side filters are active, use server total for page count.
-  // When client-side filters (search, classification, license) are active, show filtered count
-  // since the Pulp API does not support name substring, classifier, or license filtering server-side.
-  const hasActiveFilters =
-    !!deferredSearchQuery ||
-    deferredFilters.classification.length > 0 ||
-    deferredFilters.license.length > 0;
-  const currentPageItems = filteredPackages;
-  const totalItemCount = hasActiveFilters
-    ? filteredPackages.length
-    : serverTotal;
-  const filteredItemCount = hasActiveFilters
-    ? filteredPackages.length
-    : serverTotal;
+  // Loading = true until both queries have completed at least once.
+  // This prevents a "No Packages Found" flash between Query 1 (names) and
+  // Query 2 (details) completing on initial load.
+  const isLoading =
+    isLoadingNames ||
+    (isLoadingDetails &&
+      currentPageItems.length === 0 &&
+      filteredItemCount > 0);
+  const error = namesError;
 
   // Handle loading and error states
   if (isLoading) {
-    // Return context with empty data during loading
     return (
       <SearchContext.Provider
         value={{
@@ -557,7 +479,6 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
 
   if (error) {
     console.error("Failed to fetch packages:", error);
-    // Return context with empty data on error
     return (
       <SearchContext.Provider
         value={{
@@ -606,9 +527,9 @@ export const SearchProvider: React.FunctionComponent<ISearchProvider> = ({
         setFilter,
         clearAllFilters,
         deleteFilter,
-        isLoading: false,
-        isPending,
-        isFetchingMore: false,
+        isLoading,
+        isPending: isPending || isLoadingDetails,
+        isFetchingMore: isLoadingDetails,
       }}
     >
       {children}

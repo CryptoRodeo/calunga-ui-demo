@@ -97,4 +97,36 @@ export const proxyMap = {
       },
     },
   },
+  pypi: {
+    pathFilter: "/pypi",
+    target:
+      CALUNGA_ENV.PYPI_API_URL ||
+      (CALUNGA_ENV.PULP_API_URL || "http://localhost:24817").replace(
+        "/pulp/",
+        "/pypi/",
+      ),
+    pathRewrite: { "^/pypi": "" },
+    logger,
+    changeOrigin: true,
+    secure: CALUNGA_ENV.PULP_VERIFY_SSL !== "false",
+    on: {
+      proxyReq: (proxyReq, req, _res) => {
+        // Add Basic Auth if credentials are provided (same credentials as Pulp)
+        if (CALUNGA_ENV.PULP_USERNAME && CALUNGA_ENV.PULP_PASSWORD) {
+          const credentials = Buffer.from(
+            `${CALUNGA_ENV.PULP_USERNAME}:${CALUNGA_ENV.PULP_PASSWORD}`,
+          ).toString("base64");
+          proxyReq.setHeader("Authorization", `Basic ${credentials}`);
+        }
+
+        // Forward original headers
+        req.socket.remoteAddress &&
+          proxyReq.setHeader("X-Forwarded-For", req.socket.remoteAddress);
+        req.socket.remoteAddress &&
+          proxyReq.setHeader("X-Real-IP", req.socket.remoteAddress);
+        req.headers.host &&
+          proxyReq.setHeader("X-Forwarded-Host", req.headers.host);
+      },
+    },
+  },
 };

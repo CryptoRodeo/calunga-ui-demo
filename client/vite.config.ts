@@ -175,6 +175,44 @@ export default defineConfig({
           });
         },
       },
+      "/pypi": {
+        target:
+          process.env.PYPI_API_URL ||
+          (process.env.PULP_API_URL || "http://localhost:24817").replace(
+            "/pulp/",
+            "/pypi/",
+          ),
+        changeOrigin: true,
+        secure: process.env.PULP_VERIFY_SSL !== "false",
+        rewrite: (path) => {
+          const rewritten = path.replace(/^\/pypi/, "");
+          console.log(`[PYPI PROXY] Rewriting: ${path} -> ${rewritten}`);
+          return rewritten;
+        },
+        configure: (proxy, _options) => {
+          proxy.on("error", (err, _req, _res) => {
+            console.error("[PYPI PROXY ERROR]", err);
+          });
+
+          proxy.on("proxyReq", (proxyReq, _req, _res) => {
+            console.log(
+              `[PYPI PROXY] Request to: ${proxyReq.protocol}//${proxyReq.host}${proxyReq.path}`,
+            );
+
+            // Add Basic Auth (same credentials as Pulp)
+            if (process.env.PULP_USERNAME && process.env.PULP_PASSWORD) {
+              const credentials = Buffer.from(
+                `${process.env.PULP_USERNAME}:${process.env.PULP_PASSWORD}`,
+              ).toString("base64");
+              proxyReq.setHeader("Authorization", `Basic ${credentials}`);
+            }
+          });
+
+          proxy.on("proxyRes", (proxyRes, _req, _res) => {
+            console.log(`[PYPI PROXY] Response: ${proxyRes.statusCode}`);
+          });
+        },
+      },
     },
   },
   test: {

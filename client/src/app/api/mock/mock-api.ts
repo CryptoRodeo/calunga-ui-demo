@@ -25,7 +25,8 @@ async function loadDistributions(): Promise<
 > {
   if (!distributionsCache) {
     const module = await import("./data/distributions.json");
-    distributionsCache = module.default as PulpPaginatedResponse<PulpDistribution>;
+    distributionsCache =
+      module.default as PulpPaginatedResponse<PulpDistribution>;
   }
   return distributionsCache;
 }
@@ -305,6 +306,25 @@ async function handlePackagesPaginated<T>(
     params,
   };
 }
+
+/**
+ * Mock implementation of getSimplePackageNames.
+ * Extracts unique package names from the fixture data.
+ */
+export const getSimplePackageNames = async (
+  basePath: string,
+  _extraParams: Record<string, string | number> = {},
+): Promise<string[]> => {
+  await delay(MOCK_DELAY_MS);
+  const distData = await loadDistributions();
+  const dist = distData.results.find((d) => d.base_path === basePath);
+  const distName = dist?.name || "calunga-dev";
+  const pkgData = await loadPackages(distName);
+  if (!pkgData) return [];
+
+  const names = new Set<string>(pkgData.results.map((r) => r.name));
+  return Array.from(names).sort();
+};
 
 /**
  * Mock implementation of getDistributionForContent.

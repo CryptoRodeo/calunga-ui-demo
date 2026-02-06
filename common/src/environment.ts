@@ -58,6 +58,9 @@ export type CalungaEnvType = {
   /** Whether to verify SSL certificates when connecting to Pulp (server-side only) */
   PULP_VERIFY_SSL?: string;
 
+  /** Target URL for the UI server's `/pypi` proxy (PyPI Simple API). Derived from PULP_API_URL if not set. */
+  PYPI_API_URL?: string;
+
   /** Location of branding files (relative paths computed from the project source root) */
   BRANDING?: string;
 };
@@ -73,6 +76,7 @@ export const SERVER_ENV_KEYS = [
   "PULP_USERNAME",
   "PULP_PASSWORD",
   "PULP_VERIFY_SSL",
+  "PYPI_API_URL",
   "BRANDING",
 ];
 
@@ -99,6 +103,7 @@ export const buildCalungaEnv = ({
   PULP_PASSWORD,
   PULP_DOMAIN,
   PULP_VERIFY_SSL,
+  PYPI_API_URL,
   BRANDING,
 }: Partial<CalungaEnvType> = {}): CalungaEnvType => ({
   NODE_ENV,
@@ -120,6 +125,7 @@ export const buildCalungaEnv = ({
   PULP_PASSWORD,
   PULP_DOMAIN,
   PULP_VERIFY_SSL,
+  PYPI_API_URL,
   BRANDING,
 });
 
